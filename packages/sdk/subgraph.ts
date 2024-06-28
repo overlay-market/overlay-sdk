@@ -1,6 +1,13 @@
-import { request } from 'graphql-request';
-import { OpenPositionsQuery, UnwindPositionsQuery } from './queries.js'; 
-import type { GetOpenPositionsOptions, OpenPosition, SubgraphUrl, GetUnwindPositionsOptions, UnwindPosition } from './types'; 
+import { request, RequestExtendedOptions } from 'graphql-request';
+import { OpenPositionsQuery as OpenPositionsQueryDocument, UnwindPositionsQuery as UnwindPositionsQueryDocument } from './queries'; 
+import { OpenPositionsQuery, OpenPositionsQueryVariables, UnwindsQuery, UnwindsQueryVariables } from './types';
+
+export type SubgraphUrl =
+  | string
+  | {
+      url: string;
+      requestHeaders?: RequestExtendedOptions['requestHeaders'];
+    };
 
 const parseSubgraphUrl = (value: SubgraphUrl) => {
   if (typeof value === 'string') return { url: value };
@@ -12,6 +19,7 @@ const requestAllWithStep = async <TResult, TResultEntry, TVariables>({
   step,
   document,
   variables,
+  extractArray,
 }: {
   variables: TVariables;
   document: any;
@@ -41,16 +49,24 @@ const requestAllWithStep = async <TResult, TResultEntry, TVariables>({
   return results;
 };
 
+export type GetOpenPositionsOptions = {
+  url: string;
+  account: string;
+  first?: number;
+  skip?: number;
+};
+
+type OpenPosition = NonNullable<NonNullable<OpenPositionsQuery['account']>['positions']>[number];
+
 export const getOpenPositions = async ({
   url,
   account,
   first,
-  skip,
 }: GetOpenPositionsOptions): Promise<OpenPosition[]> => {
-  return requestAllWithStep<typeof OpenPositionsQuery, OpenPosition, { account: string }>(
+  return requestAllWithStep< OpenPositionsQuery, OpenPosition, OpenPositionsQueryVariables>(
     {
       url,
-      document: OpenPositionsQuery,
+      document: OpenPositionsQueryDocument,
       step: first ?? 1000,
       extractArray: (result) => result?.account?.positions ?? [],
       variables: {
@@ -60,17 +76,26 @@ export const getOpenPositions = async ({
   );
 };
 
+export type GetUnwindPositionsOptions = {
+  url: string;
+  account: string;
+  first?: number;
+  skip?: number;
+};
+
+type Unwind = NonNullable<NonNullable<UnwindsQuery['account']>['unwinds']>[number];
+
 export const getUnwindPositions = async ({
     url,
     account,
     first,
     skip,
-  }: GetUnwindPositionsOptions): Promise<UnwindPosition[]> => {
-    return requestAllWithStep<typeof UnwindPositionsQuery, UnwindPosition, { account: string }>(
+  }: GetUnwindPositionsOptions): Promise<Unwind[]> => {
+    return requestAllWithStep<UnwindsQuery, Unwind, UnwindsQueryVariables>(
       {
         url,
-        document: UnwindPositionsQuery,
-        step: first ?? 1000, // Default step size of 1000 if not provided
+        document: UnwindPositionsQueryDocument,
+        step: first ?? 1000,
         extractArray: (result) => result?.account?.unwinds ?? [],
         variables: {
           account,
