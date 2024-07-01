@@ -1,11 +1,12 @@
 {
-  "name": "sdk",
+  "name": "overlay-sdk",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "generate": "graphql-codegen"
+    "generate": "graphql-codegen",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
