@@ -1,10 +1,15 @@
 {
-    "compilerOptions": {
-      "target": "es5", // Adjust target based on browser support needs
-      "module": "commonjs", // Adjust module type if needed (e.g., "esnext" for modern modules)
-      "strict": true, // Enable strict mode for better type checking
-      "lib": ["dom", "dom.iterable", "esnext"], // Include necessary libraries for browser support
-      "allowJs": true, // Allow importing non-TypeScript files (if applicable)
-      "outDir": "dist", // Optional output directory for compiled JavaScript (if desired)
-    }
-  }
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "commonjs",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}
