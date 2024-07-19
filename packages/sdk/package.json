@@ -2,10 +2,12 @@
   "name": "sdk",
   "version": "1.0.0",
   "description": "",
-  "main": "index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "jest",
-    "generate": "graphql-codegen"
+    "generate": "graphql-codegen",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -25,5 +27,9 @@
     "ts-jest": "^29.1.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.2"
-  }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
 }
