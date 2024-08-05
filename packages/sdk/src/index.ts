@@ -1,3 +1,7 @@
-import { getOpenPositions, getUnwindPositions } from './subgraph'
+import {
+  getOpenPositions,
+  getUnwindPositions,
+  transformUnwindPositions,
+} from "./subgraph";
 
-export { getOpenPositions, getUnwindPositions }
+export { getOpenPositions, getUnwindPositions, transformUnwindPositions };

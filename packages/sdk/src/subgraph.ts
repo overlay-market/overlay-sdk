@@ -151,6 +151,50 @@ export const getOpenPositions = async ({
   });
 };
 
+type TransformedOpen = {
+  marketName: string | undefined;
+  positionSide: string | undefined;
+  parsedCreatedTimestamp: string | undefined;
+  parsedClosedTimestamp: string | undefined;
+  entryPrice: string | undefined;
+  size: string | undefined;
+  exitPrice: string | undefined;
+  pnl: string | number | undefined;
+};
+
+export const transformOpenPositions = async (
+  openPositions: OpenPosition[]
+): Promise<TransformedOpen[]> => {
+  const transformedOpens: TransformedOpen[] = [];
+  for (const open of openPositions) {
+    const marketName = await getMarketNames(open.id.split("-")[0]);
+    const priceCurrency = MarketDetails[open.id.split("-")[0]]?.currency;
+    const parsedEntryPrice = formatBigNumber(open.entryPrice, Number(18));
+    transformedOpens.push({
+      marketName: marketName,
+      size:
+        +open.isLong / 10 ** 18 < 1
+          ? (+open.isLiquidated / 10 ** 18).toFixed(6)
+          : (+open.isLiquidated / 10 ** 18).toFixed(2),
+      positionSide: open.leverage + "x " + (open.isLong ? "Long" : "Short"),
+      entryPrice: `${priceCurrency ? priceCurrency : ""}${
+        parsedEntryPrice
+          ? priceCurrency === "%"
+            ? toPercentUnit(parsedEntryPrice)
+            : toScientificNumber(parsedEntryPrice)
+          : "-"
+      }`,
+      parsedCreatedTimestamp: formatUnixTimestampToDate(
+        open.createdAtTimestamp
+      ),
+      exitPrice: "-",
+      parsedClosedTimestamp: "-",
+      pnl: "-",
+    });
+  }
+  return transformedOpens;
+};
+
 export type GetUnwindPositionsOptions = {
   url: string;
   account: string;
