@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
-import { FlexContainer, FlexRow } from "../../components/Container/Container";
-// import Web3Status from "../Web3Status/Web3Status";
-import OverlayLogoOnlyDark from "../../assets/images/overlay-logo-only-no-background.png";
-// import WalletMenu from "./WalletMenu";
-// import ChainSwitch from "./ChainSwitch";
+import {
+  FlexContainer,
+  FlexRow,
+} from "../../../components/Container/Container";
+import Web3Status from "./Web3Status";
+import OverlayLogoOnlyDark from "../../../assets/images/overlay-logo-only-no-background.png";
+import WalletMenu from "./WalletMenu";
+import ChainSwitch from "./ChainSwitch";
 import { IconButton } from "@mui/material";
 import styled from "@emotion/styled";
 
@@ -48,10 +50,9 @@ export default function Header() {
 
       <AccountContainer>
         <FlexContainer gap="12px">
-          {/* <Web3Status /> */}
-          {/* <ChainSwitch /> */}
-          {/* <WalletMenu /> */}
-          <div>Account</div>
+          <Web3Status />
+          <ChainSwitch />
+          <WalletMenu />
         </FlexContainer>
       </AccountContainer>
     </HeaderContainer>

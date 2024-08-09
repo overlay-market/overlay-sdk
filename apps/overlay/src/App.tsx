@@ -3,7 +3,7 @@ import { createPublicClient, http } from "viem";
 import { arbitrumSepolia } from "viem/chains";
 import { useEffect, useState } from "react";
 import styled from "@emotion/styled";
-import Header from "./pages/App/Header";
+import Header from "./pages/App/Header/Header";
 import Main from "./pages/App/Main";
 
 export const AppWrapper = styled.div`
