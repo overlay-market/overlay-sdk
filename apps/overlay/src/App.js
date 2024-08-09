@@ -4,6 +4,7 @@ import { OverlaySDK } from 'overlay-sdk';
 import { createPublicClient, http } from 'viem';
 import { arbitrumSepolia } from 'viem/chains';
 import {useEffect, useState} from 'react'
+import PositionsTable from './positionTable';
 
 function App() {
   const [account, setAccount] = useState()
@@ -43,6 +44,9 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
+        <h1>Positions table</h1>
+        <PositionsTable />
+        <br />
         <img src={logo} className="App-logo" alt="logo" />
         <p>
           Working on ...

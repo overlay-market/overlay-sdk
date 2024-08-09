@@ -1,0 +1,8 @@
+overrideExisting: true
+schema: https://api.studio.thegraph.com/query/77621/overlay-sepolia/version/latest
+documents: "./**/**/!(*.d).{ts,tsx}"
+generates:
+  src/types.ts:
+    plugins:
+      - typescript
+      - typescript-operations
