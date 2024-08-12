@@ -3,11 +3,29 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
+import Web3Provider from "./components/Web3Provider";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+if (window.ethereum) {
+  window.ethereum.autoRefreshOnNetworkChange = false;
+}
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 20, // 20 seconds
+    },
+  },
+});
 
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 root.render(
   <React.StrictMode>
-    <App />
+    <Web3Provider>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    </Web3Provider>
   </React.StrictMode>
 );
 

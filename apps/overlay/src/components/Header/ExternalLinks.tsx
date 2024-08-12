@@ -1,9 +1,6 @@
-import { FlexRow } from "../../../components/Container/Container";
-// import {
-//   useSetChainId,
-//   useSetSlippageModalToggle,
-//   useWalletModalToggle,
-// } from "../../state/application/hooks";
+import { useDisconnect } from "wagmi";
+import { FlexRow } from "../../components/Container/Container";
+import { useAccount } from "../../hooks/useAccount";
 import { NETWORK_ICONS, NETWORK_LABELS } from "./ChainSwitch";
 import styled from "@emotion/styled";
 
@@ -68,9 +65,8 @@ export const MenuLink = ({
 };
 
 export default function ExternalLinks() {
-  // const { deactivate, account, chainId } = useActiveWeb3React();
-  const account = "0x93cF46b09c17209f132F155494156f3C7491F1f9";
-  const chainId = 421614;
+  const { address: account, chainId } = useAccount();
+  const { disconnect } = useDisconnect();
   // const toggleWalletModal = useWalletModalToggle();
   // const setChainId = useSetChainId()
 
@@ -78,9 +74,9 @@ export default function ExternalLinks() {
     // setChainId(Number(chainId))
     sessionStorage.setItem("chainId", String(chainId));
     localStorage.setItem("disconnected", "true");
-    // deactivate();
+    disconnect();
   };
-  console.log(NETWORK_LABELS[chainId]);
+
   return (
     <>
       {account && chainId ? (

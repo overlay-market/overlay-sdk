@@ -1,9 +1,6 @@
-import {
-  FlexContainer,
-  FlexRow,
-} from "../../../components/Container/Container";
+import { FlexContainer, FlexRow } from "../../components/Container/Container";
 import Web3Status from "./Web3Status";
-import OverlayLogoOnlyDark from "../../../assets/images/overlay-logo-only-no-background.png";
+import OverlayLogoOnlyDark from "../../assets/images/overlay-logo-only-no-background.png";
 import WalletMenu from "./WalletMenu";
 import ChainSwitch from "./ChainSwitch";
 import { IconButton } from "@mui/material";

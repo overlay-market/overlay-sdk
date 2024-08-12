@@ -1,18 +1,15 @@
 import { useState, useRef, useEffect } from "react";
-import {
-  FlexContainer,
-  FlexRow,
-} from "../../../components/Container/Container";
-import ArbitrumLogo from "../../../assets/images/arbitrum-logo.png";
-import EthereumLogo from "../../../assets/images/ethereum-logo.png";
-import ArbitrumTestnetLogo from "../../../assets/images/arbitrum-testnet-logo.png";
-import ImolaLogo from "../../../assets/images/imola-logo.png";
+import { FlexContainer, FlexRow } from "../../components/Container/Container";
+import ArbitrumLogo from "../../assets/images/arbitrum-logo.png";
+import EthereumLogo from "../../assets/images/ethereum-logo.png";
+import ArbitrumTestnetLogo from "../../assets/images/arbitrum-testnet-logo.png";
+import ImolaLogo from "../../assets/images/imola-logo.png";
 // import {useActiveWeb3React} from '../../hooks/web3'
 import {
   SupportedChainId,
   DEFAULT_CHAINID,
   WORKING_CHAINS,
-} from "../../../constants/chains";
+} from "../../constants/chains";
 // import {
 //   switchNetworkToArbitrum,
 //   switchNetworkToImola,
@@ -137,13 +134,13 @@ export default function ChainSwitch() {
           ? NETWORK_ICONS[chainIdLocal]
           : chainId && supportedChainId
           ? NETWORK_ICONS[chainId]
-          : NETWORK_ICONS[DEFAULT_CHAINID]
+          : NETWORK_ICONS[DEFAULT_CHAINID as number]
       );
     } else {
       setActiveChainSrc(
         chainIdLocal > 0
           ? NETWORK_ICONS[chainIdLocal]
-          : NETWORK_ICONS[DEFAULT_CHAINID]
+          : NETWORK_ICONS[DEFAULT_CHAINID as number]
       );
     }
   }, [account, chainId, supportedChainId, chainIdLocal]);

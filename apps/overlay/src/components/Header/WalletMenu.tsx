@@ -134,10 +134,7 @@ export default function WalletMenu() {
           </WalletMenuButton>
         </div>
         <MenuContent open={isMenuOpen} ref={menuRef}>
-          <ExternalLinks
-          // isSubMenuOpen={isSubMenuOpen}
-          // setIsSubMenuOpen={setIsSubMenuOpen}
-          />
+          <ExternalLinks />
         </MenuContent>
       </RelativeContainer>
     </>

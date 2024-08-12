@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 // import { AlertTriangle } from "react-feather";
 // import { UnsupportedChainIdError } from "@web3-react/core";
-import { shortenAddress } from "../../../utils/web3";
+import { shortenAddress } from "../../utils/web3";
 
-import { SupportedChainId } from "../../../constants/chains";
-import { FlexColumn, FlexRow } from "../../../components/Container/Container";
+import { SupportedChainId } from "../../constants/chains";
+import { FlexColumn, FlexRow } from "../../components/Container/Container";
 // import { useWalletModalToggle } from "../../state/application/hooks";
 
 // import ConnectWalletModal from "../ConnectWalletModal/ConnectWalletModal";
-import Loader from "../../../components/Loaders/Loaders";
+import Loader from "../../components/Loaders/Loaders";
 import { ethers } from "ethers";
 // import { switchNetworkToArbitrum } from "../../utils/switchNetworkToArbitrum";
 import styled from "@emotion/styled";
-
-// const NEW_HEADER_FLAG = true
+import { useAccount } from "../../hooks/useAccount";
+// import { useAccount, useDisconnect, useEnsAvatar, useEnsName } from "wagmi";
 
 export const Web3StatusConnected = styled.div`
   display: flex;
@@ -73,12 +73,9 @@ const providerEth = new ethers.InfuraProvider(
 );
 
 function Web3StatusInner() {
-  // const { account, chainId, error } = useActiveWeb3React();
-  const account = "0x93cF46b09c17209f132F155494156f3C7491F1f9";
-  const chainId = 421614;
+  const { address: account } = useAccount();
 
   // const toggleWalletModal = useWalletModalToggle();
-
   const [ens, setEns] = useState<string | null>(null);
   useEffect(() => {
     const fetchENS = async () => {
@@ -108,7 +105,7 @@ function Web3StatusInner() {
     return (
       <Web3StatusConnected>
         <WalletDetails align="start">
-          <div>{ens ?? shortenAddress(account)}</div>
+          <div>{ens ?? shortenAddress(String(account))}</div>
         </WalletDetails>
       </Web3StatusConnected>
     );
