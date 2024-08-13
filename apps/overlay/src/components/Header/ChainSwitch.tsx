@@ -4,7 +4,6 @@ import ArbitrumLogo from "../../assets/images/arbitrum-logo.png";
 import EthereumLogo from "../../assets/images/ethereum-logo.png";
 import ArbitrumTestnetLogo from "../../assets/images/arbitrum-testnet-logo.png";
 import ImolaLogo from "../../assets/images/imola-logo.png";
-// import {useActiveWeb3React} from '../../hooks/web3'
 import {
   SupportedChainId,
   DEFAULT_CHAINID,
@@ -20,7 +19,7 @@ import {
 // import getLibrary from "../../utils/getLibrary";
 import styled from "@emotion/styled";
 import { Box, Menu, MenuItem } from "@mui/material";
-// import { useWeb3Context } from 'web3-react'
+import { useAccount } from "../../hooks/useAccount";
 
 export const ChainLogo = styled.div<{ src: string }>`
   background: no-repeat center/contain url(${({ src }) => src});
@@ -112,9 +111,8 @@ const CHAIN_LIST_ORDER: { [x: number]: number } = {
 };
 
 export default function ChainSwitch() {
-  // const { account, chainId } = useActiveWeb3React();
-  const account = "0x93cF46b09c17209f132F155494156f3C7491F1f9";
-  const chainId = 421614;
+  const { address: account, chainId } = useAccount();
+
   const supportedChainId: boolean = Boolean(
     chainId && WORKING_CHAINS.includes(SupportedChainId[chainId])
   );

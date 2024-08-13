@@ -27,3 +27,4 @@ export const VIEM_CHAINS: { [key in CHAINS]: Chain | number} = {
   [CHAINS.Arbitrum]: arbitrum,
   [CHAINS.ArbitrumSepolia]: arbitrumSepolia,
 };
+

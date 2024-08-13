@@ -1,11 +1,10 @@
 import "./App.css";
 import logo from "../../logo.png";
 import { useAccount } from "../../hooks/useAccount";
-import { useAccount as useWagmiAccount } from "wagmi";
+import { useChainId, useAccount as useWagmiAccount } from "wagmi";
 
 function Main() {
-  const { account, chainId } = useAccount();
-  const { address } = useWagmiAccount();
+  const { address: account, chainId } = useAccount();
 
   return (
     <div className="App">
@@ -17,7 +16,6 @@ function Main() {
         </p>
         <p>current account - {account}</p>
         <p>current chainId - {chainId}</p>
-        <p>current address - {address}</p>
       </header>
     </div>
   );

@@ -12,17 +12,17 @@ export const wagmiConfig = createConfig({
     walletConnect({ projectId }),
     metaMask(),
   ],
-  // transports: {
-  //   [mainnet.id]: http(),
-  //   [arbitrum.id]: http(),
-  //   [arbitrumSepolia.id]: http(),
-  // },
-  client({ chain }) {
-    return createClient({
-      chain,
-      batch: { multicall: true },
-      pollingInterval: 12_000,
-      transport: http(chain.rpcUrls.default.http[0])
-    })
+  transports: {
+    [mainnet.id]: http(),
+    [arbitrum.id]: http(),
+    [arbitrumSepolia.id]: http(),
   },
+  // client({ chain }) {
+  //   return createClient({
+  //     chain,
+  //     batch: { multicall: true },
+  //     pollingInterval: 12_000,
+  //     transport: http(chain.rpcUrls.default.http[0])
+  //   })
+  // },
 })
