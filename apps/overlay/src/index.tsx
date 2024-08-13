@@ -5,6 +5,8 @@ import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import Web3Provider from "./components/Web3Provider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Provider } from "react-redux";
+import store from "./state/state";
 
 if (window.ethereum) {
   window.ethereum.autoRefreshOnNetworkChange = false;
@@ -21,11 +23,13 @@ const queryClient = new QueryClient({
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 root.render(
   <React.StrictMode>
-    <Web3Provider>
-      <QueryClientProvider client={queryClient}>
-        <App />
-      </QueryClientProvider>
-    </Web3Provider>
+    <Provider store={store}>
+      <Web3Provider>
+        <QueryClientProvider client={queryClient}>
+          <App />
+        </QueryClientProvider>
+      </Web3Provider>
+    </Provider>
   </React.StrictMode>
 );
 

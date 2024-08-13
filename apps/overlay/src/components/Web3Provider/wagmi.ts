@@ -1,7 +1,7 @@
 import { createClient } from 'viem'
 import { http, createConfig } from 'wagmi'
 import { arbitrum, mainnet, arbitrumSepolia } from 'wagmi/chains'
-import { injected, metaMask, safe, walletConnect, coinbaseWallet } from 'wagmi/connectors'
+import { injected, metaMask, walletConnect } from 'wagmi/connectors'
 
 const projectId = <string>process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID
 
@@ -11,7 +11,6 @@ export const wagmiConfig = createConfig({
     injected(),
     walletConnect({ projectId }),
     metaMask(),
-    safe(),
   ],
   // transports: {
   //   [mainnet.id]: http(),

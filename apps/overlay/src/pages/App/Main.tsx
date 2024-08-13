@@ -1,25 +1,11 @@
 import "./App.css";
-import { OverlaySDK } from "overlay-sdk";
-import { createPublicClient, http } from "viem";
-import { arbitrumSepolia } from "viem/chains";
-import { useEffect, useState } from "react";
 import logo from "../../logo.png";
 import { useAccount } from "../../hooks/useAccount";
-import {
-  useAccount as useWagmiAccount,
-  useDisconnect,
-  useEnsAvatar,
-  useEnsName,
-  useConnect,
-  Connector,
-} from "wagmi";
+import { useAccount as useWagmiAccount } from "wagmi";
 
 function Main() {
   const { account, chainId } = useAccount();
-  const { disconnect } = useDisconnect();
-  const { address, isConnected } = useWagmiAccount();
-
-  const { connectors, connect } = useConnect();
+  const { address } = useWagmiAccount();
 
   return (
     <div className="App">
@@ -32,42 +18,8 @@ function Main() {
         <p>current account - {account}</p>
         <p>current chainId - {chainId}</p>
         <p>current address - {address}</p>
-        <div>
-          <button onClick={() => disconnect()}>Disconnect</button>
-        </div>
       </header>
-      {!isConnected &&
-        connectors.map((connector) => (
-          <WalletOption
-            key={connector.uid}
-            connector={connector}
-            onClick={() => connect({ connector })}
-          />
-        ))}
     </div>
-  );
-}
-
-function WalletOption({
-  connector,
-  onClick,
-}: {
-  connector: Connector;
-  onClick: () => void;
-}) {
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    (async () => {
-      const provider = await connector.getProvider();
-      setReady(!!provider);
-    })();
-  }, [connector]);
-
-  return (
-    <button disabled={!ready} onClick={onClick}>
-      {connector.name}
-    </button>
   );
 }
 

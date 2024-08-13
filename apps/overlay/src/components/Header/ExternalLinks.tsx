@@ -3,6 +3,7 @@ import { FlexRow } from "../../components/Container/Container";
 import { useAccount } from "../../hooks/useAccount";
 import { NETWORK_ICONS, NETWORK_LABELS } from "./ChainSwitch";
 import styled from "@emotion/styled";
+import { useWalletModalToggle } from "../../state/chain/hooks";
 
 export const PlatformLogo = styled.div<{ src: string; open?: boolean }>`
   background: no-repeat center/contain url(${({ src }) => src});
@@ -67,7 +68,7 @@ export const MenuLink = ({
 export default function ExternalLinks() {
   const { address: account, chainId } = useAccount();
   const { disconnect } = useDisconnect();
-  // const toggleWalletModal = useWalletModalToggle();
+  const toggleWalletModal = useWalletModalToggle();
   // const setChainId = useSetChainId()
 
   const disconnectWallet = () => {
@@ -91,7 +92,7 @@ export default function ExternalLinks() {
           background={"#303236"}
           onClick={(event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
             event.stopPropagation();
-            // toggleWalletModal();
+            toggleWalletModal();
           }}
         >
           <div style={{ textDecoration: "underline" }}>Connect Wallet</div>

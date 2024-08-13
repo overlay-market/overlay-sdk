@@ -1,19 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-// import { AlertTriangle } from "react-feather";
-// import { UnsupportedChainIdError } from "@web3-react/core";
+import { useEffect, useState } from "react";
 import { shortenAddress } from "../../utils/web3";
-
 import { SupportedChainId } from "../../constants/chains";
 import { FlexColumn, FlexRow } from "../../components/Container/Container";
-// import { useWalletModalToggle } from "../../state/application/hooks";
-
-// import ConnectWalletModal from "../ConnectWalletModal/ConnectWalletModal";
-import Loader from "../../components/Loaders/Loaders";
+import { useWalletModalToggle } from "../../state/chain/hooks";
+import ConnectWalletModal from "../ConnectWalletModal/ConnectWalletModal";
 import { ethers } from "ethers";
-// import { switchNetworkToArbitrum } from "../../utils/switchNetworkToArbitrum";
 import styled from "@emotion/styled";
 import { useAccount } from "../../hooks/useAccount";
-// import { useAccount, useDisconnect, useEnsAvatar, useEnsName } from "wagmi";
 
 export const Web3StatusConnected = styled.div`
   display: flex;
@@ -37,10 +30,6 @@ export const Web3StatusError = styled(Web3StatusConnected)`
   border-radius: 15px;
   padding: 4px 8px;
 `;
-
-// export const StyledAlertTriangle = styled(AlertTriangle)`
-//   margin-right: 3px;
-// `;
 
 export const Account = styled(FlexRow)`
   font-size: 12px;
@@ -75,7 +64,7 @@ const providerEth = new ethers.InfuraProvider(
 function Web3StatusInner() {
   const { address: account } = useAccount();
 
-  // const toggleWalletModal = useWalletModalToggle();
+  const toggleWalletModal = useWalletModalToggle();
   const [ens, setEns] = useState<string | null>(null);
   useEffect(() => {
     const fetchENS = async () => {
@@ -132,9 +121,7 @@ function Web3StatusInner() {
   } else {
     return (
       // not connected
-      <Web3StatusUnconnected
-      // onClick={toggleWalletModal}
-      >
+      <Web3StatusUnconnected onClick={toggleWalletModal}>
         <div>Connect wallet</div>
       </Web3StatusUnconnected>
     );
@@ -145,7 +132,7 @@ export default function Web3Status() {
   return (
     <>
       <Web3StatusInner />
-      {/* <ConnectWalletModal /> */}
+      <ConnectWalletModal />
     </>
   );
 }
