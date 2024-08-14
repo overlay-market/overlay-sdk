@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { shortenAddress } from "../../utils/web3";
 import { SupportedChainId } from "../../constants/chains";
 import { FlexColumn, FlexRow } from "../../components/Container/Container";
-import { useWalletModalToggle } from "../../state/chain/hooks";
+import { useWalletModalToggle } from "../../state/application/hooks";
 import ConnectWalletModal from "../ConnectWalletModal/ConnectWalletModal";
 import { ethers } from "ethers";
 import styled from "@emotion/styled";

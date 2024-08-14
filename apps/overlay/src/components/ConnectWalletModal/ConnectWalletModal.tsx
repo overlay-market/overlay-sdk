@@ -1,6 +1,9 @@
 import { useEffect } from "react";
-import { ApplicationModal } from "../../state/chain/actions";
-import { useModalOpen, useWalletModalToggle } from "../../state/chain/hooks";
+import { ApplicationModal } from "../../state/application/actions";
+import {
+  useModalOpen,
+  useWalletModalToggle,
+} from "../../state/application/hooks";
 import Modal from "../Modal/Modal";
 import WalletOption from "./WalletOptions";
 import usePrevious from "../../hooks/usePrevious";

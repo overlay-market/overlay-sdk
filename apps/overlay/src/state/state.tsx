@@ -1,6 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { save, load } from "redux-localstorage-simple";
-import chain from "./chain/reducer";
+import chain from "./application/reducer";
 import { updateVersion } from "./global/actions";
 import { setupListeners } from "@reduxjs/toolkit/query";
 

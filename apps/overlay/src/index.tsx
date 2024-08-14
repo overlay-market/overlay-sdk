@@ -7,6 +7,7 @@ import Web3Provider from "./components/Web3Provider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
 import store from "./state/state";
+import ApplicationUpdater from "./state/application/updater";
 
 if (window.ethereum) {
   window.ethereum.autoRefreshOnNetworkChange = false;
@@ -26,6 +27,7 @@ root.render(
     <Provider store={store}>
       <Web3Provider>
         <QueryClientProvider client={queryClient}>
+          <ApplicationUpdater />
           <App />
         </QueryClientProvider>
       </Web3Provider>

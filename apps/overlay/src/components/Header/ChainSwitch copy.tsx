@@ -1,15 +1,25 @@
-import { useState, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { FlexContainer, FlexRow } from "../../components/Container/Container";
 import ArbitrumLogo from "../../assets/images/arbitrum-logo.png";
 import EthereumLogo from "../../assets/images/ethereum-logo.png";
 import ArbitrumTestnetLogo from "../../assets/images/arbitrum-testnet-logo.png";
 import ImolaLogo from "../../assets/images/imola-logo.png";
-import { SupportedChainId } from "../../constants/chains";
-
+import {
+  SupportedChainId,
+  DEFAULT_CHAINID,
+  WORKING_CHAINS,
+} from "../../constants/chains";
+// import {
+//   switchNetworkToArbitrum,
+//   switchNetworkToImola,
+// } from "../../utils/switchNetworkToArbitrum";
+// import { useChainIdLocal, useSetChainId } from "../../state/application/hooks";
+// import useGetCurrentChainId from "../../hooks/useGetCurrentChainId";
+// import { useNetwork } from "../../connectors/connectors";
+// import getLibrary from "../../utils/getLibrary";
 import styled from "@emotion/styled";
 import { Box, Menu, MenuItem } from "@mui/material";
-import { useMultichainContext } from "../../state/multichain/useMultichainContext";
-import useSelectChain from "../../hooks/useSelectChain";
+import { useAccount } from "../../hooks/useAccount";
 
 export const ChainLogo = styled.div<{ src: string }>`
   background: no-repeat center/contain url(${({ src }) => src});
@@ -92,37 +102,46 @@ export const NETWORK_LABELS: {
 
 const CHAIN_LIST: { [chainId in SupportedChainId | number]: string } = {
   [SupportedChainId.ARBITRUM_SEPOLIA]: "Arbitrum Sepolia",
-  // [SupportedChainId.IMOLA]: "Movement",
-  [SupportedChainId.ARBITRUM]: "Arbitrum",
-  [SupportedChainId.MAINNET]: "Mainnet",
+  [SupportedChainId.IMOLA]: "Movement",
 };
 
 const CHAIN_LIST_ORDER: { [x: number]: number } = {
   [1]: SupportedChainId.ARBITRUM_SEPOLIA,
-  // [2]: SupportedChainId.IMOLA,
-  [2]: SupportedChainId.ARBITRUM,
-  [3]: SupportedChainId.MAINNET,
+  [2]: SupportedChainId.IMOLA,
 };
 
 export default function ChainSwitch() {
-  const { chainId, setSelectedChainId } = useMultichainContext();
+  const { address: account, chainId } = useAccount();
 
-  const selectChain = useSelectChain();
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-
-  const onSelectChain = useCallback(
-    async (targetChainId: number | null) => {
-      console.log({ targetChainId });
-      if (!targetChainId) {
-        setSelectedChainId(targetChainId);
-      } else {
-        setSelectedChainId(targetChainId);
-        await selectChain(targetChainId);
-      }
-      setAnchorEl(null);
-    },
-    [setSelectedChainId, selectChain]
+  const supportedChainId: boolean = Boolean(
+    chainId && WORKING_CHAINS.includes(SupportedChainId[chainId])
   );
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [activeChainSrc, setActiveChainSrc] = useState("");
+  // const chainIdLocal = useChainIdLocal()
+  const chainIdLocal = Number(sessionStorage.getItem("chainId"));
+  // const setChainId = useSetChainId();
+  // const chainIdCurrent = useGetCurrentChainId();
+  // const activeNetwork = useNetwork();
+  // console.log({chainIdLocal}, {chainIdCurrent})
+
+  useEffect(() => {
+    if (account) {
+      setActiveChainSrc(
+        chainIdLocal > 0
+          ? NETWORK_ICONS[chainIdLocal]
+          : chainId && supportedChainId
+          ? NETWORK_ICONS[chainId]
+          : NETWORK_ICONS[DEFAULT_CHAINID as number]
+      );
+    } else {
+      setActiveChainSrc(
+        chainIdLocal > 0
+          ? NETWORK_ICONS[chainIdLocal]
+          : NETWORK_ICONS[DEFAULT_CHAINID as number]
+      );
+    }
+  }, [account, chainId, supportedChainId, chainIdLocal]);
 
   const openDropdownMenu = Boolean(anchorEl);
 
@@ -135,6 +154,22 @@ export default function ChainSwitch() {
     setAnchorEl(null);
   };
 
+  const handleSelectChain = async (chainId: number) => {
+    // if (account) {
+    //   Number(chainId) === Number(SupportedChainId.ARBITRUM_SEPOLIA)
+    //     ? await switchNetworkToArbitrum()
+    //     : Number(chainId) === Number(SupportedChainId.IMOLA)
+    //     ? await switchNetworkToImola()
+    //     : console.log("error");
+    // }
+
+    sessionStorage.setItem("chainId", String(chainId));
+    setActiveChainSrc(NETWORK_ICONS[chainId]);
+    setAnchorEl(null);
+    // setChainId(chainId);
+    // getLibrary(activeNetwork(chainId).provider);
+  };
+
   return (
     <>
       <ChainSwitchButton
@@ -144,7 +179,7 @@ export default function ChainSwitch() {
         aria-haspopup="true"
         aria-expanded={openDropdownMenu ? "true" : undefined}
       >
-        <ChainLogo src={NETWORK_ICONS[chainId as number]} />
+        <ChainLogo src={activeChainSrc} />
       </ChainSwitchButton>
       <StyledMenu
         id="basic-menu"
@@ -165,7 +200,7 @@ export default function ChainSwitch() {
           return (
             <MenuItem
               key={id}
-              onClick={() => onSelectChain(CHAIN_LIST_ORDER[id])}
+              onClick={() => handleSelectChain(CHAIN_LIST_ORDER[id])}
               disableRipple
             >
               <FlexContainer gap="16px">

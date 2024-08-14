@@ -7,13 +7,13 @@ import {
 } from './actions'
 
 export interface ChainState {
-  readonly chainId: number | null
+  readonly chainId: number | null | undefined
   readonly chainIdLocal: number | null
   readonly openModal: ApplicationModal | null
 }
 
 const initialState: ChainState = {
-  chainId: 1,
+  chainId: null,
   chainIdLocal: null,
   openModal: null,
 }
