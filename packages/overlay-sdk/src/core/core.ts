@@ -2,33 +2,27 @@ import {
   type Address,
   type WalletClient,
   type PublicClient,
-  type Chain,  
-  type CustomTransportConfig, 
+  type Chain,
+  type CustomTransportConfig,
   createPublicClient,
   createWalletClient,
   fallback,
   http,
-  custom, 
-} from 'viem';
+  custom,
+  GetContractReturnType,
+} from "viem";
+import { ERROR_CODE, invariant } from "../common/utils/sdk-error.js";
+import { type SDKErrorProps, SDKError } from "../common/utils/index.js";
 import {
-  ERROR_CODE,
-  invariant,
-} from '../common/utils/sdk-error.js';
-import { type SDKErrorProps, SDKError } from '../common/utils/index.js';
-import {
-  SUPPORTED_CHAINS,  
-  type CHAINS,  
-  VIEM_CHAINS  
-} from '../common/constants.js';
-import type {
-  OverlaySDKCoreProps,
-  LOG_MODE,
-  AccountValue,
-} from './types.js';
-import { OverlaySDKCacheable } from '../common/class-primitives/cacheable.js';
+  SUPPORTED_CHAINS,
+  type CHAINS,
+  VIEM_CHAINS,
+  OVERLAY_CONTRACT_NAMES,
+} from "../common/constants.js";
+import type { OverlaySDKCoreProps, LOG_MODE, AccountValue } from "./types.js";
+import { OverlaySDKCacheable } from "../common/class-primitives/cacheable.js";
 
 export default class OverlaySDKCore extends OverlaySDKCacheable {
-
   #web3Provider: WalletClient | undefined;
 
   readonly chainId: CHAINS;
@@ -45,7 +39,7 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
     super();
     this.chainId = props.chainId;
     this.rpcUrls = props.rpcUrls;
-    this.logMode = props.logMode ?? 'info';
+    this.logMode = props.logMode ?? "info";
 
     const { chain, rpcProvider, web3Provider } = this.init(props);
 
@@ -58,7 +52,7 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
 
   public static createRpcProvider(
     chainId: CHAINS,
-    rpcUrls: string[],
+    rpcUrls: string[]
   ): PublicClient {
     const rpcs = rpcUrls.map((url) => http(url));
 
@@ -74,7 +68,7 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
   public static createWeb3Provider(
     chainId: CHAINS,
     transport: any,
-    transportConfig?: CustomTransportConfig,
+    transportConfig?: CustomTransportConfig
   ): WalletClient {
     return createWalletClient({
       chain: VIEM_CHAINS[chainId],
@@ -117,26 +111,29 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
   public useWeb3Provider(): WalletClient {
     invariant(
       this.#web3Provider,
-      'Web3 Provider is not defined',
-      ERROR_CODE.PROVIDER_ERROR,
+      "Web3 Provider is not defined",
+      ERROR_CODE.PROVIDER_ERROR
     );
     return this.#web3Provider;
   }
 
   public async getWeb3Address(accountValue?: AccountValue): Promise<Address> {
-    if (typeof accountValue === 'string') return accountValue;
+    if (typeof accountValue === "string") return accountValue;
     if (accountValue) return accountValue.address;
     const web3Provider = this.useWeb3Provider();
 
     if (web3Provider.account) return web3Provider.account.address;
 
-    const walletClient = OverlaySDKCore.createWeb3Provider(this.chainId, this.#web3Provider);
+    const walletClient = OverlaySDKCore.createWeb3Provider(
+      this.chainId,
+      this.#web3Provider
+    );
 
     const accounts = await walletClient.requestAddresses();
     invariant(
       accounts,
-      'web3provider must have at least 1 account',
-      ERROR_CODE.PROVIDER_ERROR,
+      "web3provider must have at least 1 account",
+      ERROR_CODE.PROVIDER_ERROR
     );
     return accounts[0];
   }

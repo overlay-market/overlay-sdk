@@ -1,6 +1,6 @@
 import logo from './logo.png';
 import './App.css';
-import { OverlaySDK } from 'overlay-sdk';
+import { OverlaySDK, OverlaySDKMarket } from 'overlay-sdk';
 import { createPublicClient, http } from 'viem';
 import { arbitrumSepolia } from 'viem/chains';
 import {useEffect, useState} from 'react'
@@ -21,6 +21,8 @@ function App() {
     rpcProvider,
     web3Provider
   });
+
+  console.log("market factor: ", sdk.market.factory("0x6aa41b8f2f858723aafcf388a90d34d1cb1162d9"))
 
   const getWeb3Address = async () => {
     const address = await sdk.core.getWeb3Address()
