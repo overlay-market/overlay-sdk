@@ -3,9 +3,7 @@ import {
   type Address,
   type WalletClient,
   getContract,
-  encodeFunctionData,
 } from "viem";
-import { OVERLAY_CONTRACT_NAMES } from "../common/constants.js";
 import { OverlayV1MarketABI } from "./abis/OverlayV1Market.js";
 import { OverlaySDKModule } from "../common/class-primitives/sdk-module.js";
 import { OverlaySDKCommonProps } from "../core/types.js";
