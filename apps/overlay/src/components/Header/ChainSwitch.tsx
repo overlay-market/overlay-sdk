@@ -5,7 +5,6 @@ import EthereumLogo from "../../assets/images/ethereum-logo.png";
 import ArbitrumTestnetLogo from "../../assets/images/arbitrum-testnet-logo.png";
 import ImolaLogo from "../../assets/images/imola-logo.png";
 import { SupportedChainId } from "../../constants/chains";
-
 import styled from "@emotion/styled";
 import { Box, Menu, MenuItem } from "@mui/material";
 import { useMultichainContext } from "../../state/multichain/useMultichainContext";
@@ -92,32 +91,31 @@ export const NETWORK_LABELS: {
 
 const CHAIN_LIST: { [chainId in SupportedChainId | number]: string } = {
   [SupportedChainId.ARBITRUM_SEPOLIA]: "Arbitrum Sepolia",
-  // [SupportedChainId.IMOLA]: "Movement",
+  [SupportedChainId.IMOLA]: "Movement",
   [SupportedChainId.ARBITRUM]: "Arbitrum",
   [SupportedChainId.MAINNET]: "Mainnet",
 };
 
 const CHAIN_LIST_ORDER: { [x: number]: number } = {
   [1]: SupportedChainId.ARBITRUM_SEPOLIA,
-  // [2]: SupportedChainId.IMOLA,
   [2]: SupportedChainId.ARBITRUM,
   [3]: SupportedChainId.MAINNET,
+  [4]: SupportedChainId.IMOLA,
 };
 
 export default function ChainSwitch() {
   const { chainId, setSelectedChainId } = useMultichainContext();
-
   const selectChain = useSelectChain();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const onSelectChain = useCallback(
     async (targetChainId: number | null) => {
-      console.log({ targetChainId });
       if (!targetChainId) {
         setSelectedChainId(targetChainId);
       } else {
         setSelectedChainId(targetChainId);
-        await selectChain(targetChainId);
+        selectChain(targetChainId);
+        sessionStorage.setItem("chainId", String(targetChainId));
       }
       setAnchorEl(null);
     },
@@ -144,7 +142,11 @@ export default function ChainSwitch() {
         aria-haspopup="true"
         aria-expanded={openDropdownMenu ? "true" : undefined}
       >
-        <ChainLogo src={NETWORK_ICONS[chainId as number]} />
+        {chainId ? (
+          <ChainLogo src={NETWORK_ICONS[chainId as number]} />
+        ) : (
+          <div>⚠️</div>
+        )}
       </ChainSwitchButton>
       <StyledMenu
         id="basic-menu"

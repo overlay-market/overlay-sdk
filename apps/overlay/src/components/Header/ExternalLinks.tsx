@@ -1,9 +1,9 @@
-import { useDisconnect } from "wagmi";
 import { FlexRow } from "../../components/Container/Container";
 import { useAccount } from "../../hooks/useAccount";
 import { NETWORK_ICONS, NETWORK_LABELS } from "./ChainSwitch";
 import styled from "@emotion/styled";
 import { useWalletModalToggle } from "../../state/application/hooks";
+import { useDisconnect } from "../../hooks/useDisconnect";
 
 export const PlatformLogo = styled.div<{ src: string; open?: boolean }>`
   background: no-repeat center/contain url(${({ src }) => src});
@@ -72,9 +72,6 @@ export default function ExternalLinks() {
   // const setChainId = useSetChainId()
 
   const disconnectWallet = () => {
-    // setChainId(Number(chainId))
-    sessionStorage.setItem("chainId", String(chainId));
-    localStorage.setItem("disconnected", "true");
     disconnect();
   };
 

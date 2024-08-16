@@ -27,7 +27,7 @@ root.render(
     <Provider store={store}>
       <Web3Provider>
         <QueryClientProvider client={queryClient}>
-          <ApplicationUpdater />
+          {/* <ApplicationUpdater /> */}
           <App />
         </QueryClientProvider>
       </Web3Provider>

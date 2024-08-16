@@ -4,9 +4,7 @@ import { Chain } from "viem"
 
 type MultichainContextType = {
   setSelectedChainId: Dispatch<SetStateAction<number | undefined | null>>
-  isUserSelectedChainId: boolean
-  setIsUserSelectedChainId: Dispatch<SetStateAction<boolean>>
-  
+    
   // The chainId of the context - can be different from the connected Chain ID
   // if multichain UX is enabled, otherwise it will be the same as the connected chain ID
   chainId?: number | Chain
@@ -20,9 +18,6 @@ type MultichainContextType = {
 
 export const MultichainContext = createContext<MultichainContextType>({
   setSelectedChainId: () => undefined,
-  isUserSelectedChainId: false,
-  setIsUserSelectedChainId: () => undefined,
-  
   chainId: DEFAULT_CHAINID,
   initialChainId: DEFAULT_CHAINID,
   isMultichainContext: false,

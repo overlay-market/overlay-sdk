@@ -1,6 +1,8 @@
 import styled from "@emotion/styled";
 import Header from "./components/Header/Header";
 import Main from "./pages/App/Main";
+import { useRef } from "react";
+import useSyncChainQuery from "./hooks/useSyncChainQuery";
 
 export const AppWrapper = styled.div`
   background-color: #202431;
@@ -14,6 +16,9 @@ export const AppWrapper = styled.div`
 `;
 
 function App() {
+  const chainIdRef = useRef<number | undefined>(undefined);
+  useSyncChainQuery(chainIdRef);
+
   return (
     <AppWrapper>
       <Header />

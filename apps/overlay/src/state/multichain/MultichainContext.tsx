@@ -1,7 +1,7 @@
 import { PropsWithChildren, useEffect, useMemo, useState } from "react";
 import { useAccount } from "../../hooks/useAccount";
-import usePrevious from "../../hooks/usePrevious";
 import { MultichainContext } from "./types";
+import { DEFAULT_CHAINID } from "../../constants/chains";
 
 export function MultichainContextProvider({
   children,
@@ -12,37 +12,23 @@ export function MultichainContextProvider({
   const [selectedChainId, setSelectedChainId] = useState<
     number | undefined | null
   >(initialChainId);
-  const [isUserSelectedChainId, setIsUserSelectedChainId] =
-    useState<boolean>(false);
 
   const account = useAccount();
-  // const previousConnectedChainId = usePrevious(account.chainId);
 
   useEffect(() => {
     if (initialChainId) {
       setSelectedChainId(initialChainId);
     }
   }, [initialChainId, setSelectedChainId]);
-
-  // const setMulticallUpdaterChainId = useUpdateAtom(
-  //   multicallUpdaterSwapChainIdAtom
-  // );
-
-  // useEffect(() => {
-  //   const chainId = selectedChainId ? account.chainId : undefined;
-  //   setMulticallUpdaterChainId(chainId);
-  // }, [account.chainId, selectedChainId, setMulticallUpdaterChainId]);
-
+  console.log({ selectedChainId, account }, account.chainId, DEFAULT_CHAINID);
   const value = useMemo(() => {
     return {
       setSelectedChainId,
       initialChainId,
-      chainId: selectedChainId ? account.chainId : undefined,
+      chainId: selectedChainId ?? account.chainId ?? DEFAULT_CHAINID,
       isMultichainContext: true,
-      isUserSelectedChainId,
-      setIsUserSelectedChainId,
     };
-  }, [initialChainId, account.chainId, selectedChainId, isUserSelectedChainId]);
+  }, [initialChainId, account.chainId, selectedChainId]);
 
   return (
     <MultichainContext.Provider value={value}>
