@@ -1,6 +1,6 @@
 export const LINKS = {
   MARKET_PRICES_API: "https://api.overlay.market/sepolia-charts/v1/charts",
-  URL: "https://gateway-arbitrum.network.thegraph.com/api/a5f78f593443103009d504bb32410270/subgraphs/id/6HYgwKVqKS4dYr3DDhZCH6zey7LbTd8DHqWtHZkjXBW5",
+  URL: "https://api.studio.thegraph.com/query/77621/overlay-sepolia-test-less-call/version/latest",
 };
 
 export type MarketDetailsData = {

@@ -12,7 +12,6 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   static readonly PRECISION = 10n ** 27n;
 
   constructor(props: OverlaySDKCommonProps) {
-    console.log("OverlaySDKMarket", props);
     super(props);
   }
 
@@ -36,5 +35,10 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   public async factory(market: Address): Promise<Address> {
     const contract = await this.getContractV1Market(market);
     return contract.read.factory();
+  }
+
+  public async getIsShutdown(market: Address): Promise<boolean> {
+    const contract = await this.getContractV1Market(market);
+    return contract.read.isShutdown();
   }
 }

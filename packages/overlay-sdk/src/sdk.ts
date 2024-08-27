@@ -7,6 +7,7 @@ export class OverlaySDK {
   readonly test_module: TestModuleSDK;
   readonly market: OverlaySDKMarket;
   readonly state: OverlaySDKState;
+  readonly midPrice: OverlaySDKState;
 
   constructor(props: OverlaySDKCoreProps) {
     // Core functionality
@@ -16,5 +17,6 @@ export class OverlaySDK {
     this.test_module = new TestModuleSDK({ ...props, core });
     this.market = new OverlaySDKMarket({ ...props, core });
     this.state = new OverlaySDKState({ ...props, core });
+    this.midPrice = new OverlaySDKState({ ...props, core });
   }
 }

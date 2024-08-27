@@ -22,9 +22,6 @@ function App() {
     web3Provider
   });
 
-  console.log("market factor: ", sdk.market.factory("0x6aa41b8f2f858723aafcf388a90d34d1cb1162d9"))
-
-  console.log("market state: ", sdk.state.getFactory("0x2878837ea173e8bd40db7cee360b15c1c27deb5a"))
   const getWeb3Address = async () => {
     const address = await sdk.core.getWeb3Address()
     setAccount(address)

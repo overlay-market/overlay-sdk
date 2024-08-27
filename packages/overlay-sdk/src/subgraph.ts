@@ -18,17 +18,38 @@ import {
   toPercentUnit,
   toScientificNumber,
 } from "./common/utils/index";
+import { OverlaySDK } from "./sdk";
+import { createPublicClient, createWalletClient, http } from "viem";
+import { arbitrumSepolia, mainnet } from "viem/chains";
+
+const rpcProvider = createPublicClient({
+  chain: arbitrumSepolia,
+  transport: http(),
+});
+
+const web3Provider = window.ethereum;
+
+// Get the address
+async function getWalletAddress() {
+  const address = await sdk.core.getWeb3Address();
+  return address;
+}
+
+const sdk = new OverlaySDK({
+  chainId: 421614,
+  rpcProvider,
+  web3Provider,
+});
 
 export const getMarketNames = async (marketAddress: string) => {
   try {
+    const response = await axios.get(`${LINKS.MARKET_PRICES_API}/markets`);
     const markets = (await axios.get(`${LINKS.MARKET_PRICES_API}/markets`))
       .data as {
       address: string;
       name?: string;
     }[];
-    console.log("markets:", markets);
     const market = markets.find(({ address }) => address === marketAddress);
-    console.log("market:", market);
     return market?.name;
   } catch (error) {
     console.error("Error fetching market names", error);
@@ -43,9 +64,7 @@ export const getCurrencySymbol = async (marketAddress: string) => {
       address: string;
       name: string;
     }[];
-    console.log("markets:", markets);
     const market = markets.find(({ address }) => address === marketAddress);
-    console.log("market:", market);
     const marketAddress: string | undefined = market?.address;
     return marketAddress;
   } catch (error) {
@@ -150,11 +169,8 @@ type TransformedOpen = {
   marketName: string | undefined;
   positionSide: string | undefined;
   parsedCreatedTimestamp: string | undefined;
-  parsedClosedTimestamp: string | undefined;
   entryPrice: string | undefined;
-  size: string | undefined;
-  exitPrice: string | undefined;
-  pnl: string | number | undefined;
+  liquidatePrice: string | undefined;
 };
 
 export const transformOpenPositions = async (
@@ -162,15 +178,51 @@ export const transformOpenPositions = async (
 ): Promise<TransformedOpen[]> => {
   const transformedOpens: TransformedOpen[] = [];
   for (const open of openPositions) {
+    const positionId = open.id.substring(2).split("-")[0];
+    const walletAddress = await getWalletAddress();
+    const marketId = open.market.id.substring(2);
+    const entryPrice = open.entryPrice;
+    const isLong = open.isLong;
+    const leverage = open.leverage;
+    console.log("isLong: ", isLong);
+    console.log("leverage: ", leverage);
+    console.log("entryPrice: ", entryPrice);
+    console.log("positinoId: ", positionId);
+    // console.log("marketId: ", marketId);
+    console.log("walletAddress: ", walletAddress);
+    const positionValue = await sdk.state.getValue(
+      "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
+      `0x${marketId}`,
+      walletAddress,
+      BigInt(`0x${positionId}`)
+    );
+    const currentOi = await sdk.state.getCurrentOi(
+      "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
+      `0x${marketId}`,
+      walletAddress,
+      BigInt(`0x${positionId}`)
+    );
+    const liquidatePrice = await sdk.state.getLiquidatePrice(
+      "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
+      `0x${marketId}`,
+      walletAddress,
+      BigInt(`0x${positionId}`)
+    );
+    console.log("liquidatePrice: ", liquidatePrice);
+    console.log("positionValue: ", positionValue);
+    console.log("currentOi: ", currentOi);
+    const marketMid = await sdk.state.getMidPrice(
+      "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
+      `0x${marketId}`
+    );
+    console.log("marketMid tha real one: ", marketMid);
+    const parsedLiquidatePrice = formatBigNumber(liquidatePrice, Number(18));
     const marketName = await getMarketNames(open.id.split("-")[0]);
     const priceCurrency = MarketDetails[open.id.split("-")[0]]?.currency;
     const parsedEntryPrice = formatBigNumber(open.entryPrice, Number(18));
+    console.log("parcedLiquidatePrice: ", parsedLiquidatePrice);
     transformedOpens.push({
       marketName: marketName,
-      size:
-        +open.isLong / 10 ** 18 < 1
-          ? (+open.isLiquidated / 10 ** 18).toFixed(6)
-          : (+open.isLiquidated / 10 ** 18).toFixed(2),
       positionSide: open.leverage + "x " + (open.isLong ? "Long" : "Short"),
       entryPrice: `${priceCurrency ? priceCurrency : ""}${
         parsedEntryPrice
@@ -179,12 +231,16 @@ export const transformOpenPositions = async (
             : toScientificNumber(parsedEntryPrice)
           : "-"
       }`,
+      liquidatePrice: `${priceCurrency ? priceCurrency : ""}${
+        parsedLiquidatePrice
+          ? priceCurrency === "%"
+            ? toPercentUnit(parsedLiquidatePrice)
+            : toScientificNumber(parsedLiquidatePrice)
+          : "-"
+      }`,
       parsedCreatedTimestamp: formatUnixTimestampToDate(
         open.createdAtTimestamp
       ),
-      exitPrice: "-",
-      parsedClosedTimestamp: "-",
-      pnl: "-",
     });
   }
   return transformedOpens;
@@ -216,7 +272,6 @@ export const getUnwindPositions = async ({
   url,
   account,
   first,
-  skip,
 }: GetUnwindPositionsOptions): Promise<Unwind[]> => {
   return requestAllWithStep<UnwindsQuery, Unwind, UnwindsQueryVariables>({
     url,

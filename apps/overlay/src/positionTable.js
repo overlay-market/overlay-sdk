@@ -8,10 +8,11 @@ import {
   TableRow,
   Paper,
 } from "@mui/material";
-import { getUnwindPositions, transformUnwindPositions, LINKS } from "overlay-sdk";
+import { getUnwindPositions, transformUnwindPositions, LINKS, transformOpenPositions, getOpenPositions, getMarketNames } from "overlay-sdk";
 
 const PositionsTable = () => {
   const [positions, setPositions] = useState([]);
+  const [openPositions, setOpenPositions] = useState([]);
 
   const url = LINKS.URL;
   const account = "0x42e372d3ab3ac53036997bae6d1ab77c2ecd64b3";
@@ -22,15 +23,22 @@ const PositionsTable = () => {
     const fetchData = async () => {
       try {
         console.log("url", url);
-        const rawData = await getUnwindPositions({
+        const rawUnwindData = await getUnwindPositions({
           url,
           account,
           first,
           skip,
         });
-        const transformedData = await transformUnwindPositions(rawData);
-        console.log("transformedData", transformedData);
+        const transformedData = await transformUnwindPositions(rawUnwindData);
+        const rawOpenData = await getOpenPositions({
+          url,
+          account,
+          first,
+          skip,
+        });
+        const transformedOpenPositions = await transformOpenPositions(rawOpenData);
         setPositions(transformedData);
+        setOpenPositions(transformedOpenPositions);
       } catch (error) {
         console.error("Error fetching positions:", error);
         if (
@@ -48,34 +56,69 @@ const PositionsTable = () => {
   }, []);
 
   return (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Market Name</TableCell>
-            <TableCell>Position Side</TableCell>
-            <TableCell>Created Timestamp</TableCell>
-            <TableCell>Closed Timestamp</TableCell>
-            <TableCell>Entry Price</TableCell>
-            <TableCell>Size</TableCell>
-            <TableCell>Exit Price</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {positions.map((position, index) => (
-            <TableRow key={index}>
-              <TableCell>{position.marketName}</TableCell>
-              <TableCell>{position.positionSide}</TableCell>
-              <TableCell>{position.parsedCreatedTimestamp}</TableCell>
-              <TableCell>{position.parsedClosedTimestamp}</TableCell>
-              <TableCell>{position.entryPrice}</TableCell>
-              <TableCell>{position.size}</TableCell>
-              <TableCell>{position.exitPrice}</TableCell>
+    <>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Market Name</TableCell>
+              <TableCell>Position</TableCell>
+              <TableCell>Created Timestamp</TableCell>
+              <TableCell>Closed Timestamp</TableCell>
+              <TableCell>Entry Price</TableCell>
+              <TableCell>Size</TableCell>
+              <TableCell>Exit Price</TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+          </TableHead>
+          <TableBody>
+            {positions.map((position, index) => (
+              <TableRow key={index}>
+                <TableCell>{position.marketName}</TableCell>
+                <TableCell>{position.positionSide}</TableCell>
+                <TableCell>{position.parsedCreatedTimestamp}</TableCell>
+                <TableCell>{position.parsedClosedTimestamp}</TableCell>
+                <TableCell>{position.entryPrice}</TableCell>
+                <TableCell>{position.size}</TableCell>
+                <TableCell>{position.exitPrice}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+            <br></br>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Market Name</TableCell>
+              <TableCell>Size</TableCell>
+              <TableCell>Position</TableCell>
+              <TableCell>Entry Price</TableCell>
+              <TableCell>current Price</TableCell>
+              <TableCell>Liq. Price</TableCell>
+              <TableCell>Created Timestamp</TableCell>
+              <TableCell>Unrealized PnL</TableCell>
+              <TableCell>Funding</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {openPositions.map((position, index) => (
+              <TableRow key={index}>
+                <TableCell>{position.marketName}</TableCell>
+                <TableCell>{position.positionSide}</TableCell>
+                <TableCell>{position.parsedCreatedTimestamp}</TableCell>
+                <TableCell>{position.parsedClosedTimestamp}</TableCell>
+                <TableCell>{position.entryPrice}</TableCell>
+                <TableCell>{position.size}</TableCell>
+                <TableCell>{position.exitPrice}</TableCell>
+                <TableCell>{position.exitPrice}</TableCell>
+                <TableCell>{position.exitPrice}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </>
   );
 };
 
