@@ -10,8 +10,8 @@ import {
   UnwindsQuery,
   UnwindsQueryVariables,
 } from "./types";
-import { LINKS, MarketDetails } from "./constants";
-import { BigNumberish } from "ethers";
+import { LINKS, MarketDetails, ONE_BN } from "./constants";
+import { BigNumber, BigNumberish } from "ethers";
 import { formatUnits } from "ethers/lib/utils";
 import {
   formatUnixTimestampToDate,
@@ -19,8 +19,10 @@ import {
   toScientificNumber,
 } from "./common/utils/index";
 import { OverlaySDK } from "./sdk";
-import { createPublicClient, createWalletClient, http } from "viem";
-import { arbitrumSepolia, mainnet } from "viem/chains";
+import { createPublicClient, http, type Address } from "viem";
+import { arbitrumSepolia } from "viem/chains";
+import JSBI from "jsbi";
+import { TickMath } from "@uniswap/v3-sdk";
 
 const rpcProvider = createPublicClient({
   chain: arbitrumSepolia,
@@ -52,7 +54,7 @@ export const getMarketNames = async (marketAddress: string) => {
     const market = markets.find(({ address }) => address === marketAddress);
     return market?.name;
   } catch (error) {
-    console.error("Error fetching market names", error);
+    console.error("market names", error);
     return undefined;
   }
 };
@@ -171,59 +173,122 @@ type TransformedOpen = {
   parsedCreatedTimestamp: string | undefined;
   entryPrice: string | undefined;
   liquidatePrice: string | undefined;
+  currentPrice: string | undefined;
+  size: number | string | undefined;
+  unrealizedPnL: string | number | undefined;
+  parsedFunding: string | number | undefined;
 };
-
 export const transformOpenPositions = async (
   openPositions: OpenPosition[]
 ): Promise<TransformedOpen[]> => {
   const transformedOpens: TransformedOpen[] = [];
   for (const open of openPositions) {
-    const positionId = open.id.substring(2).split("-")[0];
+    const positionId = BigInt(open.id.split("-")[1]);
     const walletAddress = await getWalletAddress();
-    const marketId = open.market.id.substring(2);
+    const marketId = open.market.id as Address;
     const entryPrice = open.entryPrice;
     const isLong = open.isLong;
     const leverage = open.leverage;
-    console.log("isLong: ", isLong);
-    console.log("leverage: ", leverage);
-    console.log("entryPrice: ", entryPrice);
-    console.log("positinoId: ", positionId);
-    // console.log("marketId: ", marketId);
-    console.log("walletAddress: ", walletAddress);
     const positionValue = await sdk.state.getValue(
       "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
-      `0x${marketId}`,
+      marketId,
       walletAddress,
-      BigInt(`0x${positionId}`)
+      positionId
     );
+    if (positionValue === BigInt(0)) {
+      continue;
+    }
     const currentOi = await sdk.state.getCurrentOi(
       "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
-      `0x${marketId}`,
+      marketId,
       walletAddress,
-      BigInt(`0x${positionId}`)
+      positionId
     );
     const liquidatePrice = await sdk.state.getLiquidatePrice(
       "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
-      `0x${marketId}`,
+      marketId,
       walletAddress,
-      BigInt(`0x${positionId}`)
+      positionId
     );
-    console.log("liquidatePrice: ", liquidatePrice);
-    console.log("positionValue: ", positionValue);
-    console.log("currentOi: ", currentOi);
+    const info = await sdk.state.getInfo(
+      "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
+      marketId,
+      walletAddress,
+      positionId
+    );
+    const cost = await sdk.state.getCost(
+      "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
+      marketId,
+      walletAddress,
+      positionId
+    );
+    const tradingFee = await sdk.state.getTradingFee(
+      "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
+      marketId,
+      walletAddress,
+      positionId
+    );
     const marketMid = await sdk.state.getMidPrice(
       "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
-      `0x${marketId}`
+      marketId
     );
-    console.log("marketMid tha real one: ", marketMid);
-    const parsedLiquidatePrice = formatBigNumber(liquidatePrice, Number(18));
     const marketName = await getMarketNames(open.id.split("-")[0]);
     const priceCurrency = MarketDetails[open.id.split("-")[0]]?.currency;
-    const parsedEntryPrice = formatBigNumber(open.entryPrice, Number(18));
-    console.log("parcedLiquidatePrice: ", parsedLiquidatePrice);
+    const parsedEntryPrice = formatBigNumber(entryPrice, Number(18));
+    const parsedValue: string | number | undefined = (() => {
+      if (!positionValue && positionValue === undefined) return undefined;
+      const fullValue = formatBigNumber(positionValue, 18, 18);
+      if (fullValue === undefined) return "-";
+      return +fullValue < 1
+        ? formatBigNumber(positionValue, 18, 6)
+        : formatBigNumber(positionValue, 18, 2);
+    })();
+    const unrealizedPnL: string | number | undefined = (() => {
+      if (
+        positionValue === undefined ||
+        cost === undefined ||
+        tradingFee === undefined
+      )
+        return undefined;
+      const diff =
+        (Number(positionValue) - Number(cost) - Number(tradingFee)) / 10 ** 18;
+      return diff < 1 ? diff.toFixed(6) : diff.toFixed(2);
+    })();
+    function tickToPrice(tick: number): BigNumber {
+      const Q96 = JSBI.exponentiate(JSBI.BigInt(2), JSBI.BigInt(96));
+      const Q192 = JSBI.exponentiate(Q96, JSBI.BigInt(2));
+      const ONE_JSBI = JSBI.exponentiate(JSBI.BigInt(10), JSBI.BigInt(18));
+      const sqrtRatio = TickMath.getSqrtRatioAtTick(tick);
+      const ratio = JSBI.multiply(sqrtRatio, sqrtRatio);
+      const ratio18 = JSBI.multiply(ratio, ONE_JSBI);
+      const priceJSBI = JSBI.divide(ratio18, Q192);
+      return BigNumber.from(priceJSBI.toString());
+    }
+    const parsedFunding: string | number | undefined = (() => {
+      if (info === undefined || !currentOi || !marketMid) return undefined;
+      const baseFractionRemaining = 10000;
+      const remainingNotionalInitial = BigNumber.from(info.notionalInitial)
+        .mul(info.fractionRemaining)
+        .div(baseFractionRemaining);
+
+      const remainingOiInitial = remainingNotionalInitial
+        .mul(ONE_BN)
+        .div(tickToPrice(info.midTick));
+      if (remainingOiInitial.eq(0)) return undefined;
+      const fundingPayments = BigNumber.from(marketMid)
+        .mul(BigNumber.from(currentOi).sub(remainingOiInitial))
+        .div(ONE_BN);
+
+      const fullValue = formatBigNumber(fundingPayments.abs(), 18, 18);
+      if (fullValue === undefined) return "-";
+      return +fullValue < 1
+        ? formatBigNumber(fundingPayments, 18, 6)
+        : formatBigNumber(fundingPayments, 18, 2);
+    })();
     transformedOpens.push({
       marketName: marketName,
-      positionSide: open.leverage + "x " + (open.isLong ? "Long" : "Short"),
+      size: parsedValue,
+      positionSide: leverage + "x " + (isLong ? "Long" : "Short"),
       entryPrice: `${priceCurrency ? priceCurrency : ""}${
         parsedEntryPrice
           ? priceCurrency === "%"
@@ -232,15 +297,24 @@ export const transformOpenPositions = async (
           : "-"
       }`,
       liquidatePrice: `${priceCurrency ? priceCurrency : ""}${
-        parsedLiquidatePrice
+        formatBigNumber(liquidatePrice, Number(18), 4)
           ? priceCurrency === "%"
-            ? toPercentUnit(parsedLiquidatePrice)
-            : toScientificNumber(parsedLiquidatePrice)
+            ? toPercentUnit(formatBigNumber(liquidatePrice, Number(18), 4))
+            : toScientificNumber(formatBigNumber(liquidatePrice, Number(18), 4))
+          : "-"
+      }`,
+      currentPrice: `${priceCurrency ? priceCurrency : ""}${
+        formatBigNumber(marketMid, Number(18), 4)
+          ? priceCurrency === "%"
+            ? toPercentUnit(formatBigNumber(marketMid, Number(18), 4))
+            : toScientificNumber(formatBigNumber(marketMid, Number(18), 4))
           : "-"
       }`,
       parsedCreatedTimestamp: formatUnixTimestampToDate(
         open.createdAtTimestamp
       ),
+      unrealizedPnL: unrealizedPnL,
+      parsedFunding: parsedFunding,
     });
   }
   return transformedOpens;

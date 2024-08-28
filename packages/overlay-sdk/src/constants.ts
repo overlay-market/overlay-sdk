@@ -1,3 +1,5 @@
+import { BigNumber } from "ethers";
+
 export const LINKS = {
   MARKET_PRICES_API: "https://api.overlay.market/sepolia-charts/v1/charts",
   URL: "https://api.studio.thegraph.com/query/77621/overlay-sepolia-test-less-call/version/latest",
@@ -7,6 +9,8 @@ export type MarketDetailsData = {
   marketName: string;
   currency: string;
 };
+
+export const ONE_BN = BigNumber.from(10).pow(18);
 
 export const PRICE_CURRENCY_FROM_QUOTE = {
   USD: "$",
