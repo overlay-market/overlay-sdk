@@ -4,12 +4,16 @@ export const OpenPositionsQuery = gql`
   query openPositions($account: ID!, $first: Int, $skip: Int) {
     account(id: $account) {
       positions(
-        where: { isLiquidated: false, currentOi_gt: "0" }
+        where: {
+          isLiquidated: false
+          fractionUnwound_lt: "1000000000000000000"
+        }
         orderBy: createdAtTimestamp
         orderDirection: desc
         first: $first
         skip: $skip
       ) {
+        fractionUnwound
         id
         createdAtTimestamp
         currentOi

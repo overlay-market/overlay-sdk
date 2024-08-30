@@ -1,4 +1,5 @@
 import { Address } from "viem";
+import { BigNumber } from "ethers";
 
 export const LINKS = {
   MARKET_PRICES_API: "https://api.overlay.market/sepolia-charts/v1/charts",
@@ -9,6 +10,8 @@ export type MarketDetailsData = {
   marketName: string;
   currency: string;
 };
+
+export const ONE_BN = BigNumber.from(10).pow(18);
 
 export const PRICE_CURRENCY_FROM_QUOTE = {
   USD: "$",

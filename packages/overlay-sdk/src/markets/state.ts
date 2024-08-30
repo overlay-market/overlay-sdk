@@ -108,6 +108,67 @@ export class OverlaySDKState extends OverlaySDKModule {
     }
   }
 
+  public async getCost(
+    state: Address,
+    market: Address,
+    address: Address,
+    id: bigint
+  ): Promise<bigint> {
+    try {
+      const contract = await this.getContractV1State(state);
+      const liquidatePrice = await contract.read.cost([market, address, id]);
+      return liquidatePrice;
+    } catch (error) {
+      console.error("Failed to get current open interest:", error);
+      throw error;
+    }
+  }
+
+  public async getTradingFee(
+    state: Address,
+    market: Address,
+    address: Address,
+    id: bigint
+  ): Promise<bigint> {
+    try {
+      const contract = await this.getContractV1State(state);
+      const liquidatePrice = await contract.read.tradingFee([
+        market,
+        address,
+        id,
+      ]);
+      return liquidatePrice;
+    } catch (error) {
+      console.error("Failed to get current open interest:", error);
+      throw error;
+    }
+  }
+
+  public async getInfo(
+    state: Address,
+    market: Address,
+    address: Address,
+    id: bigint
+  ): Promise<{
+    notionalInitial: bigint;
+    debtInitial: bigint;
+    midTick: number;
+    entryTick: number;
+    isLong: boolean;
+    liquidated: boolean;
+    oiShares: bigint;
+    fractionRemaining: number;
+  }> {
+    try {
+      const contract = await this.getContractV1State(state);
+      const info = await contract.read.position([market, address, id]);
+      return info;
+    } catch (error) {
+      console.error("Failed to get current open interest:", error);
+      throw error;
+    }
+  }
+
   public async getMarketState(
     state: Address,
     market: Address

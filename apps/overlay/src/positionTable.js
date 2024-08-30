@@ -22,7 +22,6 @@ const PositionsTable = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log("url", url);
         const rawUnwindData = await getUnwindPositions({
           url,
           account,
@@ -67,6 +66,7 @@ const PositionsTable = () => {
               <TableCell>Closed Timestamp</TableCell>
               <TableCell>Entry Price</TableCell>
               <TableCell>Size</TableCell>
+              <TableCell>Pnl</TableCell>
               <TableCell>Exit Price</TableCell>
             </TableRow>
           </TableHead>
@@ -79,6 +79,7 @@ const PositionsTable = () => {
                 <TableCell>{position.parsedClosedTimestamp}</TableCell>
                 <TableCell>{position.entryPrice}</TableCell>
                 <TableCell>{position.size}</TableCell>
+                <TableCell>{position.pnl}</TableCell>
                 <TableCell>{position.exitPrice}</TableCell>
               </TableRow>
             ))}
@@ -105,14 +106,14 @@ const PositionsTable = () => {
             {openPositions.map((position, index) => (
               <TableRow key={index}>
                 <TableCell>{position.marketName}</TableCell>
-                <TableCell>{position.positionSide}</TableCell>
-                <TableCell>{position.parsedCreatedTimestamp}</TableCell>
-                <TableCell>{position.parsedClosedTimestamp}</TableCell>
-                <TableCell>{position.entryPrice}</TableCell>
                 <TableCell>{position.size}</TableCell>
-                <TableCell>{position.exitPrice}</TableCell>
-                <TableCell>{position.exitPrice}</TableCell>
-                <TableCell>{position.exitPrice}</TableCell>
+                <TableCell>{position.positionSide}</TableCell>
+                <TableCell>{position.entryPrice}</TableCell>
+                <TableCell>{position.currentPrice}</TableCell>
+                <TableCell>{position.liquidatePrice}</TableCell>
+                <TableCell>{position.parsedCreatedTimestamp}</TableCell>
+                <TableCell>{position.unrealizedPnL}</TableCell>
+                <TableCell>{position.parsedFunding}</TableCell>
               </TableRow>
             ))}
           </TableBody>
