@@ -1,16 +1,18 @@
 import axios from "axios";
-import { request, RequestExtendedOptions } from "graphql-request";
+import { request, RequestExtendedOptions, GraphQLClient } from "graphql-request";
 import {
   OpenPositionsQuery as OpenPositionsQueryDocument,
   UnwindPositionsQuery as UnwindPositionsQueryDocument,
+  ActiveMarketsQuery as ActiveMarketsQueryDocument,
 } from "./queries";
 import {
   OpenPositionsQuery,
   OpenPositionsQueryVariables,
   UnwindsQuery,
   UnwindsQueryVariables,
+  ActiveMarketsQuery
 } from "./types";
-import { LINKS, MarketDetails } from "./constants";
+import { LINKS, MarketDetails, V1_PERIPHERY_ADDRESS } from "./constants";
 import { BigNumberish } from "ethers";
 import { formatUnits } from "ethers/lib/utils";
 import {
@@ -19,8 +21,9 @@ import {
   toScientificNumber,
 } from "./common/utils/index";
 import { OverlaySDK } from "./sdk";
-import { createPublicClient, createWalletClient, http } from "viem";
+import { createPublicClient, createWalletClient, encodeFunctionData, http } from "viem";
 import { arbitrumSepolia, mainnet } from "viem/chains";
+import { OverlayV1StateABI } from "./markets/abis/OverlayV1State";
 
 const rpcProvider = createPublicClient({
   chain: arbitrumSepolia,
@@ -333,3 +336,42 @@ export const transformUnwindPositions = async (
   }
   return transformedUnwinds;
 };
+
+const SUBGRAPH_URL = 'https://gateway-arbitrum.network.thegraph.com/api/84ab887f7372fde61d4f1e228fa25964/subgraphs/id/59rgxaXFUQv5K6UXb1JJhS44uyPYn2EJFEZrZJLG5a4Y'
+const client = new GraphQLClient(SUBGRAPH_URL)
+
+type ActiveMarket = NonNullable<
+  NonNullable<ActiveMarketsQuery>["markets"]
+>[number];
+
+export const getActiveMarkets = async(): Promise<ActiveMarket[]> => {
+  try {
+    const data: ActiveMarket[] = await client.request(ActiveMarketsQueryDocument);
+    console.log('User data:', data);
+  
+    const chainId = sdk.core.chainId
+
+    const qq = await sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], '0x3d47247220d89ad623767de2045dc5e0c5920610')
+    const qq2 = await sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], "0x09e8641df1e963d0bb1267e51579fc2b4e3e60cd")
+    
+    console.log({qq, qq2})
+
+    return data;
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    throw error;
+  }
+}
+
+export const getActiveMarkets2 = async() => {
+  try {
+    const partialResult = await request<ActiveMarketsQuery>(
+      LINKS.URL,
+      ActiveMarketsQueryDocument
+    );
+    return partialResult;
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    throw error;
+  }
+}

@@ -5,6 +5,8 @@ import { createPublicClient, http } from 'viem';
 import { arbitrumSepolia } from 'viem/chains';
 import {useEffect, useState} from 'react'
 import PositionsTable from './positionTable';
+import { getActiveMarkets, getActiveMarkets2 } from "overlay-sdk";
+
 
 function App() {
   const [account, setAccount] = useState()
@@ -40,6 +42,31 @@ function App() {
   const testFunctionResult = sdk.test_module.testFunction()
   console.log({testFunctionResult})
   sdk.test_module.consoleTestModule()
+
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const activeMarkets = await getActiveMarkets();
+        const activeMarkets2 = await getActiveMarkets2();
+       
+        console.log({activeMarkets, activeMarkets2})
+        
+      } catch (error) {
+        console.error("Error fetching positions:", error);
+        if (
+          error instanceof Error &&
+          error.message.includes("auth error: payment required")
+        ) {
+          console.error(
+            "API key payment required. Please update your subscription or contact support."
+          );
+        }
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <div className="App">

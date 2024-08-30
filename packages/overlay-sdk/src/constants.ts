@@ -1,3 +1,5 @@
+import { Address } from "viem";
+
 export const LINKS = {
   MARKET_PRICES_API: "https://api.overlay.market/sepolia-charts/v1/charts",
   URL: "https://api.studio.thegraph.com/query/77621/overlay-sepolia-test-less-call/version/latest",
@@ -129,3 +131,22 @@ export const MarketDetails: { [address: string]: MarketDetailsData } = {
     currency: "",
   },
 };
+
+export enum SupportedChainId {
+  MAINNET = 1, //at launch
+  RINKEBY = 4, //pre-launch only
+  GÖRLI = 5, //pre-launch only
+  ARBITRUM = 42161,
+  ARBITRUM_GÖRLI = 421613,
+  ARBITRUM_SEPOLIA = 421614,
+  IMOLA = 30732,
+  BARTIO = 80084,
+}
+
+export type AddressMap = {[chainId: number]: Address}
+
+export const V1_PERIPHERY_ADDRESS: AddressMap = {
+  [SupportedChainId.ARBITRUM_SEPOLIA]: '0x2878837ea173e8bd40db7cee360b15c1c27deb5a',
+  [SupportedChainId.IMOLA]: '0x0CA6128B528f503C7c649ba9cc02560a8B9fD55e',
+  [SupportedChainId.BARTIO]: '0x4f69dfb24958fcf69b70bca73c3e74f2c82bb405',
+}
