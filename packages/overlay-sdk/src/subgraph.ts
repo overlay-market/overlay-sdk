@@ -1,5 +1,5 @@
 import axios from "axios";
-import { request, RequestExtendedOptions, GraphQLClient } from "graphql-request";
+import { request, RequestExtendedOptions } from "graphql-request";
 import {
   OpenPositionsQuery as OpenPositionsQueryDocument,
   UnwindPositionsQuery as UnwindPositionsQueryDocument,
@@ -12,7 +12,7 @@ import {
   UnwindsQueryVariables,
   ActiveMarketsQuery
 } from "./types";
-import { LINKS, MarketDetails, ONE_BN, V1_PERIPHERY_ADDRESS } from "./constants";
+import { LINKS, MarketDetails, ONE_BN } from "./constants";
 import { BigNumber, BigNumberish } from "ethers";
 import { formatUnits } from "ethers/lib/utils";
 import {
@@ -20,31 +20,16 @@ import {
   toPercentUnit,
   toScientificNumber,
 } from "./common/utils/index";
-import { OverlaySDK } from "./sdk";
-import { createPublicClient, http, type Address } from "viem";
-import { OverlayV1StateABI } from "./markets/abis/OverlayV1State";
-import { arbitrumSepolia } from "viem/chains";
+import { sdk } from "./sdk";
+import { type Address } from "viem";
 import JSBI from "jsbi";
 import { TickMath } from "@uniswap/v3-sdk";
-
-const rpcProvider = createPublicClient({
-  chain: arbitrumSepolia,
-  transport: http(),
-});
-
-const web3Provider = window.ethereum;
 
 // Get the address
 async function getWalletAddress() {
   const address = await sdk.core.getWeb3Address();
   return address;
 }
-
-const sdk = new OverlaySDK({
-  chainId: 421614,
-  rpcProvider,
-  web3Provider,
-});
 
 export const getMarketNames = async (marketAddress: string) => {
   try {
@@ -411,41 +396,16 @@ export const transformUnwindPositions = async (
   return transformedUnwinds;
 };
 
-const SUBGRAPH_URL = 'https://gateway-arbitrum.network.thegraph.com/api/84ab887f7372fde61d4f1e228fa25964/subgraphs/id/59rgxaXFUQv5K6UXb1JJhS44uyPYn2EJFEZrZJLG5a4Y'
-const client = new GraphQLClient(SUBGRAPH_URL)
-
-type ActiveMarket = NonNullable<
-  NonNullable<ActiveMarketsQuery>["markets"]
->[number];
-
-export const getActiveMarkets = async(): Promise<ActiveMarket[]> => {
+export const getActiveMarketsFromSubgraph = async() => {
   try {
-    const data: ActiveMarket[] = await client.request(ActiveMarketsQueryDocument);
-    console.log('User data:', data);
-  
-    const chainId = sdk.core.chainId
-
-    const qq = await sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], '0x3d47247220d89ad623767de2045dc5e0c5920610')
-    const qq2 = await sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], "0x09e8641df1e963d0bb1267e51579fc2b4e3e60cd")
-    
-    console.log({qq, qq2})
-
-    return data;
-  } catch (error) {
-    console.error('Error fetching user data:', error);
-    throw error;
-  }
-}
-
-export const getActiveMarkets2 = async() => {
-  try {
-    const partialResult = await request<ActiveMarketsQuery>(
+    const data = await request<ActiveMarketsQuery>(
       LINKS.URL,
       ActiveMarketsQueryDocument
     );
-    return partialResult;
+   
+    return data.markets
   } catch (error) {
-    console.error('Error fetching user data:', error);
-    throw error;
+    console.error('Error fetching active markets data:', error);
+    return undefined
   }
 }
