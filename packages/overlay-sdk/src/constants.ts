@@ -1,9 +1,26 @@
 import { Address } from "viem";
 import { BigNumber } from "ethers";
+import BtcdLogo from './assets/markets_logo/bitcoin-dominance-logo.png'
+import EthDominanceLogo from './assets/markets_logo/eth-dominance.png'
+import csgoLogo from './assets/markets_logo/csgo-logo.svg'
+import BtcFrogsLogo from './assets/markets_logo/btc-frogs.png'
+import NodeMonkesLogo from './assets/markets_logo/node-monkes.png'
+import QuantumCatsLogo from './assets/markets_logo/quantum-cats.png'
+import InkLogo from './assets/markets_logo/ink.png'
+import EvIndexLogo from './assets/markets_logo/ev-index.png'
+import EthSolLogo from './assets/markets_logo/ethsol.png'
+import AIIndexLogo from './assets/markets_logo/AI_Index.png'
+import ChainlinkOracleLogo from './assets/oracles_logo/oracle-type-chainlink.png'
+import UniswapOracleLogo from './assets/oracles_logo/oracle-type-uniswap.png'
+import NFTPerpOracleLogo from './assets/oracles_logo/oracle-type-nftperp.png'
+import OverlayOracleLogo from './assets/oracles_logo/oracle-type-overlay.png'
+import TruflationOracleLogo from './assets/oracles_logo/oracle-type-truflation.png'
+import PythOracleLogo from './assets/oracles_logo/oracle-type-pyth.png'
 
 export const LINKS = {
   MARKET_PRICES_API: "https://api.overlay.market/sepolia-charts/v1/charts",
   URL: "https://api.studio.thegraph.com/query/77621/overlay-sepolia-test-less-call/version/latest",
+  MARKETS_DETAILS_API: "http://localhost:4000/api/markets",
 };
 
 export type MarketDetailsData = {
@@ -23,6 +40,28 @@ export const PRICE_CURRENCY_FROM_QUOTE = {
   BTC: "₿",
   PERCENTAGE: "%",
 };
+
+export const MARKET_LOGO = {
+  BtcdLogo: BtcdLogo,
+  EthDominanceLogo: EthDominanceLogo,
+  csgoLogo: csgoLogo,
+  BtcFrogsLogo: BtcFrogsLogo,
+  NodeMonkesLogo: NodeMonkesLogo,
+  QuantumCatsLogo: QuantumCatsLogo,
+  InkLogo: InkLogo,
+  EvIndexLogo: EvIndexLogo,
+  EthSolLogo: EthSolLogo,
+  AIIndexLogo: AIIndexLogo,
+};
+
+export const ORACLE_LOGO = {
+  CHAINLINK: ChainlinkOracleLogo,
+  UNISWAP: UniswapOracleLogo,
+  NFTPERP: NFTPerpOracleLogo,
+  OVERLAY: OverlayOracleLogo,
+  TRUFLATION: TruflationOracleLogo,
+  PYTH: PythOracleLogo,
+}
 
 export const MarketDetails: { [address: string]: MarketDetailsData } = {
   "0x6aa41b8f2f858723aafcf388a90d34d1cb1162d9": {

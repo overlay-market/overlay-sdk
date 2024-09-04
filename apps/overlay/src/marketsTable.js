@@ -28,7 +28,7 @@ const MarketsTable = () => {
 
     fetchData();
   }, []);
-console.log({markets})
+
   return (
     <>
       <TableContainer component={Paper}>
@@ -47,15 +47,13 @@ console.log({markets})
             {markets && markets.map((market, index) => (
               <MarketsRow 
                 key={market.marketAddress}
-                index={index + 1} //start count at 1
-                marketId={market.marketAddress}
+                index={index + 1} 
                 marketName={market.marketName}
                 midPrice={market.parsedMid}
                 oiLong={market.parsedOiLong}
                 oiShort={market.parsedOiShort}
                 dailyFundingRate={market.parsedDailyFundingRate}
-                oracleLogo={undefined}
-                // oracleLogo={MarketDetails[market.marketAddress.toLowerCase()].oracleLogo ?? market.oracleLogo}
+                oracleLogo={market.oracleLogo}
                 marketLogo={market.marketLogo}
                 priceCurrency={market.priceCurrency}
               />
@@ -103,7 +101,7 @@ const MarketsRow = ({
   return (
     <TableRow key={index}>
       <TableCell>{index}</TableCell>
-      <TableCell>{marketLogo ? <img src={marketLogo} alt="Market Feed Logo" /> : '-'}{marketName}</TableCell>
+      <TableCell>{marketLogo ? <img src={marketLogo} alt="Market Feed Logo" width='30px' height='30px'/> : '-'}{marketName}</TableCell>
       <TableCell>{priceCurrency}
           {priceCurrency === '%'
             ? toPercentUnit(midPrice)
@@ -118,7 +116,7 @@ const MarketsRow = ({
         {longPercentageOfTotalOi}%
         
       </TableCell>
-      <TableCell><img src={oracleLogo} alt="Market Feed Logo" /></TableCell>
+      <TableCell><img src={oracleLogo} alt="Market Feed Logo" width='20px' height='20px' /></TableCell>
     </TableRow>
   )
 }
