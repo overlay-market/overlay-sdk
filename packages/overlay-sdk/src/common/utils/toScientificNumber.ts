@@ -1,41 +1,43 @@
-import BigNumber from "bignumber.js";
-import { BigNumber as EthersBigNumber } from "ethers";
+import { formatUnits } from 'viem';
 
-const BIG_ZERO = new BigNumber(0);
-const BIG_ONE = new BigNumber(1);
+const BIG_ZERO = 0n;
+const BIG_ONE = 1n;
 
-const TRILLION = BIG_ONE.shiftedBy(12);
-const BILLION = BIG_ONE.shiftedBy(9);
-const MILLION = BIG_ONE.shiftedBy(6);
+const TRILLION = BIG_ONE * 10n ** 12n;
+const BILLION = BIG_ONE * 10n ** 9n;
+const MILLION = BIG_ONE * 10n ** 6n;
 
 const parseBigNumberOrZero = (
-  input: string | BigNumber | EthersBigNumber | number | null
+  input: string | bigint | number | null
 ) => {
   if (!input) return BIG_ZERO;
 
   // Remove any commas
   let inputStr = String(input).replace(/,/g, "");
 
-  const result = BigNumber.isBigNumber(inputStr)
-    ? new BigNumber(inputStr)
-    : new BigNumber(inputStr);
+  let result: bigint;
 
-  if (!result.isFinite() || result.isNaN()) return BIG_ZERO;
+  try {
+    result = BigInt(inputStr);
+  } catch {
+    return BIG_ZERO;
+  }
 
   return result;
 };
 
-const toPrecisionTrim = (value: BigNumber, significantFigures: number) => {
-  const isNegative = value.isNegative();
-  const absValue = value.abs();
-
-  let formattedValue = absValue
-    .toPrecision(significantFigures, 1)
+const toPrecisionTrim = (value: bigint, significantFigures: number) => {
+  const valueStr = formatUnits(value, 0);
+  const isNegative = valueStr.startsWith("-");
+  const absValueStr = isNegative ? valueStr.slice(1) : valueStr;
+ 
+  let formattedValue = Number(absValueStr)
+    .toPrecision(significantFigures)
     .replace(/(\.[0-9]*?)0+$/, "$1");
 
   // Add back commas when necessary
   const parts = formattedValue.split(".");
-  parts[0] = new BigNumber(parts[0]).toFormat();
+  parts[0] = Number(parts[0]).toLocaleString();
   formattedValue = parts.join(".");
 
   formattedValue = formattedValue.endsWith(".")
@@ -45,47 +47,49 @@ const toPrecisionTrim = (value: BigNumber, significantFigures: number) => {
 };
 
 export const toScientificNumber = (
-  input: string | BigNumber | EthersBigNumber | number | null | undefined
-) => {
+  input: string | bigint | number | null | undefined
+): string => {
   const value = parseBigNumberOrZero(input || 0);
 
   // Check if the value is zero
-  if (value.isZero()) {
-    return value.toFixed();
+  if (value === BIG_ZERO) {
+    return '0';
   }
 
   // Check if value less than 0.0001 for exponential
-  if (value.abs().lt(0.0001)) {
-    const sign = value.isNegative() ? "-" : "";
-    let exponent = 0;
-    let absValue = value.abs();
+  const absValue = BigInt(Math.abs(Number(formatUnits(value, 0))));
+  
+  if (absValue < 10n ** 4n) {
+    const sign = value < 0 ? "-" : "";
+    let exponent = 0n;
+    let baseValue = absValue;
 
     // Multiply till base is > 100
-    while (absValue.lt(100)) {
-      absValue = absValue.times(10);
+    while (baseValue < 100n) {
+      baseValue *= 10n;
       exponent--;
     }
 
-    return `${sign}${toPrecisionTrim(absValue, 3)}e-${-exponent}`;
+    return `${sign}${toPrecisionTrim(baseValue, 3)}e-${-exponent}`;
   }
 
   // Check if the value is less than 1 million
-  if (value.abs().lt(MILLION)) {
+  if (absValue < MILLION) {
     return toPrecisionTrim(value, 6);
   }
 
   // Check if the value is less than 1 billion
-  if (value.abs().lt(BILLION)) {
-    return `${toPrecisionTrim(value.div(MILLION), 6)} M`;
+  if (absValue < BILLION) {
+    return `${toPrecisionTrim(value / MILLION, 6)} M`;
   }
 
   // Check if the value is less than 1 trillion
-  if (value.abs().lt(TRILLION)) {
-    return `${toPrecisionTrim(value.div(BILLION), 6)} B`;
+  if (absValue < TRILLION) {
+    return `${toPrecisionTrim(value / BILLION, 6)} B`;
   }
 
   // Value is greater than or equal to 1 trillion
-  return `${toPrecisionTrim(value.div(TRILLION), 6)} T`;
+  return `${toPrecisionTrim(value / TRILLION, 6)} T`;
 };
 
 export const toPercentUnit = (input: string | number | null | undefined) => {

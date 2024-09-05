@@ -1,13 +1,13 @@
-import {utils, BigNumberish} from 'ethers'
+import { formatUnits } from 'viem'
 
 export function formatBigNumber(
-  bignumber: BigNumberish,
+  bignumber: bigint,
   decimals: number = 18,
   digits: number = 4,
   returnNumberType: boolean = false,
 ): number | string | undefined {
   if (bignumber !== undefined) {
-    const formatted: string = utils.formatUnits(bignumber, decimals)
+    const formatted: string = formatUnits(bignumber, decimals)
     const formatWithDigits: string = Number.parseFloat(formatted).toFixed(digits)
     return returnNumberType ? Number(formatWithDigits) : formatWithDigits
   } else {

@@ -1,5 +1,4 @@
 import { Address } from "viem";
-import { BigNumber } from "ethers";
 import BtcdLogo from './assets/markets_logo/bitcoin-dominance-logo.png'
 import EthDominanceLogo from './assets/markets_logo/eth-dominance.png'
 import csgoLogo from './assets/markets_logo/csgo-logo.svg'
@@ -28,7 +27,7 @@ export type MarketDetailsData = {
   currency: string;
 };
 
-export const ONE_BN = BigNumber.from(10).pow(18);
+export const ONE_BN = 10n ** 18n;
 
 export const PRICE_CURRENCY_FROM_QUOTE = {
   USD: "$",
