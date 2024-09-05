@@ -1,1 +1,49 @@
 # overlay-sdk
+
+## Installation
+
+1. Build the package:
+
+```
+cd packages/overlay-sdk
+pnpm run build
+```
+
+2. Link the package to react application
+
+```
+cd ../../apps/overlay
+pnpm add overlay-sdk
+```
+
+## Usage
+
+To get started with the Overlay SDK import the necessary module:
+
+```
+import { OverlaySDK } from 'overlay-sdk'
+
+```
+
+## Initialization
+
+Before using the SDK create an instance of the OverlaySDK class:
+
+```ts
+// Pass your own viem PublicClient
+
+import { createPublicClient, http } from "viem";
+import { arbitrumSepolia } from "viem/chains";
+
+const rpcProvider = createPublicClient({
+  chain: arbitrumSepolia,
+  transport: http(),
+});
+const web3Provider = window.ethereum;
+
+const sdk = new OverlaySDK({
+  chainId: 421614,
+  rpcProvider,
+  web3Provider,
+});
+```

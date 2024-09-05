@@ -1,0 +1,32 @@
+{
+  "name": "overlay-sdk",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "module": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "generate": "graphql-codegen",
+    "build": "tsc && node copy-assets.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "fil": [
+    "dist"
+  ],
+  "devDependencies": {
+    "@graphql-codegen/cli": "^5.0.2",
+    "typescript": "^5.5.3"
+  },
+  "dependencies": {
+    "@emotion/styled": "^11.13.0",
+    "@uniswap/v3-sdk": "^3.13.1",
+    "axios": "1.7.0",
+    "bignumber.js": "^9.1.2",
+    "graphql-request": "^6.1.0",
+    "jsbi": "^4.3.0",
+    "viem": "^2.17.5"
+  }
+}
