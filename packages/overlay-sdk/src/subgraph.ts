@@ -3,45 +3,32 @@ import { request, RequestExtendedOptions } from "graphql-request";
 import {
   OpenPositionsQuery as OpenPositionsQueryDocument,
   UnwindPositionsQuery as UnwindPositionsQueryDocument,
+  ActiveMarketsQuery as ActiveMarketsQueryDocument,
 } from "./queries";
 import {
   OpenPositionsQuery,
   OpenPositionsQueryVariables,
   UnwindsQuery,
   UnwindsQueryVariables,
+  ActiveMarketsQuery
 } from "./types";
 import { LINKS, MarketDetails, ONE_BN } from "./constants";
-import { BigNumber, BigNumberish } from "ethers";
-import { formatUnits } from "ethers/lib/utils";
 import {
+  formatBigNumber,
   formatUnixTimestampToDate,
   toPercentUnit,
   toScientificNumber,
 } from "./common/utils/index";
-import { OverlaySDK } from "./sdk";
-import { createPublicClient, http, type Address } from "viem";
-import { arbitrumSepolia } from "viem/chains";
+import { sdk } from "./sdk";
+import { type Address } from "viem";
 import JSBI from "jsbi";
 import { TickMath } from "@uniswap/v3-sdk";
-
-const rpcProvider = createPublicClient({
-  chain: arbitrumSepolia,
-  transport: http(),
-});
-
-const web3Provider = window.ethereum;
 
 // Get the address
 async function getWalletAddress() {
   const address = await sdk.core.getWeb3Address();
   return address;
 }
-
-const sdk = new OverlaySDK({
-  chainId: 421614,
-  rpcProvider,
-  web3Provider,
-});
 
 export const getMarketNames = async (marketAddress: string) => {
   try {
@@ -85,22 +72,6 @@ export type SubgraphUrl =
 const parseSubgraphUrl = (value: SubgraphUrl) => {
   if (typeof value === "string") return { url: value };
   else return value;
-};
-
-const formatBigNumber = (
-  bignumber: BigNumberish,
-  decimals: number = 18,
-  digits: number = 4,
-  returnNumberType: boolean = false
-): number | string | undefined => {
-  if (bignumber !== undefined) {
-    const formatted: string = formatUnits(bignumber, decimals);
-    const formatWithDigits: string =
-      Number.parseFloat(formatted).toFixed(digits);
-    return returnNumberType ? Number(formatWithDigits) : formatWithDigits;
-  } else {
-    return undefined;
-  }
 };
 
 const requestAllWithStep = async <TResult, TResultEntry, TVariables>({
@@ -254,7 +225,7 @@ export const transformOpenPositions = async (
         (Number(positionValue) - Number(cost) - Number(tradingFee)) / 10 ** 18;
       return diff < 1 ? diff.toFixed(6) : diff.toFixed(2);
     })();
-    function tickToPrice(tick: number): BigNumber {
+    function tickToPrice(tick: number): bigint {
       const Q96 = JSBI.exponentiate(JSBI.BigInt(2), JSBI.BigInt(96));
       const Q192 = JSBI.exponentiate(Q96, JSBI.BigInt(2));
       const ONE_JSBI = JSBI.exponentiate(JSBI.BigInt(10), JSBI.BigInt(18));
@@ -262,29 +233,31 @@ export const transformOpenPositions = async (
       const ratio = JSBI.multiply(sqrtRatio, sqrtRatio);
       const ratio18 = JSBI.multiply(ratio, ONE_JSBI);
       const priceJSBI = JSBI.divide(ratio18, Q192);
-      return BigNumber.from(priceJSBI.toString());
+      return BigInt(priceJSBI.toString());
     }
     const parsedFunding: string | number | undefined = (() => {
       if (info === undefined || !currentOi || !marketMid) return undefined;
-      const baseFractionRemaining = 10000;
-      const remainingNotionalInitial = BigNumber.from(info.notionalInitial)
-        .mul(info.fractionRemaining)
-        .div(baseFractionRemaining);
+      const baseFractionRemaining = 10000n;
+      const remainingNotionalInitial = BigInt(info.notionalInitial)
+        * BigInt(info.fractionRemaining) / baseFractionRemaining;
 
       const remainingOiInitial = remainingNotionalInitial
-        .mul(ONE_BN)
-        .div(tickToPrice(info.midTick));
-      if (remainingOiInitial.eq(0)) return undefined;
-      const fundingPayments = BigNumber.from(marketMid)
-        .mul(BigNumber.from(currentOi).sub(remainingOiInitial))
-        .div(ONE_BN);
+        * ONE_BN / tickToPrice(info.midTick);
+      
+      if (remainingOiInitial === 0n) return undefined;
 
-      const fullValue = formatBigNumber(fundingPayments.abs(), 18, 18);
+      const fundingPayments = BigInt(marketMid)
+        * (BigInt(currentOi) - remainingOiInitial) / ONE_BN;
+
+      const fullValue = formatBigNumber(fundingPayments < 0n ? -fundingPayments : fundingPayments, 18, 18);
+      
       if (fullValue === undefined) return "-";
+      
       return +fullValue < 1
         ? formatBigNumber(fundingPayments, 18, 6)
         : formatBigNumber(fundingPayments, 18, 2);
     })();
+
     transformedOpens.push({
       marketName: marketName,
       size: parsedValue,
@@ -407,3 +380,17 @@ export const transformUnwindPositions = async (
   }
   return transformedUnwinds;
 };
+
+export const getActiveMarketsFromSubgraph = async() => {
+  try {
+    const data = await request<ActiveMarketsQuery>(
+      LINKS.URL,
+      ActiveMarketsQueryDocument
+    );
+   
+    return data.markets
+  } catch (error) {
+    console.error('Error fetching active markets data:', error);
+    return undefined
+  }
+}

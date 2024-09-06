@@ -185,7 +185,7 @@ export class OverlaySDKState extends OverlaySDKModule {
     fundingRate: bigint;
   }> {
     const contract = await this.getContractV1State(state);
-    const marketState = contract.read.marketState([market]);
+    const marketState = await contract.read.marketState([market]);
     return marketState;
   }
 

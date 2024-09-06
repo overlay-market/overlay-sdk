@@ -4639,3 +4639,17 @@ export type UnwindsQueryVariables = Exact<{
 
 
 export type UnwindsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', unwinds: Array<{ __typename?: 'Unwind', collateral: any, currentDebt: any, currentOi: any, fraction: any, fractionOfPosition: any, id: string, isLong: boolean, mint: any, pnl: any, price: any, size: any, timestamp: any, transferAmount: any, unwindNumber: any, value: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: string } } }> } | null };
+
+export type ActiveMarketsQueryVariables = Exact<{ [key: string]: never; }>;
+
+export type ActiveMarketsQuery = (
+  { __typename?: 'Query' }
+  & { markets: Array<(
+    { __typename?: 'Market' }
+    & Pick<Market, 'id' | 'feedAddress' | 'k' | 'lmbda' | 'delta' | 'capPayoff' | 'capNotional' | 'capLeverage' | 'circuitBreakerWindow' | 'circuitBreakerMintTarget' | 'maintenanceMarginFraction' | 'maintenanceMarginBurnRate' | 'liquidationFeeRate' | 'tradingFeeRate' | 'minCollateral' | 'priceDriftUpperLimit' | 'averageBlockTime' | 'isShutdown'>
+    & { factory: (
+      { __typename?: 'Factory' }
+      & Pick<Factory, 'id'>
+    ) }
+  )> }
+);

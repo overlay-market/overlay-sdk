@@ -7,7 +7,7 @@ const TRILLION = BIG_ONE.shiftedBy(12)
 const BILLION = BIG_ONE.shiftedBy(9)
 const MILLION = BIG_ONE.shiftedBy(6)
 
-const parseBigNumberOrZero = (input: string | BigNumber | bigint | number | null) => {
+const parseBigNumberOrZero = (input) => {
   if (!input) return BIG_ZERO
 
   // Remove any commas
@@ -20,7 +20,7 @@ const parseBigNumberOrZero = (input: string | BigNumber | bigint | number | null
   return result
 }
 
-const toPrecisionTrim = (value: BigNumber, significantFigures: number) => {
+const toPrecisionTrim = (value, significantFigures) => {
   const isNegative = value.isNegative()
   const absValue = value.abs()
 
@@ -35,7 +35,7 @@ const toPrecisionTrim = (value: BigNumber, significantFigures: number) => {
   return isNegative ? `-${formattedValue}` : formattedValue
 }
 
-export const toScientificNumber = (input: string | BigNumber | bigint | number | null | undefined) => {
+export const toScientificNumber = (input) => {
   const value = parseBigNumberOrZero(input || 0)
 
   // Check if the value is zero
@@ -77,10 +77,24 @@ export const toScientificNumber = (input: string | BigNumber | bigint | number |
   return `${toPrecisionTrim(value.div(TRILLION), 6)} T`
 }
 
-export const toPercentUnit = (input: string | number | null | undefined) => {
+export const toPercentUnit = (input) => {
   const ONE_HUNDRED = 100
 
   if (Number.isNaN(Number(input))) return 0
 
   return (Number(input) * ONE_HUNDRED).toFixed(2)
+}
+
+export const limitDigitsInDecimals = (input, sigFig = 4) => {
+  if (Number(input) < 1) {
+    return Number(input).toLocaleString('en-US', {
+      maximumSignificantDigits: sigFig,
+      minimumSignificantDigits: sigFig,
+    })
+  } else {
+    return Number(input).toLocaleString('en-US', {
+      maximumFractionDigits: sigFig,
+      minimumFractionDigits: sigFig,
+    })
+  }
 }

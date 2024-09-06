@@ -76,3 +76,31 @@ export const UnwindPositionsQuery = gql`
     }
   }
 `;
+
+export const ActiveMarketsQuery = gql`
+  query activeMarkets {
+    markets(where: {isShutdown: false}) {
+      id
+      feedAddress
+      factory {
+        id
+      }
+      k
+      lmbda
+      delta
+      capPayoff
+      capNotional
+      capLeverage
+      circuitBreakerWindow
+      circuitBreakerMintTarget
+      maintenanceMarginFraction
+      maintenanceMarginBurnRate
+      liquidationFeeRate
+      tradingFeeRate
+      minCollateral
+      priceDriftUpperLimit
+      averageBlockTime
+      isShutdown
+    }
+  }
+`;
