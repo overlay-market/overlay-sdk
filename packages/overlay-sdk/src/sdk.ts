@@ -1,5 +1,6 @@
 import { OverlaySDKCore, OverlaySDKCoreProps } from "./core/index.js";
 import { OverlaySDKMarket, OverlaySDKState } from "./markets/index.js";
+import { OverlaySDKOverlayToken } from "./ov/index.js";
 import { TestModuleSDK } from "./test_module/index.js";
 
 export class OverlaySDK {
@@ -8,6 +9,7 @@ export class OverlaySDK {
   readonly market: OverlaySDKMarket;
   readonly state: OverlaySDKState;
   readonly midPrice: OverlaySDKState;
+  readonly ov: OverlaySDKOverlayToken;
 
   constructor(props: OverlaySDKCoreProps) {
     // Core functionality
@@ -18,5 +20,6 @@ export class OverlaySDK {
     this.market = new OverlaySDKMarket({ ...props, core });
     this.state = new OverlaySDKState({ ...props, core });
     this.midPrice = new OverlaySDKState({ ...props, core });
+    this.ov = new OverlaySDKOverlayToken({ ...props, core });
   }
 }
