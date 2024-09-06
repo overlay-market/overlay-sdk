@@ -10,16 +10,18 @@ import {
   http,
   custom,
   GetContractReturnType,
+  JsonRpcAccount,
 } from "viem";
-import { ERROR_CODE, invariant } from "../common/utils/sdk-error.js";
+import { ERROR_CODE, invariant, invariantArgument, withSDKError } from "../common/utils/sdk-error.js";
 import { type SDKErrorProps, SDKError } from "../common/utils/index.js";
 import {
   SUPPORTED_CHAINS,
   type CHAINS,
   VIEM_CHAINS,
   OVERLAY_CONTRACT_NAMES,
+  NOOP,
 } from "../common/constants.js";
-import type { OverlaySDKCoreProps, LOG_MODE, AccountValue } from "./types.js";
+import { type OverlaySDKCoreProps, type LOG_MODE, type AccountValue, type PerformTransactionOptions, type TransactionResult, type TransactionOptions, TransactionCallbackStage, GetFeeDataResult } from "./types.js";
 import { OverlaySDKCacheable } from "../common/class-primitives/cacheable.js";
 
 export default class OverlaySDKCore extends OverlaySDKCacheable {
@@ -136,5 +138,183 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
       ERROR_CODE.PROVIDER_ERROR
     );
     return accounts[0];
+  }
+
+  // @Logger('Utils:')
+  public async useAccount(
+    accountValue?: AccountValue,
+  ): Promise<JsonRpcAccount> {
+    if (accountValue) {
+      if (typeof accountValue === 'string')
+        return { address: accountValue, type: 'json-rpc' };
+      else return accountValue as JsonRpcAccount;
+    }
+    if (this.web3Provider) {
+      if (!this.web3Provider.account) {
+        const [account] = await withSDKError(
+          this.web3Provider.requestAddresses(),
+          ERROR_CODE.READ_ERROR,
+        );
+        invariant(
+          account,
+          'web3provider must have at least 1 account',
+          ERROR_CODE.PROVIDER_ERROR,
+        );
+        this.web3Provider.account = { address: account, type: 'json-rpc' };
+      }
+      return this.web3Provider.account as unknown as JsonRpcAccount;
+    }
+    invariantArgument(false, 'No account or web3Provider is available');
+  }
+
+  // @Logger('Utils:')
+  // @Cache(60 * 60 * 1000, ['chain.id'])
+  public async isContract(address: Address): Promise<boolean> {
+    // eth_getCode returns hex string of bytecode at address
+    // for accounts it's "0x"
+    // for contract it's potentially very long hex (can't be safely&quickly parsed)
+    const result = await this.rpcProvider.getBytecode({ address: address });
+    return result ? result !== '0x' : false;
+  }
+
+  // @Logger('Utils:')
+  public async getFeeData(): Promise<GetFeeDataResult> {
+    // we look back 5 blocks at fees of botton 25% txs
+    // if you want to increase maxPriorityFee output increase percentile
+    const feeHistory = await this.rpcProvider.getFeeHistory({
+      blockCount: 5,
+      blockTag: 'pending',
+      rewardPercentiles: [25],
+    });
+
+    // get average priority fee
+    const maxPriorityFeePerGas =
+      feeHistory.reward && feeHistory.reward.length > 0
+        ? feeHistory.reward
+            .map((fees) => (fees[0] ? BigInt(fees[0]) : 0n))
+            .reduce((sum, fee) => sum + fee) / BigInt(feeHistory.reward.length)
+        : 0n;
+
+    const lastBaseFeePerGas = feeHistory.baseFeePerGas[0]
+      ? BigInt(feeHistory.baseFeePerGas[0])
+      : 0n;
+
+    // we have to multiply by 2 until we find a reliable way to predict baseFee change
+    const maxFeePerGas = lastBaseFeePerGas * 2n + maxPriorityFeePerGas;
+
+    return {
+      lastBaseFeePerGas,
+      maxPriorityFeePerGas,
+      maxFeePerGas,
+      gasPrice: maxFeePerGas, // fallback
+    };
+  }
+
+  public async performTransaction<TDecodedResult = undefined>(
+    props: PerformTransactionOptions<TDecodedResult>,
+  ): Promise<TransactionResult<TDecodedResult>> {
+    // this guards against not having web3Provider
+    this.useWeb3Provider();
+    const {
+      callback = NOOP,
+      getGasLimit,
+      sendTransaction,
+      decodeResult,
+      waitForTransactionReceiptParameters = {},
+    } = props;
+    const account = await this.useAccount(props.account);
+    const isContract = await this.isContract(account.address);
+
+    let overrides: TransactionOptions = {
+      account,
+      chain: this.chain,
+      gas: undefined,
+      maxFeePerGas: undefined,
+      maxPriorityFeePerGas: undefined,
+    };
+
+    if (isContract) {
+      // passing these stub params prevent unnecessary possibly errorish RPC calls
+      overrides = {
+        ...overrides,
+        gas: 21000n,
+        maxFeePerGas: 1n,
+        maxPriorityFeePerGas: 1n,
+        nonce: 1,
+      };
+    } else {
+      callback({ stage: TransactionCallbackStage.GAS_LIMIT });
+      const feeData = await this.getFeeData();
+      overrides.maxFeePerGas = feeData.maxFeePerGas;
+      overrides.maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
+      try {
+        overrides.gas = await getGasLimit({ ...overrides });
+      } catch {
+        // we retry without fees to see if tx will go trough
+        await withSDKError(
+          getGasLimit({
+            ...overrides,
+            maxFeePerGas: undefined,
+            maxPriorityFeePerGas: undefined,
+          }),
+          ERROR_CODE.TRANSACTION_ERROR,
+        );
+        throw this.error({
+          code: ERROR_CODE.TRANSACTION_ERROR,
+          message: 'Not enough ether for gas',
+        });
+      }
+    }
+
+    callback({ stage: TransactionCallbackStage.SIGN, payload: overrides.gas });
+
+    const hash = await withSDKError(
+      sendTransaction({
+        ...overrides,
+      }),
+      ERROR_CODE.TRANSACTION_ERROR,
+    );
+
+    if (isContract) {
+      callback({ stage: TransactionCallbackStage.MULTISIG_DONE });
+      return { hash };
+    }
+
+    callback({
+      stage: TransactionCallbackStage.RECEIPT,
+      payload: hash,
+    });
+
+    const receipt = await withSDKError(
+      this.rpcProvider.waitForTransactionReceipt({
+        hash,
+        timeout: 120_000,
+        ...waitForTransactionReceiptParameters,
+      }),
+      ERROR_CODE.TRANSACTION_ERROR,
+    );
+
+    callback({
+      stage: TransactionCallbackStage.CONFIRMATION,
+      payload: receipt,
+    });
+
+    const confirmations = await this.rpcProvider.getTransactionConfirmations({
+      hash: receipt.transactionHash,
+    });
+
+    const result = await decodeResult?.(receipt);
+
+    callback({
+      stage: TransactionCallbackStage.DONE,
+      payload: confirmations,
+    });
+
+    return {
+      hash,
+      receipt,
+      result,
+      confirmations,
+    };
   }
 }
