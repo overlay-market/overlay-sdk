@@ -1,8 +1,8 @@
-import { Address, getContract, GetContractReturnType, WalletClient } from "viem";
+import { Address, encodeFunctionData, getContract, GetContractReturnType, WalletClient } from "viem";
 import { OverlaySDKModule } from "../common/class-primitives/sdk-module";
 import { erc20abi } from './abi/erc20abi.js';
-import { ApproveProps, ParsedTransactionProps } from "./types";
-import { CommonTransactionProps, EtherValue, TransactionResult } from "../core/types";
+import { AllowanceProps, ApproveProps, ParsedTransactionProps, TransferProps } from "./types";
+import { CommonTransactionProps, EtherValue, NoCallback, TransactionOptions, TransactionResult } from "../core/types";
 import { parseValue } from "../common/utils/parse-value";
 import { NOOP } from "../common";
 
@@ -28,10 +28,80 @@ export class OverlaySDKOverlayToken extends OverlaySDKModule {
     });
   }
 
+  // Balance
+
+  // @Logger('Balances:')
+  // @ErrorHandler()
   public async balance(address?: Address): Promise<bigint> {
     const { address: parsedAddress } = await this.core.useAccount(address);
     const contract = await this.getContract();
     return contract.read.balanceOf([parsedAddress]);
+  }
+
+  // Transfer
+
+  // @Logger('Call:')
+  // @ErrorHandler()
+  public async transfer(props: TransferProps): Promise<TransactionResult> {
+    this.core.useWeb3Provider();
+    const parsedProps = await this.parseProps(props);
+    const { account, amount, to, from = account.address } = parsedProps;
+    const isTransferFrom = from !== account.address;
+    const contract = await this.getContract();
+
+    const getGasLimit = async (overrides: TransactionOptions) =>
+      isTransferFrom
+        ? contract.estimateGas.transferFrom([from, to, amount], overrides)
+        : contract.estimateGas.transfer([to, amount], overrides);
+
+    const sendTransaction = async (overrides: TransactionOptions) =>
+      isTransferFrom
+        ? contract.write.transferFrom([from, to, amount], overrides)
+        : contract.write.transfer([to, amount], overrides);
+
+    return this.core.performTransaction({
+      ...parsedProps,
+      getGasLimit,
+      sendTransaction,
+    });
+  }
+
+  // @Logger('Utils:')
+  // @ErrorHandler()
+  public async populateTransfer(props: NoCallback<TransferProps>) {
+    const parsedProps = await this.parseProps(props);
+    const { account, amount, to, from = account.address } = parsedProps;
+    const isTransferFrom = from !== account.address;
+    const contractAddress = await this.contractAddress();
+
+    return {
+      to: contractAddress,
+      from: account,
+      data: isTransferFrom
+        ? encodeFunctionData({
+            abi: erc20abi,
+            functionName: 'transferFrom',
+            args: [from, to, amount],
+          })
+        : encodeFunctionData({
+            abi: erc20abi,
+            functionName: 'transfer',
+            args: [to, amount],
+          }),
+    };
+  }
+
+  // @Logger('Utils:')
+  // @ErrorHandler()
+  public async simulateTransfer(props: NoCallback<TransferProps>) {
+    const parsedProps = await this.parseProps(props);
+    const { account, amount, to, from = account.address } = parsedProps;
+    const isTransferFrom = from !== account.address;
+
+    const contract = await this.getContract();
+    return isTransferFrom
+      ? contract.simulate.transferFrom([from, to, amount], { account: account as any })
+      : contract.simulate.transfer([to, amount], { account: account as any });
   }
 
   // Allowance
@@ -50,6 +120,48 @@ export class OverlaySDKOverlayToken extends OverlaySDKModule {
       sendTransaction: (options) =>
         contract.write.approve(txArguments, options),
     });
+  }
+
+  // @Logger('Utils:')
+  // @ErrorHandler()
+  public async populateApprove(props: NoCallback<ApproveProps>) {
+    const { account, amount, to } = await this.parseProps(props);
+    const address = await this.contractAddress();
+
+    return {
+      to: address,
+      from: account.address,
+      data: encodeFunctionData({
+        abi: erc20abi,
+        functionName: 'approve',
+        args: [to, amount],
+      }),
+    };
+  }
+
+  // @Logger('Utils:')
+  // @ErrorHandler()
+  public async simulateApprove(props: NoCallback<ApproveProps>) {
+    const { account, amount, to } = await this.parseProps(props);
+    const contract = await this.getContract();
+    return contract.simulate.approve([to, amount], { account: account as any });
+  }
+
+  // @Logger('Views:')
+  public async allowance({
+    account: accountProp,
+    to,
+  }: AllowanceProps): Promise<bigint> {
+    const account = await this.core.useAccount(accountProp);
+    return (await this.getContract()).read.allowance([account.address, to]);
+  }
+
+  // Views
+
+  // @Logger('Views:')
+  // @ErrorHandler()
+  public async totalSupply(): Promise<bigint> {
+    return (await this.getContract()).read.totalSupply();
   }
 
   private async parseProps<
