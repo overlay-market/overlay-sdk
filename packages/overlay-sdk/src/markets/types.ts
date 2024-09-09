@@ -22,3 +22,28 @@ export type BuildResult = {
   positionId: bigint;
 };
 
+export type UnwindProps = CommonTransactionProps & {
+  marketAddress: Address;
+  positionId: bigint;
+  fraction: bigint;
+  priceLimit: bigint;
+};
+
+export type UnwindInnerProps = CommonTransactionProps & {
+  marketAddress: Address;
+  positionId: bigint;
+  fraction: bigint;
+  priceLimit: bigint;
+  account: JsonRpcAccount;
+};
+
+export type EmergencyWithdrawProps = CommonTransactionProps & {
+  marketAddress: Address;
+  positionId: bigint;
+};
+
+export type EmergencyWithdrawInnerProps = CommonTransactionProps & {
+  marketAddress: Address;
+  positionId: bigint;
+  account: JsonRpcAccount;
+};

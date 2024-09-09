@@ -4,15 +4,24 @@ import {
   type WalletClient,
   getContract,
   TransactionReceipt,
+  encodeFunctionData,
+  toEventHash,
+  getAbiItem,
+  decodeEventLog,
 } from "viem";
 import { OverlayV1MarketABI } from "./abis/OverlayV1Market.js";
 import { OverlaySDKModule } from "../common/class-primitives/sdk-module.js";
-import { OverlaySDKCommonProps, TransactionOptions, TransactionResult } from "../core/types.js";
-import { BuildInnerProps, BuildProps, BuildResult } from "./types.js";
+import { NoCallback, OverlaySDKCommonProps, TransactionOptions, TransactionResult } from "../core/types.js";
+import { BuildInnerProps, BuildProps, BuildResult, EmergencyWithdrawInnerProps, EmergencyWithdrawProps, UnwindInnerProps, UnwindProps } from "./types.js";
 import { NOOP } from "../common/constants.js";
+import { ERROR_CODE, invariant } from "../common/index.js";
 
 export class OverlaySDKMarket extends OverlaySDKModule {
   static readonly PRECISION = 10n ** 27n;
+
+  private static BUILD_SIGNATURE = toEventHash(
+    getAbiItem({abi: OverlayV1MarketABI, name: "Build"})
+  )
 
   constructor(props: OverlaySDKCommonProps) {
     super(props);
@@ -45,13 +54,15 @@ export class OverlaySDKMarket extends OverlaySDKModule {
     return contract.read.isShutdown();
   }
 
+  // Build
+
   // @Logger('Call:')
   // @ErrorHandler()
   public async build(
     props: BuildProps
   ): Promise<TransactionResult<BuildResult>> {
     this.core.useWeb3Provider();
-    const { callback, account, marketAddress, ...rest } = await this.parseProps(props);
+    const { callback, account, marketAddress, ...rest } = await this.parseBuildProps(props);
 
     const contract = await this.getContractV1Market(marketAddress);
 
@@ -65,18 +76,178 @@ export class OverlaySDKMarket extends OverlaySDKModule {
         contract.estimateGas.build(txArguments, options),
       sendTransaction: (options: TransactionOptions) =>
         contract.write.build(txArguments, options),
-      decodeResult: (receipt) => this.submitParse(receipt),
+      decodeResult: async (receipt) => this.submitParse(receipt),
     });
-    
   }
 
-  private async submitParse(receipt: TransactionReceipt): Promise<BuildResult> {
+  // @Logger('Utils:')
+  // @ErrorHandler()
+  public async populateBuild(props: NoCallback<BuildProps>) {
+    const { account, collateral, leverage, isLong, priceLimit, marketAddress } = await this.parseBuildProps(props);
+
     return {
-      positionId: 33n
+      to: marketAddress,
+      from: account.address,
+      data: encodeFunctionData({
+        abi: OverlayV1MarketABI,
+        functionName: "build",
+        args: [collateral, leverage, isLong, priceLimit],
+      })
     };
   }
 
-  private async parseProps(props: BuildProps): Promise<BuildInnerProps> {
+  // @Logger('Utils:')
+  // @ErrorHandler()
+  public async simulateBuild(props: NoCallback<BuildProps>) {
+    const { account, collateral, leverage, isLong, priceLimit, marketAddress } = await this.parseBuildProps(props);
+    
+    const contract = await this.getContractV1Market(marketAddress);
+
+    return contract.simulate.build([collateral, leverage, isLong, priceLimit], {
+      account: account.address,
+    });
+  }
+
+  // Unwind
+
+  // @Logger('Call:')
+  // @ErrorHandler()
+  public async unwind(
+    props: UnwindProps
+  ): Promise<TransactionResult> {
+    this.core.useWeb3Provider();
+    const { callback, account, marketAddress, ...rest } = await this.parseUnwindProps(props);
+
+    const contract = await this.getContractV1Market(marketAddress);
+
+    const txArguments = [rest.positionId, rest.fraction, rest.priceLimit] as const;
+
+    return this.core.performTransaction({
+      ...rest,
+      account,
+      callback,
+      getGasLimit: (options: TransactionOptions) =>
+        contract.estimateGas.unwind(txArguments, options),
+      sendTransaction: (options: TransactionOptions) =>
+        contract.write.unwind(txArguments, options),
+    });
+  }
+
+  // @Logger('Utils:')
+  // @ErrorHandler()
+  public async populateUnwind(props: NoCallback<UnwindProps>) {
+    const { account, positionId, fraction, priceLimit, marketAddress } = await this.parseUnwindProps(props);
+
+    return {
+      to: marketAddress,
+      from: account.address,
+      data: encodeFunctionData({
+        abi: OverlayV1MarketABI,
+        functionName: "unwind",
+        args: [positionId, fraction, priceLimit],
+      })
+    };
+  }
+
+  // @Logger('Utils:')
+  // @ErrorHandler()
+  public async simulateUnwind(props: NoCallback<UnwindProps>) {
+    const { account, positionId, fraction, priceLimit, marketAddress } = await this.parseUnwindProps(props);
+
+    const contract = await this.getContractV1Market(marketAddress);
+
+    return contract.simulate.unwind([positionId, fraction, priceLimit], {
+      account: account.address,
+    });
+  }
+
+  // EmergencyWithdraw
+
+  // @Logger('Call:')
+  // @ErrorHandler()
+  public async emergencyWithdraw(
+    props: EmergencyWithdrawProps
+  ): Promise<TransactionResult> {
+    this.core.useWeb3Provider();
+    const { callback, account, marketAddress, ...rest } = await this.parseEmergencyWithdrawProps(props);
+
+    const contract = await this.getContractV1Market(marketAddress);
+
+    const txArguments = [rest.positionId] as const;
+
+    return this.core.performTransaction({
+      ...rest,
+      account,
+      callback,
+      getGasLimit: (options: TransactionOptions) =>
+        contract.estimateGas.emergencyWithdraw(txArguments, options),
+      sendTransaction: (options: TransactionOptions) =>
+        contract.write.emergencyWithdraw(txArguments, options),
+    });
+  }
+
+  // @Logger('Utils:')
+  // @ErrorHandler()
+  public async populateEmergencyWithdraw(props: NoCallback<EmergencyWithdrawProps>) {
+    const { account, positionId, marketAddress } = await this.parseEmergencyWithdrawProps(props);
+
+    return {
+      to: marketAddress,
+      from: account.address,
+      data: encodeFunctionData({
+        abi: OverlayV1MarketABI,
+        functionName: "emergencyWithdraw",
+        args: [positionId],
+      })
+    };
+  }
+
+  // @Logger('Utils:')
+  // @ErrorHandler()
+  public async simulateEmergencyWithdraw(props: NoCallback<EmergencyWithdrawProps>) {
+    const { account, positionId, marketAddress } = await this.parseEmergencyWithdrawProps(props);
+
+    const contract = await this.getContractV1Market(marketAddress);
+
+    return contract.simulate.emergencyWithdraw([positionId], {
+      account: account.address,
+    });
+  }
+
+  private submitParse(receipt: TransactionReceipt): BuildResult {
+    let positionId: bigint | undefined;
+    for (const log of receipt.logs) {
+      if (log.topics[0] !== OverlaySDKMarket.BUILD_SIGNATURE) {
+        continue;
+      }
+      const parsedLog = decodeEventLog({
+        abi: OverlayV1MarketABI,
+        strict: true,
+        ...log,
+      });
+      positionId = BigInt(parsedLog.args.positionId);
+    }
+    invariant(positionId, "Position ID not found in the transaction receipt", ERROR_CODE.TRANSACTION_ERROR);
+    return { positionId };
+  }
+
+  private async parseBuildProps(props: BuildProps): Promise<BuildInnerProps> {
+    return {
+      ...props,
+      account: await this.core.useAccount(props.account),
+      callback: props.callback ?? NOOP,
+    };
+  }
+
+  private async parseUnwindProps(props: UnwindProps): Promise<UnwindInnerProps> {
+    return {
+      ...props,
+      account: await this.core.useAccount(props.account),
+      callback: props.callback ?? NOOP,
+    };
+  }
+
+  private async parseEmergencyWithdrawProps(props: EmergencyWithdrawProps): Promise<EmergencyWithdrawInnerProps> {
     return {
       ...props,
       account: await this.core.useAccount(props.account),

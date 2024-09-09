@@ -90,6 +90,9 @@ export type TransactionOptions = {
   nonce?: number;
 };
 
+export type NoCallback<TProps extends { callback?: TransactionCallback }> =
+  Omit<TProps, 'callback'>;
+
 export type PerformTransactionSendTransaction = (
   override: TransactionOptions,
 ) => Promise<Hash>;
