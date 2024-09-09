@@ -1,6 +1,7 @@
 import './App.css';
 import PositionsTable from './positionTable';
 import MarketsTable from './marketsTable';
+import Market from './market';
 
 function App() {
   return (
@@ -14,6 +15,10 @@ function App() {
         <h1>Markets table</h1>
         <MarketsTable />
         <br />        
+
+        <h1>Market write methods</h1>
+        <Market />
+        <br />
         
       </header>
     </div>
