@@ -8,7 +8,8 @@ import {
   TableRow,
   Paper,
 } from "@mui/material";
-import { getUnwindPositions, transformUnwindPositions, LINKS, transformOpenPositions, getOpenPositions, getMarketNames } from "overlay-sdk";
+import { getUnwindPositions, LINKS, getOpenPositions,  } from "overlay-sdk";
+import { sdk } from "./client";
 
 const PositionsTable = () => {
   const [positions, setPositions] = useState([]);
@@ -28,14 +29,14 @@ const PositionsTable = () => {
           first,
           skip,
         });
-        const transformedData = await transformUnwindPositions(rawUnwindData);
+        const transformedData = await sdk.unwindPositions.transformUnwindPositions(rawUnwindData);
         const rawOpenData = await getOpenPositions({
           url,
           account,
           first,
           skip,
         });
-        const transformedOpenPositions = await transformOpenPositions(rawOpenData);
+        const transformedOpenPositions = await sdk.openPositions.transformOpenPositions(rawOpenData);
         setPositions(transformedData);
         setOpenPositions(transformedOpenPositions);
       } catch (error) {
