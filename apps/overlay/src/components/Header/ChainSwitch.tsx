@@ -4,6 +4,7 @@ import ArbitrumLogo from "../../assets/images/arbitrum-logo.png";
 import EthereumLogo from "../../assets/images/ethereum-logo.png";
 import ArbitrumTestnetLogo from "../../assets/images/arbitrum-testnet-logo.png";
 import ImolaLogo from "../../assets/images/imola-logo.png";
+import BartioLogo from "../../assets/images/bartio-logo.png";
 import { SupportedChainId } from "../../constants/chains";
 import styled from "@emotion/styled";
 import { Box, Menu, MenuItem } from "@mui/material";
@@ -68,6 +69,7 @@ export const NETWORK_ICONS: { [chainId in SupportedChainId | number]: string } =
     [SupportedChainId.ARBITRUM]: ArbitrumLogo,
     [SupportedChainId.ARBITRUM_SEPOLIA]: ArbitrumTestnetLogo,
     [SupportedChainId.IMOLA]: ImolaLogo,
+    [SupportedChainId.BARTIO]: BartioLogo,
   };
 
 export const NETWORK_LABELS: {
@@ -87,6 +89,12 @@ export const NETWORK_LABELS: {
       <div style={{ color: "#FF648A" }}>Testnet</div>
     </FlexRow>
   ),
+  [SupportedChainId.BARTIO]: (
+    <FlexRow>
+      <div>Berachain-bArtio -</div>
+      <div style={{ color: "#FF648A" }}>Testnet</div>
+    </FlexRow>
+  ),
 };
 
 const CHAIN_LIST: { [chainId in SupportedChainId | number]: string } = {
@@ -94,6 +102,7 @@ const CHAIN_LIST: { [chainId in SupportedChainId | number]: string } = {
   [SupportedChainId.IMOLA]: "Movement",
   [SupportedChainId.ARBITRUM]: "Arbitrum",
   [SupportedChainId.MAINNET]: "Mainnet",
+  [SupportedChainId.BARTIO]: "Berachain",
 };
 
 const CHAIN_LIST_ORDER: { [x: number]: number } = {
@@ -101,6 +110,7 @@ const CHAIN_LIST_ORDER: { [x: number]: number } = {
   [2]: SupportedChainId.ARBITRUM,
   [3]: SupportedChainId.MAINNET,
   [4]: SupportedChainId.IMOLA,
+  [5]: SupportedChainId.BARTIO,
 };
 
 export default function ChainSwitch() {

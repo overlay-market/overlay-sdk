@@ -2,7 +2,7 @@ import { createPublicClient, http } from "viem";
 import { OverlaySDKCore, OverlaySDKCoreProps } from "./core/index.js";
 import { OverlaySDKMarket, OverlaySDKState } from "./markets/index.js";
 import { OverlaySDKMarkets } from './marketsList/index.js';
-import { arbitrumSepolia } from "viem/chains";
+import { arbitrumSepolia, berachainTestnetbArtio } from "viem/chains";
 export class OverlaySDK {
   readonly core: OverlaySDKCore;
   readonly market: OverlaySDKMarket;
@@ -22,15 +22,28 @@ export class OverlaySDK {
   }
 }
 
+// const rpcProvider = createPublicClient({
+//   chain: arbitrumSepolia,
+//   transport: http(),
+// });
+
+// const web3Provider = window.ethereum;
+
+// export const sdk = new OverlaySDK({
+//   chainId: 421614,
+//   rpcProvider,
+//   web3Provider,
+// });
+
 const rpcProvider = createPublicClient({
-  chain: arbitrumSepolia,
+  chain: berachainTestnetbArtio,
   transport: http(),
 });
 
 const web3Provider = window.ethereum;
 
 export const sdk = new OverlaySDK({
-  chainId: 421614,
+  chainId: 80084,
   rpcProvider,
   web3Provider,
 });
