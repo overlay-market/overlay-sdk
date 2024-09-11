@@ -1,6 +1,6 @@
-import OverlaySDKCore from '../../core/core.js';
-import type { OverlaySDKCommonProps } from '../../core/types.js';
-import { OverlaySDKCacheable } from './cacheable.js';
+import OverlaySDKCore from "../../core/core.js";
+import type { OverlaySDKCommonProps } from "../../core/types.js";
+import { OverlaySDKCacheable } from "./cacheable.js";
 
 export abstract class OverlaySDKModule extends OverlaySDKCacheable {
   readonly core: OverlaySDKCore;
