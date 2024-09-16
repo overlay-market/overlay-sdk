@@ -4,7 +4,7 @@ import { OverlaySDKMarket, OverlaySDKState } from "./markets/index.js";
 import { OverlaySDKOverlayToken } from "./ov/index.js";
 
 import { OverlaySDKMarkets } from './marketsList/index.js';
-import { arbitrumSepolia, berachainTestnetbArtio } from "viem/chains";
+import { arbitrumSepolia } from "viem/chains";
 export class OverlaySDK {
   readonly core: OverlaySDKCore;
   readonly market: OverlaySDKMarket;
@@ -26,28 +26,15 @@ export class OverlaySDK {
   }
 }
 
-// const rpcProvider = createPublicClient({
-//   chain: arbitrumSepolia,
-//   transport: http(),
-// });
-
-// const web3Provider = window.ethereum;
-
-// export const sdk = new OverlaySDK({
-//   chainId: 421614,
-//   rpcProvider,
-//   web3Provider,
-// });
-
 const rpcProvider = createPublicClient({
-  chain: berachainTestnetbArtio,
+  chain: arbitrumSepolia,
   transport: http(),
 });
 
 const web3Provider = window.ethereum;
 
 export const sdk = new OverlaySDK({
-  chainId: 80084,
+  chainId: 421614,
   rpcProvider,
   web3Provider,
 });

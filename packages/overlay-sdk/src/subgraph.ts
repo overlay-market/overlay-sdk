@@ -27,7 +27,8 @@ import { CHAINS, invariant } from "./common";
 
 // Get the address
 async function getWalletAddress() {
-  const address = await sdk.core.getWeb3Address();
+  const address = (await sdk.core.useAccount()).address;
+
   return address;
 }
 
