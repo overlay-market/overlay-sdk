@@ -17,22 +17,6 @@ import {
 } from "./types";
 import { LINKS } from "./constants";
 
-export const getMarketNames = async (marketAddress: string) => {
-  try {
-    const response = await axios.get(`${LINKS.MARKET_PRICES_API}/markets`);
-    const markets = (await axios.get(`${LINKS.MARKET_PRICES_API}/markets`))
-      .data as {
-      address: string;
-      name?: string;
-    }[];
-    const market = markets.find(({ address }) => address === marketAddress);
-    return market?.name;
-  } catch (error) {
-    console.error("market names", error);
-    return undefined;
-  }
-};
-
 export type SubgraphUrl =
   | string
   | {
