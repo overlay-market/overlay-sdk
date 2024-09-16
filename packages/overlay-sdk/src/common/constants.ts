@@ -1,18 +1,38 @@
 import { type Chain } from "viem";
-import { mainnet, arbitrum, arbitrumSepolia, berachainTestnetbArtio } from "viem/chains";
+import { mainnet, arbitrum, arbitrumSepolia, berachainTestnetbArtio } from "viem/chains";import { defineChain } from 'viem'
+ 
+export const imola = defineChain({
+  id: 30732,
+  name: 'Movement',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'MOVE',
+    symbol: 'MOVE',
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://overlay-rpc.devnet.imola.movementnetwork.xyz'],
+    },
+  },
+  blockExplorers: {
+    default: { name: 'Explorer', url: 'https://explorer.devnet.imola.movementlabs.xyz/#/?network=testnet' },
+  }
+})
 
 export enum CHAINS {
   Mainnet = 1,
   Arbitrum = 42161,
   ArbitrumSepolia = 421614,
   Bartio = 80084,
+  Imola = 30732
 }
 
 export const SUPPORTED_CHAINS: CHAINS[] = [
   CHAINS.Mainnet,
   CHAINS.Arbitrum,
   CHAINS.ArbitrumSepolia,
-  CHAINS.Bartio
+  CHAINS.Bartio,
+  CHAINS.Imola
 ];
 
 export const VIEM_CHAINS: { [key in CHAINS]: Chain } = {
@@ -20,6 +40,7 @@ export const VIEM_CHAINS: { [key in CHAINS]: Chain } = {
   [CHAINS.Arbitrum]: arbitrum,
   [CHAINS.ArbitrumSepolia]: arbitrumSepolia,
   [CHAINS.Bartio]: berachainTestnetbArtio,
+  [CHAINS.Imola]: imola
 };
 
 export const enum OVERLAY_CONTRACT_NAMES {

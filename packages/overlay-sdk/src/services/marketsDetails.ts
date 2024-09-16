@@ -1,11 +1,14 @@
 import axios from "axios";
 import { IMarketDetails, MarketDetails } from "./types/marketDetailsTypes";
 import { type Address } from "viem";
-import { LINKS } from "../constants";
+import { NETWORKS } from "../constants";
+import { CHAINS, invariant } from "../common";
 
-export const getMarketsDetailsByChainId = async (chainId: Address) => {
+export const getMarketsDetailsByChainId = async (chainId: CHAINS) => {
+  invariant(chainId in CHAINS, "Unsupported chainId");
+  const url = NETWORKS[chainId].MARKETS_DETAILS_API;
   try {
-    const marketsDetailsData = (await axios.get(`${LINKS.MARKETS_DETAILS_API}/chain/${chainId}`))
+    const marketsDetailsData = (await axios.get(`${url}/chain/${chainId}`))
       .data as IMarketDetails[];
 
       const marketsDetailsMap: Map<string, MarketDetails> = new Map(

@@ -4,14 +4,14 @@ import { erc20abi } from './abi/erc20abi.js';
 import { AllowanceProps, ApproveProps, ParsedTransactionProps, TransferProps } from "./types";
 import { CommonTransactionProps, EtherValue, NoCallback, TransactionOptions, TransactionResult } from "../core/types";
 import { parseValue } from "../common/utils/parse-value";
-import { NOOP } from "../common";
+import { CHAINS, invariant, NOOP } from "../common";
+import { OV_ADDRESS } from "../constants";
 
 export class OverlaySDKOverlayToken extends OverlaySDKModule {
-
-  public ov_address: Address = '0x3E27fAe625f25291bFda517f74bf41DC40721dA2';
-
-  public contractAddress() {
-    return this.ov_address;
+  public async contractAddress() {
+    const chainId = await this.core.rpcProvider.getChainId();
+    invariant(chainId in CHAINS, 'Unsupported chainId');
+    return OV_ADDRESS[chainId as CHAINS];
   }
 
   public async getContract(): Promise<

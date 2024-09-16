@@ -7,6 +7,7 @@ import { OverlaySDK } from "../sdk.js";
 import { formatBigNumber } from "../common/utils/formatBigNumber.js";
 import { formatFundingRateToAnnual, formatFundingRateToDaily } from "../common/utils/formatWei.js";
 import { getMarketsDetailsByChainId } from "../services/marketsDetails.js";
+import { CHAINS, invariant } from "../common/index.js";
 export class OverlaySDKMarkets extends OverlaySDKModule {
   private sdk: OverlaySDK;
 
@@ -17,7 +18,8 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
  
   public async getActiveMarkets(): Promise<any> {
     const chainId = this.core.chainId
-    const activeMarkets = await getActiveMarketsFromSubgraph()
+    invariant(chainId in CHAINS, "Unsupported chainId");
+    const activeMarkets = await getActiveMarketsFromSubgraph(chainId)
 
     const transformedMarketsData = activeMarkets 
     ?  
@@ -64,7 +66,7 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
       }))
     : undefined
 
-    const marketDetails = await getMarketsDetailsByChainId(chainId as unknown as Address)
+    const marketDetails = await getMarketsDetailsByChainId(chainId)
     const marketDetailsIds = marketDetails ? Array.from(marketDetails.keys()) : []
 
     const expandedMarketsData = transformedMarketsData && marketDetails
