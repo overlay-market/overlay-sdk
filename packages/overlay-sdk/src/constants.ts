@@ -192,3 +192,5 @@ export const V1_PERIPHERY_ADDRESS: AddressMap = {
   [SupportedChainId.IMOLA]: "0x0CA6128B528f503C7c649ba9cc02560a8B9fD55e",
   [SupportedChainId.BARTIO]: "0x4f69dfb24958fcf69b70bca73c3e74f2c82bb405",
 };
+
+export const FIRST = 10;

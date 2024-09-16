@@ -6,13 +6,25 @@ import {
   toPercentUnit,
   toScientificNumber,
 } from "../../common/utils";
-import { Address } from "viem";
+import { Address, createWalletClient, http } from "viem";
 import JSBI from "jsbi";
 import { TickMath } from "@uniswap/v3-sdk";
-import { ONE_BN, PRICE_CURRENCY_FROM_QUOTE } from "../../constants";
+import {
+  FIRST,
+  LINKS,
+  ONE_BN,
+  PRICE_CURRENCY_FROM_QUOTE,
+} from "../../constants";
 import { getMarketsDetailsByChainId } from "../../services/marketsDetails";
 import { OverlaySDKModule } from "../../common/class-primitives/sdk-module";
 import { OverlaySDKCommonProps } from "../../core/types";
+import { getOpenPositions } from "../../subgraph";
+import { mainnet } from "viem/chains";
+
+const walletClient = createWalletClient({
+  chain: mainnet,
+  transport: http(),
+});
 
 type OpenPosition = NonNullable<
   NonNullable<OpenPositionsQuery["account"]>["positions"]
@@ -37,15 +49,20 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     super(props);
     this.sdk = sdk;
   }
-  transformOpenPositions = async (
-    openPositions: OpenPosition[]
-  ): Promise<TransformedOpen[]> => {
+  transformOpenPositions = async (): Promise<TransformedOpen[]> => {
+    const rawOpenData = await getOpenPositions({
+      url: LINKS.URL,
+      account: (await walletClient.getAddresses()).join(","),
+      first: FIRST,
+    });
+    const prueba = await walletClient.getAddresses();
+    console.log("prueba", prueba);
     const transformedOpens: TransformedOpen[] = [];
     const chainId = this.core.chainId;
     const marketDetails = await getMarketsDetailsByChainId(
       chainId as unknown as Address
     );
-    for (const open of openPositions) {
+    for (const open of rawOpenData) {
       const positionId = BigInt(open.id.split("-")[1]);
       const walletAddress = await this.sdk.core.getWeb3Address();
       const marketId = open.market.id as Address;

@@ -10,7 +10,9 @@ import {
   toPercentUnit,
   toScientificNumber,
 } from "../../common/utils";
-import { PRICE_CURRENCY_FROM_QUOTE } from "../../constants";
+import { FIRST, LINKS, PRICE_CURRENCY_FROM_QUOTE } from "../../constants";
+import { getUnwindPositions } from "../../subgraph";
+import { walletClient } from "../../walletAddress";
 
 type Unwind = NonNullable<
   NonNullable<UnwindsQuery["account"]>["unwinds"]
@@ -34,15 +36,19 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
     super(props);
     this.sdk = sdk;
   }
-  transformUnwindPositions = async (
-    unwindPositions: Unwind[]
-  ): Promise<TransformedUnwind[]> => {
+  transformUnwindPositions = async (): // unwindPositions: Unwind[]
+  Promise<TransformedUnwind[]> => {
+    const rawUnwindData = await getUnwindPositions({
+      url: LINKS.URL,
+      account: (await walletClient.getAddresses()).join(","),
+      first: FIRST,
+    });
     const transformedUnwinds: TransformedUnwind[] = [];
     const chainId = this.core.chainId;
     const marketDetails = await getMarketsDetailsByChainId(
       chainId as unknown as Address
     );
-    for (const unwind of unwindPositions) {
+    for (const unwind of rawUnwindData) {
       const marketName =
         marketDetails?.get(unwind.id.split("-")[0])?.marketName ?? "";
       const marketDetailsCurrency = marketDetails

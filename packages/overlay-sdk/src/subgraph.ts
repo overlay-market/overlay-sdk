@@ -4,6 +4,7 @@ import {
   OpenPositionsQuery as OpenPositionsQueryDocument,
   UnwindPositionsQuery as UnwindPositionsQueryDocument,
   ActiveMarketsQuery as ActiveMarketsQueryDocument,
+  LiquidatedPositionsQuery as LiquidatedPositionsQueryDocument,
 } from "./queries";
 import {
   OpenPositionsQuery,
@@ -11,6 +12,8 @@ import {
   UnwindsQuery,
   UnwindsQueryVariables,
   ActiveMarketsQuery,
+  LiquidatedPositionsQuery,
+  LiquidatedPositionsQueryVariables,
 } from "./types";
 import { LINKS } from "./constants";
 
@@ -133,13 +136,43 @@ export const getUnwindPositions = async ({
   });
 };
 
+export type GetliquidatedPositionsOptions = {
+  url: string;
+  account: string;
+  first?: number;
+  skip?: number;
+};
+
+type Liquidated = NonNullable<
+  NonNullable<LiquidatedPositionsQuery["account"]>["liquidates"]
+>[number];
+
+export const getLiquidatedPositions = async ({
+  url,
+  account,
+  first,
+}: GetliquidatedPositionsOptions): Promise<Liquidated[]> => {
+  return requestAllWithStep<
+    LiquidatedPositionsQuery,
+    Liquidated,
+    LiquidatedPositionsQueryVariables
+  >({
+    url,
+    document: LiquidatedPositionsQueryDocument,
+    step: first ?? 1000,
+    extractArray: (result) => result?.account?.liquidates ?? [],
+    variables: {
+      account,
+    },
+  });
+};
+
 export const getActiveMarketsFromSubgraph = async () => {
   try {
     const data = await request<ActiveMarketsQuery>(
       LINKS.URL,
       ActiveMarketsQueryDocument
     );
-
     return data.markets;
   } catch (error) {
     console.error("Error fetching active markets data:", error);

@@ -79,7 +79,7 @@ export const UnwindPositionsQuery = gql`
 
 export const ActiveMarketsQuery = gql`
   query activeMarkets {
-    markets(where: {isShutdown: false}) {
+    markets(where: { isShutdown: false }) {
       id
       feedAddress
       factory {
@@ -101,6 +101,44 @@ export const ActiveMarketsQuery = gql`
       priceDriftUpperLimit
       averageBlockTime
       isShutdown
+    }
+  }
+`;
+
+export const LiquidatedPositionsQuery = gql`
+  query liquidatedPositions($account: ID!, $first: Int, $skip: Int) {
+    account(id: $account) {
+      liquidates(
+        orderBy: timestamp
+        orderDirection: desc
+        first: $first
+        skip: $skip
+      ) {
+        collateral
+        currentDebt
+        currentOi
+        id
+        isLong
+        mint
+        price
+        timestamp
+        value
+        size
+        position {
+          createdAtTimestamp
+          currentOi
+          entryPrice
+          fractionUnwound
+          id
+          initialCollateral
+          isLong
+          leverage
+          market {
+            feedAddress
+            id
+          }
+        }
+      }
     }
   }
 `;

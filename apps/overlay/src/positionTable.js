@@ -15,28 +15,11 @@ const PositionsTable = () => {
   const [positions, setPositions] = useState([]);
   const [openPositions, setOpenPositions] = useState([]);
 
-  const url = LINKS.URL;
-  const account = "0x42e372d3ab3ac53036997bae6d1ab77c2ecd64b3";
-  const first = 10;
-  const skip = 0;
-
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const rawUnwindData = await getUnwindPositions({
-          url,
-          account,
-          first,
-          skip,
-        });
-        const transformedData = await sdk.unwindPositions.transformUnwindPositions(rawUnwindData);
-        const rawOpenData = await getOpenPositions({
-          url,
-          account,
-          first,
-          skip,
-        });
-        const transformedOpenPositions = await sdk.openPositions.transformOpenPositions(rawOpenData);
+        const transformedData = await sdk.unwindPositions.transformUnwindPositions();
+        const transformedOpenPositions = await sdk.openPositions.transformOpenPositions();
         setPositions(transformedData);
         setOpenPositions(transformedOpenPositions);
       } catch (error) {
