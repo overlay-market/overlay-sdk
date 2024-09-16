@@ -22,3 +22,5 @@ export const VIEM_CHAINS: { [key in CHAINS]: Chain } = {
 export const enum OVERLAY_CONTRACT_NAMES {
   overlayV1Market = "overlayV1Market",
 }
+
+export const NOOP = () => {};
