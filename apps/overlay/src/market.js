@@ -1,24 +1,10 @@
 import React, { useEffect, useState } from 'react'
 
-import { OverlaySDK } from 'overlay-sdk'
-import { createPublicClient, http } from 'viem'
-import { arbitrumSepolia } from 'viem/chains'
+import useSDK from './hooks/useSDK'
 
 const Market = () => {
   const [account, setAccount] = useState()
-
-  const rpcProvider = createPublicClient({
-    chain: arbitrumSepolia,
-    transport: http(),
-  })
-
-  const web3Provider = window.ethereum
-
-  const sdk = new OverlaySDK({
-    chainId: 421614,
-    rpcProvider,
-    web3Provider,
-  })
+  const sdk = useSDK()
 
   useEffect(() => {
     try {
@@ -27,6 +13,11 @@ const Market = () => {
       console.error('Error in getting web3 address', error)
     }
   }, [])
+
+  const getWeb3Provider = async () => {
+    const chainId = await sdk.core.rpcProvider.getChainId()
+    console.log('Chain data: ', chainId)
+  }
 
   const getWeb3Address = async () => {
     const address = await sdk.core.getWeb3Address()
@@ -270,6 +261,8 @@ const Market = () => {
 
   return (
     <div>
+      <h3>web3 provider</h3>
+      <button onClick={getWeb3Provider}>Get chain data</button>
       <h3>OV token methods</h3>
       <button onClick={checkBalance}>Check balance</button>
       <br />

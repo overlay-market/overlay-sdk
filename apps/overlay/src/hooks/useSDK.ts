@@ -18,6 +18,7 @@ export default function useSDK() {
     rpcProvider,
     web3Provider
   });
-    return sdk 
-
+  console.log('overlay-sdk initialized with chainId:', chainId)
+  return sdk
+  
 }

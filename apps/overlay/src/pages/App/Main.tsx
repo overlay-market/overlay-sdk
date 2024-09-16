@@ -4,6 +4,7 @@ import { MultichainContextProvider } from "../../state/multichain/MultichainCont
 import { useMultichainContext } from "../../state/multichain/useMultichainContext";
 import PositionsTable from "../../positionTable";
 import MarketsTable from "../Markets/marketsTable";
+import Market from "../../market";
 
 function Main() {
   const { address: account, chainId } = useAccount();
@@ -21,6 +22,9 @@ function Main() {
 
           <h1>Markets table</h1>
           <MarketsTable />
+
+          <h1>Market</h1>
+          <Market />
           <br />
           <p>current account - {account}</p>
           <p>useAccount chainId - {chainId}</p>
