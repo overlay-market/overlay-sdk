@@ -12,7 +12,6 @@ import {
 } from "../../common/utils";
 import { FIRST, LINKS, PRICE_CURRENCY_FROM_QUOTE } from "../../constants";
 import { getUnwindPositions } from "../../subgraph";
-import { walletClient } from "../../walletAddress";
 
 type Unwind = NonNullable<
   NonNullable<UnwindsQuery["account"]>["unwinds"]
@@ -38,9 +37,10 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
   }
   transformUnwindPositions = async (): // unwindPositions: Unwind[]
   Promise<TransformedUnwind[]> => {
+    const walletClient = (await this.sdk.core.getWeb3Address()).toLowerCase();
     const rawUnwindData = await getUnwindPositions({
       url: LINKS.URL,
-      account: (await walletClient.getAddresses()).join(","),
+      account: walletClient,
       first: FIRST,
     });
     const transformedUnwinds: TransformedUnwind[] = [];

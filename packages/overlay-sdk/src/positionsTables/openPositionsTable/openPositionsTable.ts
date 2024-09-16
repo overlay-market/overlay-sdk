@@ -21,11 +21,6 @@ import { OverlaySDKCommonProps } from "../../core/types";
 import { getOpenPositions } from "../../subgraph";
 import { mainnet } from "viem/chains";
 
-const walletClient = createWalletClient({
-  chain: mainnet,
-  transport: http(),
-});
-
 type OpenPosition = NonNullable<
   NonNullable<OpenPositionsQuery["account"]>["positions"]
 >[number];
@@ -50,13 +45,12 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     this.sdk = sdk;
   }
   transformOpenPositions = async (): Promise<TransformedOpen[]> => {
+    const walletClient = (await this.sdk.core.getWeb3Address()).toLowerCase();
     const rawOpenData = await getOpenPositions({
       url: LINKS.URL,
-      account: (await walletClient.getAddresses()).join(","),
+      account: walletClient,
       first: FIRST,
     });
-    const prueba = await walletClient.getAddresses();
-    console.log("prueba", prueba);
     const transformedOpens: TransformedOpen[] = [];
     const chainId = this.core.chainId;
     const marketDetails = await getMarketsDetailsByChainId(

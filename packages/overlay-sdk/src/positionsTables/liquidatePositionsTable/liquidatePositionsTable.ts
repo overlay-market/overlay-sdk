@@ -32,14 +32,10 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
   }
 
   transformLiquidatedPositions = async (): Promise<TransformedLiquidated[]> => {
-    const walletClient = createWalletClient({
-      chain: mainnet,
-      transport: http(),
-    });
-    console.log("walletClient", walletClient);
+    const walletClient = (await this.sdk.core.getWeb3Address()).toLowerCase();
     const rawliquidatedPositions = await getLiquidatedPositions({
       url: LINKS.URL,
-      account: (await walletClient.getAddresses()).join(","),
+      account: walletClient,
       first: 10,
     });
     const transformedLiquidated: TransformedLiquidated[] = [];
