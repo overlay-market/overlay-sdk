@@ -16,15 +16,18 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
     this.sdk = sdk;
   }  
  
-  public async getActiveMarkets(): Promise<any> {
+  public async getActiveMarkets() {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
-    const activeMarkets = await getActiveMarketsFromSubgraph(chainId)
+    const marketDetails = await getMarketsDetailsByChainId(chainId)
+    const marketDetailsValues = marketDetails && Array.from(marketDetails?.values())
 
-    const transformedMarketsData = activeMarkets 
+    const transformedMarketsData = marketDetailsValues 
     ?  
-      await Promise.allSettled(activeMarkets.map(async(market) => {
-        const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], market.id as Address)
+      await Promise.allSettled(marketDetailsValues.map(async(market) => {
+        if (market.disabled) return undefined
+        const marketId = market.id as Address
+        const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketId)
        
         if (result) {
           let parsedBid: string | number | undefined = undefined
@@ -50,14 +53,14 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
         return {
           ...market,
           ...result,
-            parsedBid,
-            parsedAsk,
-            parsedMid,
-            parsedOiLong,
-            parsedOiShort,
-            parsedCapOi,
-            parsedDailyFundingRate,
-            parsedAnnualFundingRate,
+          parsedBid,
+          parsedAsk,
+          parsedMid,
+          parsedOiLong,
+          parsedOiShort,
+          parsedCapOi,
+          parsedDailyFundingRate,
+          parsedAnnualFundingRate,
         }
         } else {
           return undefined
@@ -66,7 +69,6 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
       }))
     : undefined
 
-    const marketDetails = await getMarketsDetailsByChainId(chainId)
     const marketDetailsIds = marketDetails ? Array.from(marketDetails.keys()) : []
 
     const expandedMarketsData = transformedMarketsData && marketDetails
