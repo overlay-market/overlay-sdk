@@ -53,14 +53,14 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
         return {
           ...market,
           ...result,
-            parsedBid,
-            parsedAsk,
-            parsedMid,
-            parsedOiLong,
-            parsedOiShort,
-            parsedCapOi,
-            parsedDailyFundingRate,
-            parsedAnnualFundingRate,
+          parsedBid,
+          parsedAsk,
+          parsedMid,
+          parsedOiLong,
+          parsedOiShort,
+          parsedCapOi,
+          parsedDailyFundingRate,
+          parsedAnnualFundingRate,
         }
         } else {
           return undefined
