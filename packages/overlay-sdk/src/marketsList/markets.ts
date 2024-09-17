@@ -16,7 +16,7 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
     this.sdk = sdk;
   }  
  
-  public async getActiveMarkets(): Promise<any> {
+  public async getActiveMarkets() {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
     const marketDetails = await getMarketsDetailsByChainId(chainId)
