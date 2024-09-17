@@ -8,34 +8,35 @@ import {
   TableRow,
   Paper,
 } from "@mui/material";
-import { getUnwindPositions, transformUnwindPositions, LINKS, transformOpenPositions, getOpenPositions, getMarketNames } from "overlay-sdk";
+import { getUnwindPositions, transformUnwindPositions, transformOpenPositions, getOpenPositions } from "overlay-sdk";
 
 const PositionsTable = () => {
   const [positions, setPositions] = useState([]);
   const [openPositions, setOpenPositions] = useState([]);
 
-  const url = LINKS.URL;
   const account = "0x42e372d3ab3ac53036997bae6d1ab77c2ecd64b3";
   const first = 10;
   const skip = 0;
+
+  const chainId = 421614; // Arbitrum
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const rawUnwindData = await getUnwindPositions({
-          url,
+          chainId,
           account,
           first,
           skip,
         });
-        const transformedData = await transformUnwindPositions(rawUnwindData);
+        const transformedData = await transformUnwindPositions(chainId, rawUnwindData);
         const rawOpenData = await getOpenPositions({
-          url,
+          chainId,
           account,
           first,
           skip,
         });
-        const transformedOpenPositions = await transformOpenPositions(rawOpenData);
+        const transformedOpenPositions = await transformOpenPositions(chainId, rawOpenData);
         setPositions(transformedData);
         setOpenPositions(transformedOpenPositions);
       } catch (error) {

@@ -7,6 +7,7 @@ import { OverlaySDK } from "../sdk.js";
 import { formatBigNumber } from "../common/utils/formatBigNumber.js";
 import { formatFundingRateToAnnual, formatFundingRateToDaily } from "../common/utils/formatWei.js";
 import { getMarketsDetailsByChainId } from "../services/marketsDetails.js";
+import { CHAINS, invariant } from "../common/index.js";
 export class OverlaySDKMarkets extends OverlaySDKModule {
   private sdk: OverlaySDK;
 
@@ -15,14 +16,18 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
     this.sdk = sdk;
   }  
  
-  public async getActiveMarkets(): Promise<any> {
+  public async getActiveMarkets() {
     const chainId = this.core.chainId
-    const activeMarkets = await getActiveMarketsFromSubgraph()
+    invariant(chainId in CHAINS, "Unsupported chainId");
+    const marketDetails = await getMarketsDetailsByChainId(chainId)
+    const marketDetailsValues = marketDetails && Array.from(marketDetails?.values())
 
-    const transformedMarketsData = activeMarkets 
+    const transformedMarketsData = marketDetailsValues 
     ?  
-      await Promise.allSettled(activeMarkets.map(async(market) => {
-        const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], market.id as Address)
+      await Promise.allSettled(marketDetailsValues.map(async(market) => {
+        if (market.disabled) return undefined
+        const marketId = market.id as Address
+        const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketId)
        
         if (result) {
           let parsedBid: string | number | undefined = undefined
@@ -48,14 +53,14 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
         return {
           ...market,
           ...result,
-            parsedBid,
-            parsedAsk,
-            parsedMid,
-            parsedOiLong,
-            parsedOiShort,
-            parsedCapOi,
-            parsedDailyFundingRate,
-            parsedAnnualFundingRate,
+          parsedBid,
+          parsedAsk,
+          parsedMid,
+          parsedOiLong,
+          parsedOiShort,
+          parsedCapOi,
+          parsedDailyFundingRate,
+          parsedAnnualFundingRate,
         }
         } else {
           return undefined
@@ -64,7 +69,6 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
       }))
     : undefined
 
-    const marketDetails = await getMarketsDetailsByChainId(chainId as unknown as Address)
     const marketDetailsIds = marketDetails ? Array.from(marketDetails.keys()) : []
 
     const expandedMarketsData = transformedMarketsData && marketDetails

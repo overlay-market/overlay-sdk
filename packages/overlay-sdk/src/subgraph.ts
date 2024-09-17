@@ -12,7 +12,7 @@ import {
   UnwindsQueryVariables,
   ActiveMarketsQuery
 } from "./types";
-import { LINKS, MarketDetails, ONE_BN } from "./constants";
+import { MarketDetails, NETWORKS, ONE_BN } from "./constants";
 import {
   formatBigNumber,
   formatUnixTimestampToDate,
@@ -23,17 +23,20 @@ import { sdk } from "./sdk";
 import { type Address } from "viem";
 import JSBI from "jsbi";
 import { TickMath } from "@uniswap/v3-sdk";
+import { CHAINS, invariant } from "./common";
 
 // Get the address
 async function getWalletAddress() {
-  const address = await sdk.core.getWeb3Address();
+  const address = (await sdk.core.useAccount()).address;
+
   return address;
 }
 
-export const getMarketNames = async (marketAddress: string) => {
+export const getMarketNames = async (chainId: CHAINS, marketAddress: string) => {
   try {
-    const response = await axios.get(`${LINKS.MARKET_PRICES_API}/markets`);
-    const markets = (await axios.get(`${LINKS.MARKET_PRICES_API}/markets`))
+    invariant(chainId in CHAINS, "Unsupported chainId");
+    const api_url = NETWORKS[chainId].MARKET_PRICES_API
+    const markets = (await axios.get(`${api_url}/markets`))
       .data as {
       address: string;
       name?: string;
@@ -46,9 +49,11 @@ export const getMarketNames = async (marketAddress: string) => {
   }
 };
 
-export const getCurrencySymbol = async (marketAddress: string) => {
+export const getCurrencySymbol = async (chainId: CHAINS) => {
   try {
-    const markets = (await axios.get(`${LINKS.MARKET_PRICES_API}/markets`))
+    invariant(chainId in CHAINS, "Unsupported chainId");
+    const api_url = NETWORKS[chainId].MARKET_PRICES_API
+    const markets = (await axios.get(`${api_url}/markets`))
       .data as {
       address: string;
       name: string;
@@ -108,7 +113,7 @@ const requestAllWithStep = async <TResult, TResultEntry, TVariables>({
 };
 
 export type GetOpenPositionsOptions = {
-  url: string;
+  chainId: CHAINS;
   account: string;
   first?: number;
   skip?: number;
@@ -119,10 +124,12 @@ type OpenPosition = NonNullable<
 >[number];
 
 export const getOpenPositions = async ({
-  url,
+  chainId,
   account,
   first,
 }: GetOpenPositionsOptions): Promise<OpenPosition[]> => {
+  invariant(chainId in CHAINS, "Unsupported chainId");
+  const url = NETWORKS[chainId].SUBGRAPH_URL;
   return requestAllWithStep<
     OpenPositionsQuery,
     OpenPosition,
@@ -150,8 +157,10 @@ type TransformedOpen = {
   parsedFunding: string | number | undefined;
 };
 export const transformOpenPositions = async (
+  chainId: CHAINS,
   openPositions: OpenPosition[]
 ): Promise<TransformedOpen[]> => {
+  invariant(chainId in CHAINS, "Unsupported chainId");
   const transformedOpens: TransformedOpen[] = [];
   for (const open of openPositions) {
     const positionId = BigInt(open.id.split("-")[1]);
@@ -203,7 +212,7 @@ export const transformOpenPositions = async (
       "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
       marketId
     );
-    const marketName = await getMarketNames(open.id.split("-")[0]);
+    const marketName = await getMarketNames(chainId, open.id.split("-")[0]);
     const priceCurrency = MarketDetails[open.id.split("-")[0]]?.currency;
     const parsedEntryPrice = formatBigNumber(entryPrice, Number(18));
     const parsedValue: string | number | undefined = (() => {
@@ -294,7 +303,7 @@ export const transformOpenPositions = async (
 };
 
 export type GetUnwindPositionsOptions = {
-  url: string;
+  chainId: CHAINS;
   account: string;
   first?: number;
   skip?: number;
@@ -316,10 +325,12 @@ type TransformedUnwind = {
 };
 
 export const getUnwindPositions = async ({
-  url,
+  chainId,
   account,
   first,
 }: GetUnwindPositionsOptions): Promise<Unwind[]> => {
+  invariant(chainId in CHAINS, "Unsupported chainId");
+  const url = NETWORKS[chainId].SUBGRAPH_URL;
   return requestAllWithStep<UnwindsQuery, Unwind, UnwindsQueryVariables>({
     url,
     document: UnwindPositionsQueryDocument,
@@ -332,11 +343,12 @@ export const getUnwindPositions = async ({
 };
 
 export const transformUnwindPositions = async (
+  chainId: CHAINS,
   unwindPositions: Unwind[]
 ): Promise<TransformedUnwind[]> => {
   const transformedUnwinds: TransformedUnwind[] = [];
   for (const unwind of unwindPositions) {
-    const marketName = await getMarketNames(unwind.id.split("-")[0]);
+    const marketName = await getMarketNames(chainId, unwind.id.split("-")[0]);
     const priceCurrency = MarketDetails[unwind.id.split("-")[0]]?.currency;
     const parsedEntryPrice = formatBigNumber(
       unwind.position.entryPrice,
@@ -381,10 +393,11 @@ export const transformUnwindPositions = async (
   return transformedUnwinds;
 };
 
-export const getActiveMarketsFromSubgraph = async() => {
+export const getActiveMarketsFromSubgraph = async(chainId: CHAINS) => {
+  invariant(chainId in CHAINS, "Unsupported chainId");
   try {
     const data = await request<ActiveMarketsQuery>(
-      LINKS.URL,
+      NETWORKS[chainId].SUBGRAPH_URL,
       ActiveMarketsQueryDocument
     );
    
