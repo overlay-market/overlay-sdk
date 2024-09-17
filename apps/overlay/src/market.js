@@ -1,28 +1,13 @@
-import React, { useEffect, useState } from 'react'
-
 import useSDK from './hooks/useSDK'
+import { useAccount } from './hooks/useAccount';
 
 const Market = () => {
-  const [account, setAccount] = useState()
+  const { address: account } = useAccount();
   const sdk = useSDK()
-
-  useEffect(() => {
-    try {
-      getWeb3Address()
-    } catch (error) {
-      console.error('Error in getting web3 address', error)
-    }
-  }, [])
 
   const getWeb3Provider = async () => {
     const chainId = await sdk.core.rpcProvider.getChainId()
     console.log('Chain data: ', chainId)
-  }
-
-  const getWeb3Address = async () => {
-    const address = await sdk.core.getWeb3Address()
-    console.log('market component ' + address)
-    setAccount(address)
   }
 
   // OV token methods
