@@ -28,6 +28,8 @@ const MarketsTable = () => {
     const fetchData = async () => {
       try {
         const activeMarkets = await sdk.markets.getActiveMarkets();
+        console.log("ETH Dominance", await sdk.markets.getMarketDetails("ETH Dominance"));
+        console.log("activeMarkets", activeMarkets);
 
         activeMarkets && setMarkets(activeMarkets);
       } catch (error) {
