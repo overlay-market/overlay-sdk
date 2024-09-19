@@ -8,6 +8,7 @@ export interface IChainInfo {
 
 export interface IMarketDetails {
   _id: string;
+  marketId: string;
   marketName: string;
   logo: string;
   currency: string;

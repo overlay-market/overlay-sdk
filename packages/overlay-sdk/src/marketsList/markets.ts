@@ -6,7 +6,7 @@ import { MARKET_LOGO, PRICE_CURRENCY_FROM_QUOTE, V1_PERIPHERY_ADDRESS, ORACLE_LO
 import { OverlaySDK } from "../sdk.js";
 import { formatBigNumber } from "../common/utils/formatBigNumber.js";
 import { formatFundingRateToAnnual, formatFundingRateToDaily } from "../common/utils/formatWei.js";
-import { getMarketsDetailsByChainId } from "../services/marketsDetails.js";
+import { getMarketDetailsById, getMarketsDetailsByChainId } from "../services/marketsDetails.js";
 import { CHAINS, invariant } from "../common/index.js";
 export class OverlaySDKMarkets extends OverlaySDKModule {
   private sdk: OverlaySDK;
@@ -14,8 +14,57 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
   constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK) {
     super(props);
     this.sdk = sdk;
-  }  
- 
+  }
+
+  public async getMarketDetails(marketId: string) {
+    const chainId = this.core.chainId
+    invariant(chainId in CHAINS, "Unsupported chainId");
+
+    const marketDetails = await getMarketDetailsById(marketId, chainId)
+    invariant(marketDetails, "Market not found");
+
+    const contract = marketDetails.chains.filter((chain) => chain.chainId === chainId)[0].deploymentAddress
+    const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], contract as Address)
+
+    if (result) {
+      let parsedBid: string | number | undefined = undefined
+      let parsedAsk: string | number | undefined = undefined
+      let parsedMid: string | number | undefined = undefined
+      let parsedOiLong: string | number | undefined = undefined
+      let parsedOiShort: string | number | undefined = undefined
+      let parsedCapOi: string | number | undefined = undefined
+      let parsedDailyFundingRate: string | number | undefined = undefined
+      let parsedAnnualFundingRate: string | number | undefined = undefined
+
+      const decimals = 18
+
+      parsedBid = decimals && formatBigNumber(result.bid, decimals, 5)
+      parsedAsk = decimals && formatBigNumber(result.ask, decimals, 5)
+      parsedMid = decimals && formatBigNumber(result.mid, decimals, 5)
+      parsedOiLong = decimals && formatBigNumber(result.oiLong, decimals, 18)
+      parsedOiShort = decimals && formatBigNumber(result.oiShort, decimals, 18)
+      parsedCapOi = decimals && formatBigNumber(result.capOi, decimals, 18)
+      parsedDailyFundingRate = decimals && formatFundingRateToDaily(result.fundingRate, 18, 2)
+      parsedAnnualFundingRate = decimals && formatFundingRateToAnnual(result.fundingRate, 18, 2)
+
+      return {
+        ...marketDetails,
+        ...result,
+        contract,
+        parsedBid,
+        parsedAsk,
+        parsedMid,
+        parsedOiLong,
+        parsedOiShort,
+        parsedCapOi,
+        parsedDailyFundingRate,
+        parsedAnnualFundingRate,
+      }
+    } else {
+      return undefined
+    }
+  }
+
   public async getActiveMarkets() {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
