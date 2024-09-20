@@ -23,8 +23,8 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
     const marketDetails = await getMarketDetailsById(marketId, chainId)
     invariant(marketDetails, "Market not found");
 
-    const contract = marketDetails.chains.filter((chain) => chain.chainId === chainId)[0].deploymentAddress
-    const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], contract as Address)
+    const marketAddress = marketDetails.chain?.deploymentAddress as Address
+    const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketAddress as Address)
 
     if (result) {
       let parsedBid: string | number | undefined = undefined
@@ -49,8 +49,10 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
 
       return {
         ...marketDetails,
-        ...result,
-        contract,
+        volumeAsk: result.volumeAsk,
+        volumeBid: result.volumeBid,
+        circuitBreakerLevel: result.circuitBreakerLevel,
+        marketAddress,
         parsedBid,
         parsedAsk,
         parsedMid,

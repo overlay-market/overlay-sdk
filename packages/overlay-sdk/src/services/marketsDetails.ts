@@ -42,6 +42,7 @@ export const getMarketDetailsById = async (marketId: string, chainId: CHAINS) =>
   try {
     const marketDetailsData = (await axios.get(`${url}/${marketId}`))
       .data as IMarketDetails;
+    const chain = marketDetailsData.chains.find((chain) => chain.chainId === chainId);
 
     const marketDetail = {
       marketName: marketDetailsData.marketName,
@@ -52,15 +53,7 @@ export const getMarketDetailsById = async (marketId: string, chainId: CHAINS) =>
       fullLogo: marketDetailsData.fullLogo,
       oracleLogo: marketDetailsData.oracleLogo,
       indexesConstruction: marketDetailsData.indexesConstruction || [],
-      chains: marketDetailsData.chains.map((chain) => {
-        return {
-          chainId: chain.chainId,
-          chainName: chain.chainName,
-          deploymentAddress: chain.deploymentAddress,
-          explorerUrl: chain.explorerUrl,
-          disabled: chain.disabled,
-        };
-      }),
+      chain,
       sources: marketDetailsData.sources ? marketDetailsData.sources.map((source) => source.name) : [],
     };
 
