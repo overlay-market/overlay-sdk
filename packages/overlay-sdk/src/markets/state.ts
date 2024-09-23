@@ -194,4 +194,28 @@ export class OverlaySDKState extends OverlaySDKModule {
     const mid = marketState.mid;
     return mid;
   }
+
+  public async getOiEstimate(state: Address, market: Address, collateral: bigint, leverage: bigint, isLong: boolean): Promise<bigint> {
+    const contract = await this.getContractV1State(state);
+    const oi = await contract.read.oiEstimate([market, collateral, leverage, isLong]);
+    return oi;
+  }
+
+  public async getFractionOfCapOi(state: Address, market: Address, oi: bigint): Promise<bigint> {
+    const contract = await this.getContractV1State(state);
+    const fraction = await contract.read.fractionOfCapOi([market, oi]);
+    return fraction;
+  }
+
+  public async getBid(state: Address, market: Address, fractionOfCapOi: bigint): Promise<bigint> {
+    const contract = await this.getContractV1State(state);
+    const bid = await contract.read.bid([market, fractionOfCapOi]);
+    return bid;
+  }
+
+  public async getAsk(state: Address, market: Address, fractionOfCapOi: bigint): Promise<bigint> {
+    const contract = await this.getContractV1State(state);
+    const ask = await contract.read.ask([market, fractionOfCapOi]);
+    return ask;
+  }
 }
