@@ -24,46 +24,10 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
     invariant(marketDetails, "Market not found");
 
     const marketAddress = marketDetails.chain?.deploymentAddress as Address
-    const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketAddress as Address)
 
-    if (result) {
-      let parsedBid: string | number | undefined = undefined
-      let parsedAsk: string | number | undefined = undefined
-      let parsedMid: string | number | undefined = undefined
-      let parsedOiLong: string | number | undefined = undefined
-      let parsedOiShort: string | number | undefined = undefined
-      let parsedCapOi: string | number | undefined = undefined
-      let parsedDailyFundingRate: string | number | undefined = undefined
-      let parsedAnnualFundingRate: string | number | undefined = undefined
-
-      const decimals = 18
-
-      parsedBid = decimals && formatBigNumber(result.bid, decimals, 5)
-      parsedAsk = decimals && formatBigNumber(result.ask, decimals, 5)
-      parsedMid = decimals && formatBigNumber(result.mid, decimals, 5)
-      parsedOiLong = decimals && formatBigNumber(result.oiLong, decimals, 18)
-      parsedOiShort = decimals && formatBigNumber(result.oiShort, decimals, 18)
-      parsedCapOi = decimals && formatBigNumber(result.capOi, decimals, 18)
-      parsedDailyFundingRate = decimals && formatFundingRateToDaily(result.fundingRate, 18, 2)
-      parsedAnnualFundingRate = decimals && formatFundingRateToAnnual(result.fundingRate, 18, 2)
-
-      return {
-        ...marketDetails,
-        volumeAsk: result.volumeAsk,
-        volumeBid: result.volumeBid,
-        circuitBreakerLevel: result.circuitBreakerLevel,
-        marketAddress,
-        parsedBid,
-        parsedAsk,
-        parsedMid,
-        parsedOiLong,
-        parsedOiShort,
-        parsedCapOi,
-        parsedDailyFundingRate,
-        parsedAnnualFundingRate,
-      }
-    } else {
-      return undefined
+    return {
+      ...marketDetails,
+      marketAddress,
     }
   }
 
