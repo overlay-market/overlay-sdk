@@ -2,6 +2,7 @@ import { createPublicClient, http } from "viem";
 import { OverlaySDKCore, OverlaySDKCoreProps } from "./core/index.js";
 import { OverlaySDKMarket, OverlaySDKState } from "./markets/index.js";
 import { OverlaySDKOverlayToken } from "./ov/index.js";
+import { OverlaySDKTrade } from "./trade/index.js";
 
 import { OverlaySDKMarkets } from './marketsList/index.js';
 import { arbitrumSepolia } from "viem/chains";
@@ -11,6 +12,7 @@ export class OverlaySDK {
   readonly state: OverlaySDKState;
   readonly midPrice: OverlaySDKState;
   readonly ov: OverlaySDKOverlayToken;
+  readonly trade: OverlaySDKTrade;
   readonly markets: OverlaySDKMarkets;
 
   constructor(props: OverlaySDKCoreProps) {
@@ -22,6 +24,7 @@ export class OverlaySDK {
     this.state = new OverlaySDKState({ ...props, core });
     this.midPrice = new OverlaySDKState({ ...props, core });
     this.ov = new OverlaySDKOverlayToken({ ...props, core });
+    this.trade = new OverlaySDKTrade({ ...props, core }, this);
     this.markets = new OverlaySDKMarkets({ ...props, core }, this);
   }
 }
