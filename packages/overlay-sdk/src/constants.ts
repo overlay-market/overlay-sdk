@@ -15,6 +15,7 @@ import NFTPerpOracleLogo from "./assets/oracles_logo/oracle-type-nftperp.png";
 import OverlayOracleLogo from "./assets/oracles_logo/oracle-type-overlay.png";
 import TruflationOracleLogo from "./assets/oracles_logo/oracle-type-truflation.png";
 import PythOracleLogo from "./assets/oracles_logo/oracle-type-pyth.png";
+import { CHAINS } from "./common";
 
 export const LINKS = {
   MARKET_PRICES_API: "https://api.overlay.market/sepolia-charts/v1/charts",
@@ -184,13 +185,44 @@ export enum SupportedChainId {
   BARTIO = 80084,
 }
 
+export const FIRST = 10;
 export type AddressMap = { [chainId: number]: Address };
 
 export const V1_PERIPHERY_ADDRESS: AddressMap = {
-  [SupportedChainId.ARBITRUM_SEPOLIA]:
-    "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
-  [SupportedChainId.IMOLA]: "0x0CA6128B528f503C7c649ba9cc02560a8B9fD55e",
-  [SupportedChainId.BARTIO]: "0x4f69dfb24958fcf69b70bca73c3e74f2c82bb405",
+  [CHAINS.ArbitrumSepolia]: "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
+  [CHAINS.Imola]: "0x0CA6128B528f503C7c649ba9cc02560a8B9fD55e",
+  [CHAINS.Bartio]: "0x4f69dfb24958fcf69b70bca73c3e74f2c82bb405",
 };
 
-export const FIRST = 10;
+export const OV_ADDRESS: AddressMap = {
+  [CHAINS.ArbitrumSepolia]: "0x3E27fAe625f25291bFda517f74bf41DC40721dA2",
+  [CHAINS.Imola]: "0xCde46284D32148c4D470fA33BA788710b3d21E89",
+  [CHAINS.Bartio]: "0x97576e088f0d05EF68cac2EEc63d017FE90952a0",
+};
+
+interface Network {
+  MARKET_PRICES_API: string;
+  SUBGRAPH_URL: string;
+  MARKETS_DETAILS_API: string;
+}
+
+export const NETWORKS: { [chainId: number]: Network } = {
+  [CHAINS.ArbitrumSepolia]: {
+    MARKET_PRICES_API: "https://api.overlay.market/sepolia-charts/v1/charts",
+    SUBGRAPH_URL:
+      "https://api.studio.thegraph.com/query/77621/overlay-sepolia-test-less-call/version/latest",
+    MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets", // http://localhost:4000/api/markets
+  },
+  [CHAINS.Imola]: {
+    MARKET_PRICES_API: "https://api.overlay.market/imola-charts/v1/charts",
+    SUBGRAPH_URL:
+      "https://subgraph.overlay.market/query/subgraphs/name/overlay/v1-subgraph",
+    MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets", // http://localhost:4000/api/markets
+  },
+  [CHAINS.Bartio]: {
+    MARKET_PRICES_API: "https://api.overlay.market/bartio-charts/v1/charts",
+    SUBGRAPH_URL:
+      "https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-bartio/prod/gn",
+    MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets", // http://localhost:4000/api/markets
+  },
+};

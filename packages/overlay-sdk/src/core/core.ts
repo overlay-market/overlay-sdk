@@ -119,27 +119,6 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
     return this.#web3Provider;
   }
 
-  public async getWeb3Address(accountValue?: AccountValue): Promise<Address> {
-    if (typeof accountValue === "string") return accountValue;
-    if (accountValue) return accountValue.address;
-    const web3Provider = this.useWeb3Provider();
-
-    if (web3Provider.account) return web3Provider.account.address;
-
-    const walletClient = OverlaySDKCore.createWeb3Provider(
-      this.chainId,
-      this.#web3Provider
-    );
-
-    const accounts = await walletClient.requestAddresses();
-    invariant(
-      accounts,
-      "web3provider must have at least 1 account",
-      ERROR_CODE.PROVIDER_ERROR
-    );
-    return accounts[0];
-  }
-
   // @Logger('Utils:')
   public async useAccount(
     accountValue?: AccountValue,

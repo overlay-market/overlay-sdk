@@ -14,12 +14,14 @@ import {
   LINKS,
   ONE_BN,
   PRICE_CURRENCY_FROM_QUOTE,
+  V1_PERIPHERY_ADDRESS,
 } from "../../constants";
 import { getMarketsDetailsByChainId } from "../../services/marketsDetails";
 import { OverlaySDKModule } from "../../common/class-primitives/sdk-module";
 import { OverlaySDKCommonProps } from "../../core/types";
 import { getOpenPositions } from "../../subgraph";
 import { mainnet } from "viem/chains";
+import { CHAINS } from "../../common";
 
 type OpenPosition = NonNullable<
   NonNullable<OpenPositionsQuery["account"]>["positions"]
@@ -45,65 +47,62 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     this.sdk = sdk;
   }
   transformOpenPositions = async (): Promise<TransformedOpen[]> => {
-    const walletClient = (await this.sdk.core.getWeb3Address()).toLowerCase();
+    const walletClient = "0x42e372d3ab3ac53036997bae6d1ab77c2ecd64b3";
+    const chainId = this.core.chainId;
     const rawOpenData = await getOpenPositions({
-      url: LINKS.URL,
+      chainId: chainId,
       account: walletClient,
       first: FIRST,
     });
     const transformedOpens: TransformedOpen[] = [];
-    const chainId = this.core.chainId;
-    const marketDetails = await getMarketsDetailsByChainId(
-      chainId as unknown as Address
-    );
+    const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
     for (const open of rawOpenData) {
       const positionId = BigInt(open.id.split("-")[1]);
-      const walletAddress = await this.sdk.core.getWeb3Address();
       const marketId = open.market.id as Address;
       const entryPrice = open.entryPrice;
       const isLong = open.isLong;
       const leverage = open.leverage;
       const positionValue = await this.sdk.state.getValue(
-        "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
+        V1_PERIPHERY_ADDRESS[chainId],
         marketId,
-        walletAddress,
+        walletClient,
         positionId
       );
       if (positionValue === BigInt(0)) {
         continue;
       }
       const currentOi = await this.sdk.state.getCurrentOi(
-        "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
+        V1_PERIPHERY_ADDRESS[chainId],
         marketId,
-        walletAddress,
+        walletClient,
         positionId
       );
       const liquidatePrice = await this.sdk.state.getLiquidatePrice(
-        "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
+        V1_PERIPHERY_ADDRESS[chainId],
         marketId,
-        walletAddress,
+        walletClient,
         positionId
       );
       const info = await this.sdk.state.getInfo(
-        "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
+        V1_PERIPHERY_ADDRESS[chainId],
         marketId,
-        walletAddress,
+        walletClient,
         positionId
       );
       const cost = await this.sdk.state.getCost(
-        "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
+        V1_PERIPHERY_ADDRESS[chainId],
         marketId,
-        walletAddress,
+        walletClient,
         positionId
       );
       const tradingFee = await this.sdk.state.getTradingFee(
-        "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
+        V1_PERIPHERY_ADDRESS[chainId],
         marketId,
-        walletAddress,
+        walletClient,
         positionId
       );
       const marketMid = await this.sdk.state.getMidPrice(
-        "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
+        V1_PERIPHERY_ADDRESS[chainId],
         marketId
       );
       const marketName =

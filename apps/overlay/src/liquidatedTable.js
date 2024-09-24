@@ -17,6 +17,8 @@ const LiquidatedPositionsTable = () => {
     const fetchData = async () => {
       try {
         const liquidatedPositions = await sdk.liquidatedPositions.transformLiquidatedPositions()
+
+        console.log("liquidatedPositions", liquidatedPositions);
         
         liquidatedPositions && setliquidated(liquidatedPositions);
         

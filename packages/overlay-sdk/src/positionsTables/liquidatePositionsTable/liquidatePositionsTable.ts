@@ -12,6 +12,7 @@ import {
 } from "../../common/utils/toScientificNumber.js";
 import formatUnixTimestampToDate from "../../common/utils/formatUnixTimestampToDate.js";
 import { mainnet } from "viem/chains";
+import { CHAINS } from "../../common/constants.js";
 
 type TransformedLiquidated = {
   marketName: string | undefined;
@@ -32,7 +33,7 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
   }
 
   transformLiquidatedPositions = async (): Promise<TransformedLiquidated[]> => {
-    const walletClient = (await this.sdk.core.getWeb3Address()).toLowerCase();
+    const walletClient = (await this.sdk.core.useAccount()).address;
     const rawliquidatedPositions = await getLiquidatedPositions({
       url: LINKS.URL,
       account: walletClient,
@@ -40,9 +41,7 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
     });
     const transformedLiquidated: TransformedLiquidated[] = [];
     const chainId = this.core.chainId;
-    const marketDetails = await getMarketsDetailsByChainId(
-      chainId as unknown as Address
-    );
+    const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
 
     for (const liquidated of rawliquidatedPositions) {
       const marketName =

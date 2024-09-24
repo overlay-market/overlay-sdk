@@ -15,7 +15,8 @@ import {
   LiquidatedPositionsQuery,
   LiquidatedPositionsQueryVariables,
 } from "./types";
-import { LINKS } from "./constants";
+import { NETWORKS } from "./constants";
+import { CHAINS, invariant } from "./common";
 
 export type SubgraphUrl =
   | string
@@ -63,7 +64,7 @@ const requestAllWithStep = async <TResult, TResultEntry, TVariables>({
 };
 
 export type GetOpenPositionsOptions = {
-  url: string;
+  chainId: CHAINS;
   account: string;
   first?: number;
   skip?: number;
@@ -74,10 +75,12 @@ type OpenPosition = NonNullable<
 >[number];
 
 export const getOpenPositions = async ({
-  url,
+  chainId,
   account,
   first,
 }: GetOpenPositionsOptions): Promise<OpenPosition[]> => {
+  invariant(chainId in CHAINS, "Unsupported chainId");
+  const url = NETWORKS[chainId].SUBGRAPH_URL;
   return requestAllWithStep<
     OpenPositionsQuery,
     OpenPosition,
@@ -94,7 +97,7 @@ export const getOpenPositions = async ({
 };
 
 export type GetUnwindPositionsOptions = {
-  url: string;
+  chainId: CHAINS;
   account: string;
   first?: number;
   skip?: number;
@@ -105,10 +108,12 @@ type Unwind = NonNullable<
 >[number];
 
 export const getUnwindPositions = async ({
-  url,
+  chainId,
   account,
   first,
 }: GetUnwindPositionsOptions): Promise<Unwind[]> => {
+  invariant(chainId in CHAINS, "Unsupported chainId");
+  const url = NETWORKS[chainId].SUBGRAPH_URL;
   return requestAllWithStep<UnwindsQuery, Unwind, UnwindsQueryVariables>({
     url,
     document: UnwindPositionsQueryDocument,
@@ -151,10 +156,11 @@ export const getLiquidatedPositions = async ({
   });
 };
 
-export const getActiveMarketsFromSubgraph = async () => {
+export const getActiveMarketsFromSubgraph = async (chainId: CHAINS) => {
+  invariant(chainId in CHAINS, "Unsupported chainId");
   try {
     const data = await request<ActiveMarketsQuery>(
-      LINKS.URL,
+      NETWORKS[chainId].SUBGRAPH_URL,
       ActiveMarketsQueryDocument
     );
     return data.markets;

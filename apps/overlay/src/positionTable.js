@@ -8,7 +8,6 @@ import {
   TableRow,
   Paper,
 } from "@mui/material";
-import { getUnwindPositions, LINKS, getOpenPositions,  } from "overlay-sdk";
 import { sdk } from "./client";
 
 const PositionsTable = () => {
@@ -19,7 +18,9 @@ const PositionsTable = () => {
     const fetchData = async () => {
       try {
         const transformedData = await sdk.unwindPositions.transformUnwindPositions();
+        console.log("transformedDataFront", transformedData);
         const transformedOpenPositions = await sdk.openPositions.transformOpenPositions();
+        console.log("transformedOpenPositions", transformedOpenPositions);
         setPositions(transformedData);
         setOpenPositions(transformedOpenPositions);
       } catch (error) {

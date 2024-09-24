@@ -12,6 +12,7 @@ import {
 } from "../../common/utils";
 import { FIRST, LINKS, PRICE_CURRENCY_FROM_QUOTE } from "../../constants";
 import { getUnwindPositions } from "../../subgraph";
+import { CHAINS } from "../../common";
 
 type Unwind = NonNullable<
   NonNullable<UnwindsQuery["account"]>["unwinds"]
@@ -37,17 +38,15 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
   }
   transformUnwindPositions = async (): // unwindPositions: Unwind[]
   Promise<TransformedUnwind[]> => {
-    const walletClient = (await this.sdk.core.getWeb3Address()).toLowerCase();
+    const walletClient = "0x42e372d3ab3ac53036997bae6d1ab77c2ecd64b3";
+    const chainId = this.core.chainId;
     const rawUnwindData = await getUnwindPositions({
-      url: LINKS.URL,
+      chainId: chainId,
       account: walletClient,
       first: FIRST,
     });
     const transformedUnwinds: TransformedUnwind[] = [];
-    const chainId = this.core.chainId;
-    const marketDetails = await getMarketsDetailsByChainId(
-      chainId as unknown as Address
-    );
+    const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
     for (const unwind of rawUnwindData) {
       const marketName =
         marketDetails?.get(unwind.id.split("-")[0])?.marketName ?? "";

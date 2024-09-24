@@ -1,6 +1,6 @@
 import { OverlaySDK } from "overlay-sdk";
 import { createPublicClient, http } from "viem";
-import { arbitrumSepolia } from "viem/chains";
+import { arbitrumSepolia, berachainTestnetbArtio } from "viem/chains";
 
 const rpcProvider = createPublicClient({
   chain: arbitrumSepolia,
@@ -14,3 +14,16 @@ export const sdk = new OverlaySDK({
   rpcProvider,
   web3Provider
 });
+
+// const rpcProvider = createPublicClient({
+//   chain: berachainTestnetbArtio,
+//   transport: http(),
+// });
+
+// const web3Provider = window.ethereum;
+
+// export const sdk = new OverlaySDK({
+//   chainId: 80084,
+//   rpcProvider,
+//   web3Provider
+// });
