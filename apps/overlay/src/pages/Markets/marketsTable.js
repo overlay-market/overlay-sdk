@@ -32,28 +32,24 @@ const MarketsTable = () => {
         console.log("ETH Dominance", ethDominance);
         const ethDominanceMarketAddress = ethDominance.marketAddress;
 
-        const ethDominanceFundingRate = await sdk.trade.getFunding(ethDominanceMarketAddress);
+        const ethDominanceFundingRate = await sdk.trade.getFunding("ETH Dominance");
         console.log("ETH Dominance Funding Rate", ethDominanceFundingRate);
 
-        const ethDominanceOIBalance = await sdk.trade.getOIBalance(ethDominanceMarketAddress);
+        const ethDominanceOIBalance = await sdk.trade.getOIBalance("ETH Dominance");
         console.log("ETH Dominance OI Balance", ethDominanceOIBalance);
 
-        const ethDominancePrice = await sdk.trade.getPrice(ethDominanceMarketAddress);
+        const ethDominancePrice = await sdk.trade.getPrice("ETH Dominance");
         console.log("ETH Dominance Price", ethDominancePrice);
 
         const collateral = 20000000000000000000 // 20
         const leverage = 10000000000000000000 // 10
         const isLong = true
 
-        const ethDominancePriceWithParams = await sdk.trade.getPrice(ethDominanceMarketAddress, collateral, leverage, isLong);
+        const ethDominancePriceWithParams = await sdk.trade.getPrice("ETH Dominance", collateral, leverage, isLong);
         console.log("ETH Dominance Price with params", ethDominancePriceWithParams);
 
-        const ethDominanceBidAndAsk = await sdk.trade.getBidAndAsk(ethDominanceMarketAddress);
+        const ethDominanceBidAndAsk = await sdk.trade.getBidAndAsk("ETH Dominance");
         console.log("ETH Dominance Bid and Ask", ethDominanceBidAndAsk);
-
-        const ethDominanceBidAndAskWithParams = await sdk.trade.getBidAndAsk(ethDominanceMarketAddress, collateral, leverage, isLong);
-        console.log("ETH Dominance Bid and Ask with params", ethDominanceBidAndAskWithParams);
-
 
         activeMarkets && setMarkets(activeMarkets);
       } catch (error) {

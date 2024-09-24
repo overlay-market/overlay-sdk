@@ -15,66 +15,55 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     this.sdk = sdk;
   }
 
-  public async getFunding(marketAddress: Address) { 
+  public async getFunding(marketId: string) { 
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
+    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
 
-    const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketAddress as Address)
+    const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketAddress)
     invariant(result, "Market state not found");
 
-    let parsedDailyFundingRate: string | number | undefined = undefined
-    const decimals = 18
-    parsedDailyFundingRate = decimals && formatFundingRateToDaily(result.fundingRate, 18, 2)
-
-    return parsedDailyFundingRate
+    return formatFundingRateToDaily(result.fundingRate, 18, 2)
   }
 
-  public async getOIBalance(marketAddress: Address) {
+  public async getOIBalance(marketId: string) {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
+    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
 
-    const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketAddress as Address)
+    const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketAddress)
     invariant(result, "Market state not found");
 
-    let parsedOiLong: string | number | undefined = undefined
-    let parsedOiShort: string | number | undefined = undefined
-    let parsedCapOi: string | number | undefined = undefined
-
-    const decimals = 18
-
-    parsedOiLong = decimals && formatBigNumber(result.oiLong, decimals, 18)
-    parsedOiShort = decimals && formatBigNumber(result.oiShort, decimals, 18)
-    parsedCapOi = decimals && formatBigNumber(result.capOi, decimals, 18)
-
     return {
-      parsedOiLong,
-      parsedOiShort,
-      parsedCapOi,
+      parsedOiLong: formatBigNumber(result.oiLong, 18, 18),
+      parsedOiShort: formatBigNumber(result.oiShort, 18, 18),
+      parsedCapOi: formatBigNumber(result.capOi, 18, 18)
     }
   }
 
-  public async getPrice(marketAddress: Address, collateral?: bigint, leverage?: bigint, isLong?: boolean) {
+  public async getPrice(marketId: string, collateral?: bigint, leverage?: bigint, isLong?: boolean) {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
+    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
 
     if (!collateral || !leverage || !isLong) {
-      const midPrice = await this.sdk.state.getMidPrice(V1_PERIPHERY_ADDRESS[chainId], marketAddress as Address)
+      const midPrice = await this.sdk.state.getMidPrice(V1_PERIPHERY_ADDRESS[chainId], marketAddress)
       let parsedMid: string | number | undefined = undefined
       parsedMid = formatBigNumber(midPrice, 18, 5)
 
       return parsedMid
     }
 
-    const oiEstimated = await this.sdk.state.getOiEstimate(V1_PERIPHERY_ADDRESS[chainId], marketAddress as Address, collateral, leverage, isLong)
+    const oiEstimated = await this.sdk.state.getOiEstimate(V1_PERIPHERY_ADDRESS[chainId], marketAddress, collateral, leverage, isLong)
 
-    const fractionOfCapOi = await this.sdk.state.getFractionOfCapOi(V1_PERIPHERY_ADDRESS[chainId], marketAddress as Address, oiEstimated)
+    const fractionOfCapOi = await this.sdk.state.getFractionOfCapOi(V1_PERIPHERY_ADDRESS[chainId], marketAddress, oiEstimated)
 
     let estimatedPrice: bigint
 
     if (isLong) {
-      estimatedPrice = await this.sdk.state.getAsk(V1_PERIPHERY_ADDRESS[chainId], marketAddress as Address, fractionOfCapOi)
+      estimatedPrice = await this.sdk.state.getAsk(V1_PERIPHERY_ADDRESS[chainId], marketAddress, fractionOfCapOi)
     } else {
-      estimatedPrice = await this.sdk.state.getBid(V1_PERIPHERY_ADDRESS[chainId], marketAddress as Address, fractionOfCapOi)
+      estimatedPrice = await this.sdk.state.getBid(V1_PERIPHERY_ADDRESS[chainId], marketAddress, fractionOfCapOi)
     }
 
     let parsedEstimatedPrice: string | number | undefined = undefined
@@ -83,29 +72,20 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     return parsedEstimatedPrice
   }
 
-  public async getBidAndAsk(marketId: Address, collateral?: bigint, leverage?: bigint, isLong?: boolean) {
+  public async getBidAndAsk(marketId: string) {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
 
-    if (!collateral || !leverage || !isLong) {
-      const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketId)
+    const marketDetails = await this.sdk.markets.getMarketDetails(marketId)
 
-      return {
-        parsedBid: formatBigNumber(result.bid, 18, 5),
-        parsedAsk: formatBigNumber(result.ask, 18, 5)
-      }
-    }
+    const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketDetails.marketAddress)
 
-    const oiEstimated = await this.sdk.state.getOiEstimate(V1_PERIPHERY_ADDRESS[chainId], marketId, collateral, leverage, isLong)
-
-    const fractionOfCapOi = await this.sdk.state.getFractionOfCapOi(V1_PERIPHERY_ADDRESS[chainId], marketId, oiEstimated)
-
-    const bid = await this.sdk.state.getBid(V1_PERIPHERY_ADDRESS[chainId], marketId, fractionOfCapOi)
-    const ask = await this.sdk.state.getAsk(V1_PERIPHERY_ADDRESS[chainId], marketId, fractionOfCapOi)
+    const isPercentage = marketDetails.currency === "PERCENTAGE" || marketDetails.currency === "%"
 
     return {
-      parsedBid: formatBigNumber(bid, 18, 5),
-      parsedAsk: formatBigNumber(ask, 18, 5)
+      parsedBid: isPercentage ? `${formatBigNumber(result.bid, 18, 2)}%` : formatBigNumber(result.bid, 18, 5),
+      parsedAsk: isPercentage ? `${formatBigNumber(result.ask, 18, 2)}%` : formatBigNumber(result.ask, 18, 5)
     }
+
   }
 }
