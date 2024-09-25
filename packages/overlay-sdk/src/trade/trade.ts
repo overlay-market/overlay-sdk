@@ -83,8 +83,8 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const isPercentage = marketDetails.currency === "PERCENTAGE" || marketDetails.currency === "%"
 
     return {
-      parsedBid: isPercentage ? `${formatBigNumber(result.bid, 18, 2)}%` : formatBigNumber(result.bid, 18, 5),
-      parsedAsk: isPercentage ? `${formatBigNumber(result.ask, 18, 2)}%` : formatBigNumber(result.ask, 18, 5)
+      parsedBid: isPercentage ? formatBigNumber(result.bid, 18, 2) : formatBigNumber(result.bid, 18, 5),
+      parsedAsk: isPercentage ? formatBigNumber(result.ask, 18, 2) : formatBigNumber(result.ask, 18, 5)
     }
 
   }

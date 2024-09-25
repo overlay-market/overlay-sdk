@@ -30,7 +30,6 @@ const MarketsTable = () => {
         const activeMarkets = await sdk.markets.getActiveMarkets();
         const ethDominance = await sdk.markets.getMarketDetails("ETH Dominance");
         console.log("ETH Dominance", ethDominance);
-        const ethDominanceMarketAddress = ethDominance.marketAddress;
 
         const ethDominanceFundingRate = await sdk.trade.getFunding("ETH Dominance");
         console.log("ETH Dominance Funding Rate", ethDominanceFundingRate);
