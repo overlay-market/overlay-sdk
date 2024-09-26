@@ -33,11 +33,11 @@ export class OverlaySDKOverlayToken extends OverlaySDKModule {
 
   // @Logger('Balances:')
   // @ErrorHandler()
-  public async balance(address?: Address) {
+  public async balance(address: Address, decimals?: number) {
     const { address: parsedAddress } = await this.core.useAccount(address);
     const contract = await this.getContract();
     const balance = await contract.read.balanceOf([parsedAddress]);
-    return formatBigNumber(balance, 18, 4)
+    return decimals ? formatBigNumber(balance, 18, decimals) : balance;
   }
 
   // Transfer
