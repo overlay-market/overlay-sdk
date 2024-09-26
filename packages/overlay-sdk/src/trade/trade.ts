@@ -159,4 +159,15 @@ export class OverlaySDKTrade extends OverlaySDKModule {
 
     return formatBigNumber(liquidationPrice, 18, 5)
   }
+
+  public async getOiEstimate(marketId: string, collateral: bigint, leverage: bigint, isLong: boolean) {
+    const chainId = this.core.chainId
+    invariant(chainId in CHAINS, "Unsupported chainId");
+
+    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
+
+    const oi = await this.sdk.state.getOiEstimate(V1_PERIPHERY_ADDRESS[chainId], marketAddress, collateral, leverage, isLong)
+
+    return formatBigNumber(oi, 18, 5)
+  }
 }
