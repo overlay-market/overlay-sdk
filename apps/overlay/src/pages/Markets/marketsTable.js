@@ -63,6 +63,9 @@ const MarketsTable = () => {
         const ethDominanceFee = await sdk.trade.getFee("ETH Dominance");
         console.log("ETH Dominance Fee", ethDominanceFee);
 
+        const ethDominanceLiquidationPriceEstimate = await sdk.trade.getLiquidationPriceEstimate("ETH Dominance", collateral, leverage, isLong);
+        console.log("ETH Dominance Liquidation Price Estimate", ethDominanceLiquidationPriceEstimate);
+
         activeMarkets && setMarkets(activeMarkets);
       } catch (error) {
         console.error("Error fetching markets:", error);

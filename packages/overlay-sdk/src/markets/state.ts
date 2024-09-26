@@ -218,4 +218,10 @@ export class OverlaySDKState extends OverlaySDKModule {
     const ask = await contract.read.ask([market, fractionOfCapOi]);
     return ask;
   }
+
+  public async getLiquidationPriceEstimate(state: Address, market: Address, collateral: bigint, leverage: bigint, isLong: boolean): Promise<bigint> {
+    const contract = await this.getContractV1State(state);
+    const liquidationPrice = await contract.read.liquidationPriceEstimate([market, collateral, leverage, isLong]);
+    return liquidationPrice;
+  }
 }
