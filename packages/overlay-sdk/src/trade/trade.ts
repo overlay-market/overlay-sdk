@@ -137,4 +137,15 @@ export class OverlaySDKTrade extends OverlaySDKModule {
   
     return Math.trunc(returnValue * Math.pow(10, 18)) / Math.pow(10, 18)
   }
+
+  public async getFee(marketId: string) {
+    const chainId = this.core.chainId
+    invariant(chainId in CHAINS, "Unsupported chainId");
+
+    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
+
+    const tradingFeeRate = formatBigNumber(await this.sdk.market.getTradingFeeRate(marketAddress), 18, 6, true) as number
+
+    return tradingFeeRate * 100
+  }
 }

@@ -60,6 +60,9 @@ const MarketsTable = () => {
         const ethDominanceMaxAmount = await sdk.trade.getMaxInputIncludingFees("ETH Dominance", address, leverage);
         console.log("ETH Dominance Max Amount", ethDominanceMaxAmount);
 
+        const ethDominanceFee = await sdk.trade.getFee("ETH Dominance");
+        console.log("ETH Dominance Fee", ethDominanceFee);
+
         activeMarkets && setMarkets(activeMarkets);
       } catch (error) {
         console.error("Error fetching markets:", error);
