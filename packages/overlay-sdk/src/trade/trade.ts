@@ -51,7 +51,10 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       let parsedMid: string | number | undefined = undefined
       parsedMid = formatBigNumber(midPrice, 18, 5)
 
-      return parsedMid
+      return {
+        rawNumber: midPrice,
+        parsedNumber: parsedMid
+      }
     }
 
     const oiEstimated = await this.sdk.state.getOiEstimate(V1_PERIPHERY_ADDRESS[chainId], marketAddress, collateral, leverage, isLong)
@@ -69,7 +72,34 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     let parsedEstimatedPrice: string | number | undefined = undefined
     parsedEstimatedPrice = formatBigNumber(estimatedPrice, 18, 5)
 
-    return parsedEstimatedPrice
+    return {
+      rawNumber: estimatedPrice,
+      parsedNumber: parsedEstimatedPrice
+    }
+  }
+
+  public async getPriceInfo(marketId: string, collateral: bigint, leverage: bigint, slippage: number, isLong: boolean) {
+    const chainId = this.core.chainId
+    invariant(chainId in CHAINS, "Unsupported chainId");
+
+    const price = await this.getPrice(marketId, collateral, leverage, isLong)
+    const { rawAsk, rawBid } = await this.getBidAndAsk(marketId)
+
+    // calculate min or max price
+    const increasePercentage = (slippage + 100) * 100
+    const decreasePercentage = (100 - slippage) * 100
+    const base = BigInt(10000)
+    const minPrice = isLong ? price.rawNumber * BigInt(increasePercentage) / base : price.rawNumber * BigInt(decreasePercentage) / base
+
+    // calculate price impact
+    const priceImpactValue = isLong ? price.rawNumber - rawAsk : rawBid - price.rawNumber;
+    const priceImpactPercentage = isLong ? Number(priceImpactValue * 100n) / Number(rawAsk) : Number(priceImpactValue * 100n) / Number(rawBid);
+
+    return {
+      price: price.rawNumber,
+      minPrice,
+      priceImpactPercentage
+    }
   }
 
   public async getBidAndAsk(marketId: string) {
@@ -84,8 +114,9 @@ export class OverlaySDKTrade extends OverlaySDKModule {
 
     return {
       parsedBid: isPercentage ? formatBigNumber(result.bid, 18, 2) : formatBigNumber(result.bid, 18, 5),
-      parsedAsk: isPercentage ? formatBigNumber(result.ask, 18, 2) : formatBigNumber(result.ask, 18, 5)
+      parsedAsk: isPercentage ? formatBigNumber(result.ask, 18, 2) : formatBigNumber(result.ask, 18, 5),
+      rawBid: result.bid,
+      rawAsk: result.ask
     }
-
   }
 }
