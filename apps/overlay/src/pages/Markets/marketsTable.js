@@ -16,10 +16,13 @@ import {
 } from "../../utils/toscientificNumber";
 import useSDK from "../../hooks/useSDK";
 import { useMultichainContext } from "../../state/multichain/useMultichainContext";
+import { useAccount } from "../../hooks/useAccount";
 
 const MarketsTable = () => {
   const [markets, setMarkets] = useState([]);
   const { chainId: contextChainID } = useMultichainContext();
+  
+  const { address } = useAccount();
   
   const sdk = useSDK()
   console.log({sdk})
@@ -53,6 +56,9 @@ const MarketsTable = () => {
 
         const ethDominancePriceInfo = await sdk.trade.getPriceInfo("ETH Dominance", collateral, leverage, slippage, isLong);
         console.log("ETH Dominance Price Info", ethDominancePriceInfo);
+
+        const ethDominanceMaxAmount = await sdk.trade.getMaxInputIncludingFees("ETH Dominance", address, leverage);
+        console.log("ETH Dominance Max Amount", ethDominanceMaxAmount);
 
         activeMarkets && setMarkets(activeMarkets);
       } catch (error) {
