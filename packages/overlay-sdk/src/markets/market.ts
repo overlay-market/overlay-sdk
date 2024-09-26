@@ -54,6 +54,12 @@ export class OverlaySDKMarket extends OverlaySDKModule {
     return contract.read.isShutdown();
   }
 
+  public async getTradingFeeRate(market: Address): Promise<bigint> {
+    const contract = await this.getContractV1Market(market);
+    // tradingFeeRate is at index 11
+    return contract.read.params([11n]);
+  }
+
   // Build
 
   // @Logger('Call:')
