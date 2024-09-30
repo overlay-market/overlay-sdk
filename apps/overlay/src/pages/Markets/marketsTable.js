@@ -17,6 +17,7 @@ import {
 import useSDK from "../../hooks/useSDK";
 import { useMultichainContext } from "../../state/multichain/useMultichainContext";
 import { useAccount } from "../../hooks/useAccount";
+import { toWei } from "overlay-sdk/dist/common/utils/formatWei";
 
 const MarketsTable = () => {
   const [markets, setMarkets] = useState([]);
@@ -43,8 +44,10 @@ const MarketsTable = () => {
         const ethDominancePrice = await sdk.trade.getPrice("ETH Dominance");
         console.log("ETH Dominance Price", ethDominancePrice);
 
-        const collateral = 900000000000000000000 // 900
-        const leverage = 10000000000000000000 // 10
+        const collateral = toWei("900.666") // 900
+        console.log("Collateral", collateral);
+        const leverage = toWei(10) // 10
+        console.log("Leverage", leverage);
         const isLong = true
         const slippage = 1 // 1
 
