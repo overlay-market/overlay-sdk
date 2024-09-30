@@ -10,30 +10,58 @@ import { getMarketDetailsById, getMarketsDetailsByChainId } from "../services/ma
 import { CHAINS, invariant } from "../common/index.js";
 export class OverlaySDKMarkets extends OverlaySDKModule {
   private sdk: OverlaySDK;
+  private marketDetailsCache: Record<string, { data: any; lastUpdated: number }> = {};
+  private activeMarketsCache?: { data: any; lastUpdated: number };
 
   constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK) {
     super(props);
     this.sdk = sdk;
   }
 
-  public async getMarketDetails(marketId: string) {
+  public async getMarketDetails(marketId: string, noCaching: boolean = false) {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
 
+    // check if we have the data in cache and if it's not too old
+    if (!noCaching && this.marketDetailsCache[marketId]) {
+      const cachedData = this.marketDetailsCache[marketId];
+      const isCacheValid = Date.now() - cachedData.lastUpdated < 3600 * 1000; // 1 hour
+      if (isCacheValid) {
+        return cachedData.data;
+      }
+    }
+
+    // if not in cache or cache is too old or noCaching is true, fetch the data
     const marketDetails = await getMarketDetailsById(marketId, chainId)
     invariant(marketDetails, "Market not found");
 
     const marketAddress = marketDetails.chain?.deploymentAddress as Address
 
-    return {
+    const marketData = {
       ...marketDetails,
       marketAddress,
+    };
+
+    if (!noCaching) {
+      this.marketDetailsCache[marketId] = { data: marketData, lastUpdated: Date.now() };
     }
+
+    return marketData;
   }
 
-  public async getActiveMarkets() {
+  public async getActiveMarkets(noCaching: boolean = false) {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
+
+    // check if we have the data in cache and if it's not too old
+    if (!noCaching && this.activeMarketsCache) {
+      const isCacheValid = Date.now() - this.activeMarketsCache.lastUpdated < 3600 * 1000; // 1 hour
+      if (isCacheValid) {
+        return this.activeMarketsCache.data;
+      }
+    }
+
+    // if not in cache or cache is too old or noCaching is true, fetch the data
     const marketDetails = await getMarketsDetailsByChainId(chainId)
     const marketDetailsValues = marketDetails && Array.from(marketDetails?.values())
 
@@ -116,6 +144,10 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
         })
         .filter(item => item !== undefined) 
       : undefined
+
+    if (!noCaching) {
+      this.activeMarketsCache = { data: expandedMarketsData, lastUpdated: Date.now() };
+    }
 
     return expandedMarketsData
   }
