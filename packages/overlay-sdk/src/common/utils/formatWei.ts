@@ -1,4 +1,5 @@
-import { formatUnits } from 'viem'
+import { formatUnits, parseUnits } from 'viem'
+import { invariant } from './sdk-error'
 
 export function formatWeiToParsedNumber(wei: bigint | string | undefined, decimals: number | undefined, round?: number) {
   let parsedWei
@@ -35,4 +36,15 @@ export function formatFundingRateToAnnual(wei: bigint | string | undefined, deci
   }
 
   return roundedAnnualPercentage
+}
+
+export function toWei(input: string | number, decimals: number = 18): bigint {
+  invariant(typeof input === "string" || typeof input === "number", "Input type not supported");
+
+  const value = input.toString();
+  const numberValue = Number(value);
+
+  invariant(!isNaN(numberValue), "Invalid number format");
+  
+  return parseUnits(value, decimals);
 }
