@@ -4,8 +4,7 @@ import { OverlaySDKModule } from "../common/class-primitives/sdk-module";
 import { V1_PERIPHERY_ADDRESS } from "../constants";
 import { OverlaySDKCommonProps } from "../core/types";
 import { OverlaySDK } from "../sdk";
-import { getMarketDetailsById } from "../services/marketsDetails";
-import { formatBigNumber, formatFundingRateToAnnual, formatFundingRateToDaily } from "../common/utils";
+import { formatBigNumber, formatFundingRateToDaily } from "../common/utils";
 
 export class OverlaySDKTrade extends OverlaySDKModule {
   private sdk: OverlaySDK;
@@ -26,35 +25,33 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     return formatFundingRateToDaily(result.fundingRate, 18, 2)
   }
 
-  public async getOIBalance(marketId: string) {
+  public async getOIBalance(marketId: string, decimals?: number) {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
     const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
 
-    const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketAddress)
-    invariant(result, "Market state not found");
+    const {oiLong, oiShort} = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketAddress)
+
+    const shortPercentageOfTotalOi = (Number(oiShort) / (Number(oiLong) + Number(oiShort)) * 100).toFixed(2)
+    const longPercentageOfTotalOi = (Number(oiLong) / (Number(oiLong) + Number(oiShort)) * 100).toFixed(2)
 
     return {
-      parsedOiLong: formatBigNumber(result.oiLong, 18, 18),
-      parsedOiShort: formatBigNumber(result.oiShort, 18, 18),
-      parsedCapOi: formatBigNumber(result.capOi, 18, 18)
+      long: decimals ? formatBigNumber(oiLong, 18, decimals) : oiLong,
+      short: decimals ? formatBigNumber(oiShort, 18, decimals) : oiShort,
+      shortPercentageOfTotalOi,
+      longPercentageOfTotalOi
     }
   }
 
-  public async getPrice(marketId: string, collateral?: bigint, leverage?: bigint, isLong?: boolean) {
+  public async getPrice(marketId: string, collateral?: bigint, leverage?: bigint, isLong?: boolean, decimals?: number) {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
     const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
 
     if (!collateral || !leverage || !isLong) {
       const midPrice = await this.sdk.state.getMidPrice(V1_PERIPHERY_ADDRESS[chainId], marketAddress)
-      let parsedMid: string | number | undefined = undefined
-      parsedMid = formatBigNumber(midPrice, 18, 5)
 
-      return {
-        rawNumber: midPrice,
-        parsedNumber: parsedMid
-      }
+      return decimals ? formatBigNumber(midPrice, 18, decimals) : midPrice
     }
 
     const oiEstimated = await this.sdk.state.getOiEstimate(V1_PERIPHERY_ADDRESS[chainId], marketAddress, collateral, leverage, isLong)
@@ -69,40 +66,36 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       estimatedPrice = await this.sdk.state.getBid(V1_PERIPHERY_ADDRESS[chainId], marketAddress, fractionOfCapOi)
     }
 
-    let parsedEstimatedPrice: string | number | undefined = undefined
-    parsedEstimatedPrice = formatBigNumber(estimatedPrice, 18, 5)
-
-    return {
-      rawNumber: estimatedPrice,
-      parsedNumber: parsedEstimatedPrice
-    }
+    return decimals ? formatBigNumber(estimatedPrice, 18, decimals) : estimatedPrice
   }
 
   public async getPriceInfo(marketId: string, collateral: bigint, leverage: bigint, slippage: number, isLong: boolean) {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
 
-    const price = await this.getPrice(marketId, collateral, leverage, isLong)
-    const { rawAsk, rawBid } = await this.getBidAndAsk(marketId)
+    const price = await this.getPrice(marketId, collateral, leverage, isLong) as bigint
+    const res = await this.getBidAndAsk(marketId)
+    const bid = BigInt(res.bid)
+    const ask = BigInt(res.ask)
 
     // calculate min or max price
     const increasePercentage = (slippage + 100) * 100
     const decreasePercentage = (100 - slippage) * 100
     const base = BigInt(10000)
-    const minPrice = isLong ? price.rawNumber * BigInt(increasePercentage) / base : price.rawNumber * BigInt(decreasePercentage) / base
+    const minPrice = isLong ? price * BigInt(increasePercentage) / base : price * BigInt(decreasePercentage) / base
 
     // calculate price impact
-    const priceImpactValue = isLong ? price.rawNumber - rawAsk : rawBid - price.rawNumber;
-    const priceImpactPercentage = isLong ? Number(priceImpactValue * 100n) / Number(rawAsk) : Number(priceImpactValue * 100n) / Number(rawBid);
+    const priceImpactValue = isLong ? price - ask : bid - price;
+    const priceImpactPercentage = isLong ? Number(priceImpactValue * 100n) / Number(ask) : Number(priceImpactValue * 100n) / Number(bid);
 
     return {
-      price: price.rawNumber,
+      price: price,
       minPrice,
       priceImpactPercentage
     }
   }
 
-  public async getBidAndAsk(marketId: string) {
+  public async getBidAndAsk(marketId: string, decimals?: number) {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
 
@@ -113,10 +106,8 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const isPercentage = marketDetails.currency === "PERCENTAGE" || marketDetails.currency === "%"
 
     return {
-      parsedBid: isPercentage ? formatBigNumber(result.bid, 18, 2) : formatBigNumber(result.bid, 18, 5),
-      parsedAsk: isPercentage ? formatBigNumber(result.ask, 18, 2) : formatBigNumber(result.ask, 18, 5),
-      rawBid: result.bid,
-      rawAsk: result.ask
+      bid: decimals ? formatBigNumber(result.bid, 18, isPercentage ? 2 : 5) : result.bid,
+      ask: decimals ? formatBigNumber(result.ask, 18, isPercentage ? 2 : 5) : result.ask
     }
   }
 
