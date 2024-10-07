@@ -224,4 +224,22 @@ export class OverlaySDKState extends OverlaySDKModule {
     const liquidationPrice = await contract.read.liquidationPriceEstimate([market, collateral, leverage, isLong]);
     return liquidationPrice;
   }
+
+  public async getOIs(state: Address, market: Address) {
+    const contract = await this.getContractV1State(state);
+    const oi = await contract.read.ois([market]);
+    return oi;
+  }
+
+  public async getCapOi(state: Address, market: Address) {
+    const contract = await this.getContractV1State(state);
+    const capOi = await contract.read.capOi([market]);
+    return capOi;
+  }
+
+  public async getCircuitBreakerLevel(state: Address, market: Address) {
+    const contract = await this.getContractV1State(state);
+    const circuitBreakerLevel = await contract.read.circuitBreakerLevel([market]);
+    return circuitBreakerLevel;
+  }
 }
