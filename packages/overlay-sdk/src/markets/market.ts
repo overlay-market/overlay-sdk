@@ -60,6 +60,12 @@ export class OverlaySDKMarket extends OverlaySDKModule {
     return contract.read.params([11n]);
   }
 
+  public async getMinCollateral(market: Address): Promise<bigint> {
+    const contract = await this.getContractV1Market(market);
+    // minCollateral is at index 12
+    return contract.read.params([12n]);
+  }
+
   // Build
 
   // @Logger('Call:')
