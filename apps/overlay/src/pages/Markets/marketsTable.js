@@ -16,10 +16,14 @@ import {
 } from "../../utils/toscientificNumber";
 import useSDK from "../../hooks/useSDK";
 import { useMultichainContext } from "../../state/multichain/useMultichainContext";
+import { useAccount } from "../../hooks/useAccount";
+import { toWei } from "overlay-sdk/dist/common/utils/formatWei";
 
 const MarketsTable = () => {
   const [markets, setMarkets] = useState([]);
   const { chainId: contextChainID } = useMultichainContext();
+  
+  const { address } = useAccount();
   
   const sdk = useSDK()
   console.log({sdk})
@@ -28,6 +32,48 @@ const MarketsTable = () => {
     const fetchData = async () => {
       try {
         const activeMarkets = await sdk.markets.getActiveMarkets();
+        const ethDominance = await sdk.markets.getMarketDetails("ETH Dominance");
+        console.log("ETH Dominance", ethDominance);
+
+        const ethDominanceFundingRate = await sdk.trade.getFunding("ETH Dominance");
+        console.log("ETH Dominance Funding Rate", ethDominanceFundingRate);
+
+        const ethDominanceOIBalance = await sdk.trade.getOIBalance("ETH Dominance");
+        console.log("ETH Dominance OI Balance", ethDominanceOIBalance);
+
+        const ethDominancePrice = await sdk.trade.getPrice("ETH Dominance");
+        console.log("ETH Dominance Price", ethDominancePrice);
+
+        const collateral = toWei("900.666") // 900
+        console.log("Collateral", collateral);
+        const leverage = toWei(10) // 10
+        console.log("Leverage", leverage);
+        const isLong = true
+        const slippage = 1 // 1
+
+        const ethDominancePriceWithParams = await sdk.trade.getPrice("ETH Dominance", collateral, leverage, isLong);
+        console.log("ETH Dominance Price with params", ethDominancePriceWithParams);
+
+        const ethDominanceBidAndAsk = await sdk.trade.getBidAndAsk("ETH Dominance");
+        console.log("ETH Dominance Bid and Ask", ethDominanceBidAndAsk);
+
+        const ethDominancePriceInfo = await sdk.trade.getPriceInfo("ETH Dominance", collateral, leverage, slippage, isLong);
+        console.log("ETH Dominance Price Info", ethDominancePriceInfo);
+
+        const ethDominanceMaxAmount = await sdk.trade.getMaxInputIncludingFees("ETH Dominance", address, leverage);
+        console.log("ETH Dominance Max Amount", ethDominanceMaxAmount);
+
+        const ethDominanceFee = await sdk.trade.getFee("ETH Dominance");
+        console.log("ETH Dominance Fee", ethDominanceFee);
+
+        const ethDominanceLiquidationPriceEstimate = await sdk.trade.getLiquidationPriceEstimate("ETH Dominance", collateral, leverage, isLong);
+        console.log("ETH Dominance Liquidation Price Estimate", ethDominanceLiquidationPriceEstimate);
+
+        const ethDominanceOiEstimate = await sdk.trade.getOiEstimate("ETH Dominance", collateral, leverage, isLong);
+        console.log("ETH Dominance OI Estimate", ethDominanceOiEstimate);
+
+        const ethDominanceBuildState = await sdk.trade.getTradeState("ETH Dominance", collateral, leverage, slippage, isLong, address);
+        console.log("ETH Dominance Build State", ethDominanceBuildState);
 
         activeMarkets && setMarkets(activeMarkets);
       } catch (error) {

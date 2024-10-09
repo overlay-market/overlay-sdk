@@ -6,6 +6,7 @@ import { CommonTransactionProps, EtherValue, NoCallback, TransactionOptions, Tra
 import { parseValue } from "../common/utils/parse-value";
 import { CHAINS, invariant, NOOP } from "../common";
 import { OV_ADDRESS } from "../constants";
+import { formatBigNumber } from "../common/utils";
 
 export class OverlaySDKOverlayToken extends OverlaySDKModule {
   public async contractAddress() {
@@ -32,10 +33,11 @@ export class OverlaySDKOverlayToken extends OverlaySDKModule {
 
   // @Logger('Balances:')
   // @ErrorHandler()
-  public async balance(address?: Address): Promise<bigint> {
+  public async balance(address: Address, decimals?: number) {
     const { address: parsedAddress } = await this.core.useAccount(address);
     const contract = await this.getContract();
-    return contract.read.balanceOf([parsedAddress]);
+    const balance = await contract.read.balanceOf([parsedAddress]);
+    return decimals ? formatBigNumber(balance, 18, decimals) : balance;
   }
 
   // Transfer
