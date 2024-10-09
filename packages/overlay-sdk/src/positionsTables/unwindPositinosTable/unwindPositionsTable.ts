@@ -10,7 +10,7 @@ import {
   toPercentUnit,
   toScientificNumber,
 } from "../../common/utils";
-import { FIRST, LINKS, PRICE_CURRENCY_FROM_QUOTE } from "../../constants";
+import { FIRST, PRICE_CURRENCY_FROM_QUOTE } from "../../constants";
 import { getUnwindPositions } from "../../subgraph";
 import { CHAINS } from "../../common";
 

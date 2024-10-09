@@ -1,7 +1,7 @@
 import { createWalletClient, http, type Address } from "viem";
 import { OverlaySDKModule } from "../../common/class-primitives/sdk-module.js";
 import { OverlaySDKCommonProps } from "../../core/types.js";
-import { PRICE_CURRENCY_FROM_QUOTE, LINKS, FIRST } from "../../constants.js";
+import { PRICE_CURRENCY_FROM_QUOTE } from "../../constants.js";
 import { OverlaySDK } from "../../sdk.js";
 import { formatBigNumber } from "../../common/utils/formatBigNumber.js";
 import { getMarketsDetailsByChainId } from "../../services/marketsDetails.js";
@@ -34,13 +34,13 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
 
   transformLiquidatedPositions = async (): Promise<TransformedLiquidated[]> => {
     const walletClient = (await this.sdk.core.useAccount()).address;
+    const chainId = this.core.chainId;
     const rawliquidatedPositions = await getLiquidatedPositions({
-      url: LINKS.URL,
+      chainId: chainId,
       account: walletClient,
       first: 10,
     });
     const transformedLiquidated: TransformedLiquidated[] = [];
-    const chainId = this.core.chainId;
     const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
 
     for (const liquidated of rawliquidatedPositions) {

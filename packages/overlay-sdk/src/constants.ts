@@ -17,12 +17,6 @@ import TruflationOracleLogo from "./assets/oracles_logo/oracle-type-truflation.p
 import PythOracleLogo from "./assets/oracles_logo/oracle-type-pyth.png";
 import { CHAINS } from "./common";
 
-export const LINKS = {
-  MARKET_PRICES_API: "https://api.overlay.market/sepolia-charts/v1/charts",
-  URL: "https://api.studio.thegraph.com/query/77621/overlay-sepolia-test-less-call/version/latest",
-  MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
-};
-
 export type MarketDetailsData = {
   marketName: string;
   currency: string;

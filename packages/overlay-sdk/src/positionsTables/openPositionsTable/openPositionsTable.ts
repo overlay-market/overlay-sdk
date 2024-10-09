@@ -11,7 +11,6 @@ import JSBI from "jsbi";
 import { TickMath } from "@uniswap/v3-sdk";
 import {
   FIRST,
-  LINKS,
   ONE_BN,
   PRICE_CURRENCY_FROM_QUOTE,
   V1_PERIPHERY_ADDRESS,

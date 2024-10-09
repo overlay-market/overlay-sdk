@@ -126,7 +126,7 @@ export const getUnwindPositions = async ({
 };
 
 export type GetliquidatedPositionsOptions = {
-  url: string;
+  chainId: CHAINS;
   account: string;
   first?: number;
   skip?: number;
@@ -137,10 +137,12 @@ type Liquidated = NonNullable<
 >[number];
 
 export const getLiquidatedPositions = async ({
-  url,
+  chainId,
   account,
   first,
 }: GetliquidatedPositionsOptions): Promise<Liquidated[]> => {
+  invariant(chainId in CHAINS, "Unsupported chainId");
+  const url = NETWORKS[chainId].SUBGRAPH_URL;
   return requestAllWithStep<
     LiquidatedPositionsQuery,
     Liquidated,
