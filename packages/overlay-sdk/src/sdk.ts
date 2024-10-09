@@ -1,4 +1,3 @@
-import { createPublicClient, http } from "viem";
 import { OverlaySDKCore, OverlaySDKCoreProps } from "./core/index.js";
 import { OverlaySDKMarket, OverlaySDKState } from "./markets/index.js";
 import { OverlaySDKMarkets } from "./marketsList/index.js";
@@ -6,15 +5,12 @@ import { OverlaySDKOpenPositions } from "./positionsTables/openPositionsTable/op
 import { OverlaySDKUnwindPositions } from "./positionsTables/unwindPositinosTable/unwindPositionsTable.js";
 import { OverlaySDKOverlayToken } from "./ov/index.js";
 import { OverlaySDKTrade } from "./trade/index.js";
-
-import { arbitrumSepolia } from "viem/chains";
 import { OverlaySDKLiquidatedPositions } from "./positionsTables/liquidatePositionsTable/liquidatePositionsTable.js";
 
 export class OverlaySDK {
   readonly core: OverlaySDKCore;
   readonly market: OverlaySDKMarket;
   readonly state: OverlaySDKState;
-  readonly midPrice: OverlaySDKState;
   readonly ov: OverlaySDKOverlayToken;
   readonly trade: OverlaySDKTrade;
   readonly markets: OverlaySDKMarkets;
@@ -28,7 +24,6 @@ export class OverlaySDK {
     const core = this.core;
     this.market = new OverlaySDKMarket({ ...props, core });
     this.state = new OverlaySDKState({ ...props, core });
-    this.midPrice = new OverlaySDKState({ ...props, core });
     this.ov = new OverlaySDKOverlayToken({ ...props, core });
     this.trade = new OverlaySDKTrade({ ...props, core }, this);
     this.markets = new OverlaySDKMarkets({ ...props, core }, this);
@@ -43,16 +38,3 @@ export class OverlaySDK {
     );
   }
 }
-
-const rpcProvider = createPublicClient({
-  chain: arbitrumSepolia,
-  transport: http(),
-});
-
-const web3Provider = window.ethereum;
-
-export const sdk = new OverlaySDK({
-  chainId: 421614,
-  rpcProvider,
-  web3Provider,
-});
