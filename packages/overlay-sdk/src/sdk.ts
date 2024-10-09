@@ -5,6 +5,8 @@ import { OverlaySDKMarkets } from "./marketsList/index.js";
 import { OverlaySDKOpenPositions } from "./positionsTables/openPositionsTable/openPositionsTable.js";
 import { OverlaySDKUnwindPositions } from "./positionsTables/unwindPositinosTable/unwindPositionsTable.js";
 import { OverlaySDKOverlayToken } from "./ov/index.js";
+import { OverlaySDKTrade } from "./trade/index.js";
+
 import { arbitrumSepolia } from "viem/chains";
 import { OverlaySDKLiquidatedPositions } from "./positionsTables/liquidatePositionsTable/liquidatePositionsTable.js";
 
@@ -14,6 +16,7 @@ export class OverlaySDK {
   readonly state: OverlaySDKState;
   readonly midPrice: OverlaySDKState;
   readonly ov: OverlaySDKOverlayToken;
+  readonly trade: OverlaySDKTrade;
   readonly markets: OverlaySDKMarkets;
   readonly openPositions: OverlaySDKOpenPositions;
   readonly unwindPositions: OverlaySDKUnwindPositions;
@@ -27,6 +30,7 @@ export class OverlaySDK {
     this.state = new OverlaySDKState({ ...props, core });
     this.midPrice = new OverlaySDKState({ ...props, core });
     this.ov = new OverlaySDKOverlayToken({ ...props, core });
+    this.trade = new OverlaySDKTrade({ ...props, core }, this);
     this.markets = new OverlaySDKMarkets({ ...props, core }, this);
     this.openPositions = new OverlaySDKOpenPositions({ ...props, core }, this);
     this.unwindPositions = new OverlaySDKUnwindPositions(

@@ -5,12 +5,8 @@ export function formatBigNumber(
   decimals: number = 18,
   digits: number = 4,
   returnNumberType: boolean = false,
-): number | string | undefined {
-  if (bignumber !== undefined) {
-    const formatted: string = formatUnits(bignumber, decimals)
-    const formatWithDigits: string = Number.parseFloat(formatted).toFixed(digits)
-    return returnNumberType ? Number(formatWithDigits) : formatWithDigits
-  } else {
-    return undefined
-  }
+) {
+  const formatted = formatUnits(bignumber, decimals)
+  const formatWithDigits = Number.parseFloat(formatted).toFixed(digits)
+  return returnNumberType ? Number(formatWithDigits) : formatWithDigits
 }
