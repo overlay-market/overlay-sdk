@@ -1,6 +1,6 @@
 import { Chain, createPublicClient, http } from 'viem'
 import { useMultichainContext } from '../state/multichain/useMultichainContext';
-import { OverlaySDK } from 'overlay-sdk';
+import { OverlaySDK, OverlaySDKCore } from 'overlay-sdk';
 import { CHAINS, DEFAULT_CHAINID,  VIEM_CHAINS } from '../constants/chains';
 
 export default function useSDK() {
@@ -11,12 +11,10 @@ export default function useSDK() {
     transport: http(),
   });
   
-  const web3Provider = window.ethereum;
-  
   const sdk = new OverlaySDK({
     chainId: chainId ? chainId as CHAINS : DEFAULT_CHAINID as number,
     rpcProvider,
-    web3Provider
+    web3Provider: OverlaySDKCore.createWeb3Provider(chainId as CHAINS, window.ethereum),
   });
   console.log('overlay-sdk initialized with chainId:', chainId)
   return sdk

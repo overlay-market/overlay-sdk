@@ -5,6 +5,7 @@ import { useMultichainContext } from "../../state/multichain/useMultichainContex
 import PositionsTable from "../../positionTable";
 import MarketsTable from "../Markets/marketsTable";
 import Market from "../../market";
+import LiquidatedPositionsTable from "../../liquidatedTable";
 
 function Main() {
   const { address: account, chainId } = useAccount();
@@ -16,7 +17,8 @@ function Main() {
       <div className="App">
         <header className="App-header">
           <h1>Positions table</h1>
-          {/* <PositionsTable /> */}
+          <PositionsTable />
+          <LiquidatedPositionsTable />
 
           <br />
 

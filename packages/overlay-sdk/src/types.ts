@@ -4629,7 +4629,7 @@ export type OpenPositionsQueryVariables = Exact<{
 }>;
 
 
-export type OpenPositionsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', id: string, createdAtTimestamp: any, currentOi: any, entryPrice: any, initialCollateral: any, isLiquidated: boolean, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: string } }> } | null };
+export type OpenPositionsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', fractionUnwound: any, id: string, createdAtTimestamp: any, currentOi: any, entryPrice: any, initialCollateral: any, isLiquidated: boolean, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: string } }> } | null };
 
 export type UnwindsQueryVariables = Exact<{
   account: Scalars['ID']['input'];
@@ -4642,14 +4642,14 @@ export type UnwindsQuery = { __typename?: 'Query', account?: { __typename?: 'Acc
 
 export type ActiveMarketsQueryVariables = Exact<{ [key: string]: never; }>;
 
-export type ActiveMarketsQuery = (
-  { __typename?: 'Query' }
-  & { markets: Array<(
-    { __typename?: 'Market' }
-    & Pick<Market, 'id' | 'feedAddress' | 'k' | 'lmbda' | 'delta' | 'capPayoff' | 'capNotional' | 'capLeverage' | 'circuitBreakerWindow' | 'circuitBreakerMintTarget' | 'maintenanceMarginFraction' | 'maintenanceMarginBurnRate' | 'liquidationFeeRate' | 'tradingFeeRate' | 'minCollateral' | 'priceDriftUpperLimit' | 'averageBlockTime' | 'isShutdown'>
-    & { factory: (
-      { __typename?: 'Factory' }
-      & Pick<Factory, 'id'>
-    ) }
-  )> }
-);
+
+export type ActiveMarketsQuery = { __typename?: 'Query', markets: Array<{ __typename?: 'Market', id: string, feedAddress: string, k: any, lmbda: any, delta: any, capPayoff: any, capNotional: any, capLeverage: any, circuitBreakerWindow: any, circuitBreakerMintTarget: any, maintenanceMarginFraction: any, maintenanceMarginBurnRate: any, liquidationFeeRate: any, tradingFeeRate: any, minCollateral: any, priceDriftUpperLimit: any, averageBlockTime: any, isShutdown: boolean, factory: { __typename?: 'Factory', id: string } }> };
+
+export type LiquidatedPositionsQueryVariables = Exact<{
+  account: Scalars['ID']['input'];
+  first?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type LiquidatedPositionsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', liquidates: Array<{ __typename?: 'Liquidate', collateral: any, currentDebt: any, currentOi: any, id: string, isLong: boolean, mint: any, price: any, timestamp: any, value: any, size: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, fractionUnwound: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, market: { __typename?: 'Market', feedAddress: string, id: string } } }> } | null };
