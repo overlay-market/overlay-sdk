@@ -13,6 +13,7 @@ import {
 import formatUnixTimestampToDate from "../../common/utils/formatUnixTimestampToDate.js";
 import { mainnet } from "viem/chains";
 import { CHAINS } from "../../common/constants.js";
+import { invariant } from "../../common/index.js";
 
 type TransformedLiquidated = {
   marketName: string | undefined;
@@ -32,8 +33,12 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
     this.sdk = sdk;
   }
 
-  transformLiquidatedPositions = async (): Promise<TransformedLiquidated[]> => {
-    const walletClient = (await this.sdk.core.useAccount()).address;
+  transformLiquidatedPositions = async (account: Address): Promise<TransformedLiquidated[]> => {
+    let walletClient = account;
+    if (!walletClient) {
+      invariant(this.sdk.core.web3Provider, "Web3 provider is not set");
+      walletClient = account ?? (await this.sdk.core.web3Provider?.requestAddresses())[0] as Address;
+    }
     const chainId = this.core.chainId;
     const rawliquidatedPositions = await getLiquidatedPositions({
       chainId: chainId,
