@@ -104,11 +104,9 @@ export class OverlaySDKTrade extends OverlaySDKModule {
 
     const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketDetails.marketAddress)
 
-    const isPercentage = marketDetails.currency === "PERCENTAGE" || marketDetails.currency === "%"
-
     return {
-      bid: decimals ? formatBigNumber(result.bid, 18, isPercentage ? 2 : 5) : result.bid,
-      ask: decimals ? formatBigNumber(result.ask, 18, isPercentage ? 2 : 5) : result.ask
+      bid: decimals ? formatBigNumber(result.bid, 18, decimals) : result.bid,
+      ask: decimals ? formatBigNumber(result.ask, 18, decimals) : result.ask
     }
   }
 

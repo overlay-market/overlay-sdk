@@ -8,35 +8,19 @@ import {
   TableRow,
   Paper,
 } from "@mui/material";
-import { getUnwindPositions, transformUnwindPositions, transformOpenPositions, getOpenPositions } from "overlay-sdk";
+import { sdk } from "./client";
 
 const PositionsTable = () => {
   const [positions, setPositions] = useState([]);
   const [openPositions, setOpenPositions] = useState([]);
 
-  const account = "0x42e372d3ab3ac53036997bae6d1ab77c2ecd64b3";
-  const first = 10;
-  const skip = 0;
-
-  const chainId = 421614; // Arbitrum
-
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const rawUnwindData = await getUnwindPositions({
-          chainId,
-          account,
-          first,
-          skip,
-        });
-        const transformedData = await transformUnwindPositions(chainId, rawUnwindData);
-        const rawOpenData = await getOpenPositions({
-          chainId,
-          account,
-          first,
-          skip,
-        });
-        const transformedOpenPositions = await transformOpenPositions(chainId, rawOpenData);
+        const transformedData = await sdk.unwindPositions.transformUnwindPositions();
+        console.log("transformedDataFront", transformedData);
+        const transformedOpenPositions = await sdk.openPositions.transformOpenPositions();
+        console.log("transformedOpenPositions", transformedOpenPositions);
         setPositions(transformedData);
         setOpenPositions(transformedOpenPositions);
       } catch (error) {

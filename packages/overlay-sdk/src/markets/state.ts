@@ -17,12 +17,6 @@ const walletClient = createWalletClient({
   transport: http(),
 });
 
-// Get the address
-async function getWalletAddress() {
-  const [address] = await walletClient.getAddresses();
-  return address;
-}
-
 export class OverlaySDKState extends OverlaySDKModule {
   static readonly PRECISION = 10n ** 27n;
 

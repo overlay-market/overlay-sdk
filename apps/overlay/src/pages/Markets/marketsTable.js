@@ -54,7 +54,7 @@ const MarketsTable = () => {
         const ethDominancePriceWithParams = await sdk.trade.getPrice("ETH Dominance", collateral, leverage, isLong);
         console.log("ETH Dominance Price with params", ethDominancePriceWithParams);
 
-        const ethDominanceBidAndAsk = await sdk.trade.getBidAndAsk("ETH Dominance");
+        const ethDominanceBidAndAsk = await sdk.trade.getBidAndAsk("ETH Dominance", 2);
         console.log("ETH Dominance Bid and Ask", ethDominanceBidAndAsk);
 
         const ethDominancePriceInfo = await sdk.trade.getPriceInfo("ETH Dominance", collateral, leverage, slippage, isLong);
