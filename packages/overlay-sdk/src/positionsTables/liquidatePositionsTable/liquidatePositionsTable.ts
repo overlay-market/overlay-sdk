@@ -42,7 +42,7 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
     const chainId = this.core.chainId;
     const rawliquidatedPositions = await getLiquidatedPositions({
       chainId: chainId,
-      account: walletClient,
+      account: walletClient.toLowerCase(),
       first: 10,
     });
     const transformedLiquidated: TransformedLiquidated[] = [];
