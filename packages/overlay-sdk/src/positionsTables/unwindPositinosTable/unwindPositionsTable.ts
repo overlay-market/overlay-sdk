@@ -46,7 +46,7 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
     const chainId = this.core.chainId;
     const rawUnwindData = await getUnwindPositions({
       chainId: chainId,
-      account: walletClient,
+      account: walletClient.toLowerCase(),
       first: FIRST,
     });
     const transformedUnwinds: TransformedUnwind[] = [];
