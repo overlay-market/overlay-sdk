@@ -37,9 +37,12 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
 
     const marketAddress = marketDetails.chain?.deploymentAddress as Address
 
+    const capLeverage = await this.sdk.market.getCapLeverage(marketAddress)
+
     const marketData = {
       ...marketDetails,
       marketAddress,
+      capLeverage: formatBigNumber(capLeverage, 18, 2),
     };
 
     if (!noCaching) {
@@ -84,9 +87,9 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
            
           const decimals = 18
 
-          parsedBid = decimals && formatBigNumber(result.bid, decimals, 5)
-          parsedAsk = decimals && formatBigNumber(result.ask, decimals, 5)
-          parsedMid = decimals && formatBigNumber(result.mid, decimals, 5)
+          parsedBid = decimals && formatBigNumber(result.bid, decimals, 8)
+          parsedAsk = decimals && formatBigNumber(result.ask, decimals, 8)
+          parsedMid = decimals && formatBigNumber(result.mid, decimals, 8)
           parsedOiLong = decimals && formatBigNumber(result.oiLong, decimals, 18)
           parsedOiShort = decimals && formatBigNumber(result.oiShort, decimals, 18)
           parsedCapOi = decimals && formatBigNumber(result.capOi, decimals, 18)

@@ -66,6 +66,12 @@ export class OverlaySDKMarket extends OverlaySDKModule {
     return contract.read.params([12n]);
   }
 
+  public async getCapLeverage(market: Address) {
+    const contract = await this.getContractV1Market(market);
+    // capLeverage is at index 5
+    return contract.read.params([5n]);
+  }
+
   // Build
 
   // @Logger('Call:')
