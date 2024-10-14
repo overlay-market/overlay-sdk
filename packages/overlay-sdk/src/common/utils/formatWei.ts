@@ -1,7 +1,7 @@
 import { formatUnits, parseUnits } from 'viem'
 import { invariant } from './sdk-error'
 
-export function formatWeiToParsedNumber(wei: bigint | string | undefined, decimals: number | undefined, round?: number) {
+export function formatWeiToParsedNumber(wei: bigint | string | undefined, decimals = 18, round?: number) {
   let parsedWei
 
   if (wei) {
