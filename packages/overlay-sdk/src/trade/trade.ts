@@ -70,7 +70,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     return decimals ? formatBigNumber(estimatedPrice, 18, decimals) : estimatedPrice
   }
 
-  public async getPriceInfo(marketId: string, collateral: bigint, leverage: bigint, slippage: number, isLong: boolean) {
+  public async getPriceInfo(marketId: string, collateral: bigint, leverage: bigint, slippage: number, isLong: boolean, decimals?: number) {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
 
@@ -90,9 +90,9 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const priceImpactPercentage = isLong ? Number(priceImpactValue * 100n) / Number(ask) : Number(priceImpactValue * 100n) / Number(bid);
 
     return {
-      price,
-      minPrice,
-      priceImpactPercentage
+      price: decimals ? formatBigNumber(price, 18, decimals) : price,
+      minPrice: decimals ? formatBigNumber(minPrice, 18, decimals) : minPrice,
+      priceImpactPercentage: priceImpactPercentage.toFixed(2)
     }
   }
 
@@ -139,7 +139,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     return tradingFeeRate * 100
   }
 
-  public async getLiquidationPriceEstimate(marketId: string, collateral: bigint, leverage: bigint, isLong: boolean) {
+  public async getLiquidationPriceEstimate(marketId: string, collateral: bigint, leverage: bigint, isLong: boolean, decimals?: number) {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
 
@@ -147,7 +147,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
 
     const liquidationPrice = await this.sdk.state.getLiquidationPriceEstimate(V1_PERIPHERY_ADDRESS[chainId], marketAddress, collateral, leverage, isLong)
 
-    return formatBigNumber(liquidationPrice, 18, 5)
+    return formatBigNumber(liquidationPrice, 18, decimals || 5)
   }
 
   public async getOiEstimate(marketId: string, collateral: bigint, leverage: bigint, isLong: boolean, decimals?: number) {
