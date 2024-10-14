@@ -8,11 +8,12 @@ import {
   TableRow,
   Paper,
 } from "@mui/material";
-import { sdk } from "./client";
+import useSDK from "./hooks/useSDK";
 
 const PositionsTable = () => {
   const [positions, setPositions] = useState([]);
   const [openPositions, setOpenPositions] = useState([]);
+  const sdk = useSDK();
 
   useEffect(() => {
     const fetchData = async () => {

@@ -8,10 +8,11 @@ import {
   TableRow,
   Paper,
 } from "@mui/material";
-import { sdk } from "./client";
+import useSDK from "./hooks/useSDK";
 
 const LiquidatedPositionsTable = () => {
   const [liquidated, setliquidated] = useState([]);
+  const sdk = useSDK();
 
   useEffect(() => {
     const fetchData = async () => {

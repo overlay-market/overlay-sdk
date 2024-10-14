@@ -8,7 +8,6 @@ import {
   TableRow,
   Paper,
 } from "@mui/material";
-// import { sdk } from "./client";
 import {
   limitDigitsInDecimals,
   toPercentUnit,
