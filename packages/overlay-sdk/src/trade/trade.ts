@@ -49,7 +49,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     invariant(chainId in CHAINS, "Unsupported chainId");
     const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
 
-    if (!collateral || !leverage || !isLong) {
+    if (!collateral || !leverage || isLong === undefined) {
       const midPrice = await this.sdk.state.getMidPrice(V1_PERIPHERY_ADDRESS[chainId], marketAddress)
 
       return decimals ? formatBigNumber(midPrice, 18, decimals) : midPrice
@@ -87,7 +87,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
 
     // calculate price impact
     const priceImpactValue = isLong ? price - ask : bid - price;
-    const priceImpactPercentage = isLong ? Number(priceImpactValue * 100n) / Number(ask) : Number(priceImpactValue * 100n) / Number(bid);
+    const priceImpactPercentage = (isLong ? Number(priceImpactValue) / Number(ask) : Number(priceImpactValue) / Number(bid)) * 100
 
     return {
       price: decimals ? formatBigNumber(price, 18, decimals) : price,
