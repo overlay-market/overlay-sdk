@@ -49,7 +49,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     invariant(chainId in CHAINS, "Unsupported chainId");
     const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
 
-    if (!collateral || !leverage || !isLong) {
+    if (!collateral || !leverage || isLong === undefined) {
       const midPrice = await this.sdk.state.getMidPrice(V1_PERIPHERY_ADDRESS[chainId], marketAddress)
 
       return decimals ? formatBigNumber(midPrice, 18, decimals) : midPrice
@@ -87,7 +87,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
 
     // calculate price impact
     const priceImpactValue = isLong ? price - ask : bid - price;
-    const priceImpactPercentage = isLong ? Number(priceImpactValue * 100n) / Number(ask) : Number(priceImpactValue * 100n) / Number(bid);
+    const priceImpactPercentage = (isLong ? Number(priceImpactValue) / Number(ask) : Number(priceImpactValue) / Number(bid)) * 100
 
     return {
       price: decimals ? formatBigNumber(price, 18, decimals) : price,
@@ -163,7 +163,14 @@ export class OverlaySDKTrade extends OverlaySDKModule {
 
   // this function returns the status of a trade which is going to be built
   // since internally it uses other functions, this function will also return the values of: getLiquidationPriceEstimate, getOiEstimate, getMaxInputIncludingFees, and getPriceInfo
-  public async getTradeState(marketId: string, collateral: bigint, leverage: bigint, slippage: number, isLong: boolean, address: Address, decimals?: number) {
+  public async getTradeState(
+    marketId: string,
+    collateral: bigint,
+    leverage: bigint,
+    slippage: number,
+    isLong: boolean,
+    address: Address,
+  ) {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
 
@@ -202,21 +209,33 @@ export class OverlaySDKTrade extends OverlaySDKModule {
 
     const priceInfo = await this.getPriceInfo(marketId, collateral, leverage, slippage, isLong)
     const isPriceImpactHigh = Number(priceInfo.priceImpactPercentage) - Number(slippage) > 0
+
+    const amountExceedsMaxInput = Number(formatBigNumber(collateral, 18, 18)) > maxInputIncludingFees
+
+    const tradingFeeRate = await this.getFee(marketId)
+
+    // determine estimated collateral
+    const preAdjustedOi = Number(formatBigNumber(collateral, 18, 18)) * Number(formatBigNumber(leverage, 18, 18))
+    const calculatedBuildFee = Number(preAdjustedOi) * tradingFeeRate / 100
+    const estimatedCollateral = Number(formatBigNumber(collateral, 18, 18)) + calculatedBuildFee
     
-    let tradeState: TradeState = TradeState.Build
+    let tradeState: TradeState = TradeState.Trade
     if (showUnderwaterFlow) tradeState = TradeState.PositionUnderwater
     if (exceedOiCap) tradeState = TradeState.ExceedsOICap
     if (exceedCircuitBreakerOiCap) tradeState = TradeState.ExceedsCircuitBreakerOICap
     if (showBalanceNotEnoughWarning) tradeState = TradeState.OVLBalanceBelowMinimum
     if (showApprovalFlow) tradeState = TradeState.NeedsApproval
-    if (isPriceImpactHigh) tradeState = TradeState.BuildHighPriceImpact
+    if (isPriceImpactHigh) tradeState = TradeState.TradeHighPriceImpact
+    if (amountExceedsMaxInput) tradeState = TradeState.AmountExceedsMaxInput
 
     return {
       liquidationPriceEstimate,
-      rawExpectedOi: decimals ? formatBigNumber(rawExpectedOi, 18, decimals) : rawExpectedOi,
+      expectedOi: formatBigNumber(rawExpectedOi, 18, 18),
       maxInputIncludingFees,
       priceInfo,
-      tradeState
+      tradeState,
+      tradingFeeRate,
+      estimatedCollateral
     }
   }
 }
