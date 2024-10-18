@@ -210,7 +210,9 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const priceInfo = await this.getPriceInfo(marketId, collateral, leverage, slippage, isLong)
     const isPriceImpactHigh = Number(priceInfo.priceImpactPercentage) - Number(slippage) > 0
 
-    const amountExceedsMaxInput = Number(formatBigNumber(collateral, 18, 18)) > maxInputIncludingFees
+    const amountExceedsMaxInput = 
+      Number(formatBigNumber(collateral, 18, 18)) > maxInputIncludingFees || 
+      Number(formatBigNumber(collateral, 18, 18)) < minCollateral
 
     const tradingFeeRate = await this.getFee(marketId)
 
