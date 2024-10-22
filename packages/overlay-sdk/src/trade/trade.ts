@@ -175,46 +175,59 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     invariant(chainId in CHAINS, "Unsupported chainId");
 
     const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
-    const midPrice = await this.getPrice(marketId, undefined, undefined, undefined, 5) as number
-    const liquidationPriceEstimate = await this.getLiquidationPriceEstimate(marketId, collateral, leverage, isLong) as number
 
-    const ois = await this.sdk.state.getOIs(V1_PERIPHERY_ADDRESS[chainId], marketAddress)
+    const [
+      midPrice,
+      liquidationPriceEstimate,
+      ois,
+      capOi,
+      circuitBreakerLevel,
+      rawExpectedOi,
+      minCollateral,
+      maxInputIncludingFees,
+      currentAllowance,
+      priceInfo,
+      tradingFeeRate
+    ] = await Promise.all([
+      this.getPrice(marketId, undefined, undefined, undefined, 5),
+      this.getLiquidationPriceEstimate(marketId, collateral, leverage, isLong),
+      this.sdk.state.getOIs(V1_PERIPHERY_ADDRESS[chainId], marketAddress),
+      this.sdk.state.getCapOi(V1_PERIPHERY_ADDRESS[chainId], marketAddress),
+      this.sdk.state.getCircuitBreakerLevel(V1_PERIPHERY_ADDRESS[chainId], marketAddress),
+      this.getOiEstimate(marketId, collateral, leverage, isLong),
+      this.sdk.market.getMinCollateral(marketAddress),
+      this.getMaxInputIncludingFees(marketId, address, leverage),
+      this.sdk.ov.allowance({ account: address, to: marketAddress }),
+      this.getPriceInfo(marketId, collateral, leverage, slippage, isLong, 18),
+      this.getFee(marketId)
+    ]);
+
     invariant(ois[0] && ois[1], "OIs not found");
+    invariant(capOi, "Cap OI not found");
+
     const rawOiLong = ois[0]
     const rawOiShort = ois[1]
-
-    const capOi = await this.sdk.state.getCapOi(V1_PERIPHERY_ADDRESS[chainId], marketAddress)
-    invariant(capOi, "Cap OI not found");
     const rawCapOi = capOi
 
-    const circuitBreakerLevel = await this.sdk.state.getCircuitBreakerLevel(V1_PERIPHERY_ADDRESS[chainId], marketAddress)
+    const showUnderwaterFlow = isLong ? Number(liquidationPriceEstimate) > Number(midPrice) : Number(liquidationPriceEstimate) < Number(midPrice)
 
-    const rawExpectedOi = await this.getOiEstimate(marketId, collateral, leverage, isLong) as bigint
-
-    const showUnderwaterFlow = isLong ? liquidationPriceEstimate > midPrice : liquidationPriceEstimate < midPrice
-
-    const exceedOiCap = isLong ? rawExpectedOi + rawOiLong > rawCapOi : rawExpectedOi + rawOiShort > rawCapOi
+    const exceedOiCap = isLong ? BigInt(rawExpectedOi) + rawOiLong > rawCapOi : BigInt(rawExpectedOi) + rawOiShort > rawCapOi
 
     const exceedCircuitBreakerOiCap = isLong
-      ? (rawExpectedOi + rawOiLong) > (rawCapOi * circuitBreakerLevel / 10n ** 18n)
-      : (rawExpectedOi + rawOiShort) > (rawCapOi * circuitBreakerLevel / 10n ** 18n)
+      ? (BigInt(rawExpectedOi) + rawOiLong) > (rawCapOi * circuitBreakerLevel / 10n ** 18n)
+      : (BigInt(rawExpectedOi) + rawOiShort) > (rawCapOi * circuitBreakerLevel / 10n ** 18n)
 
-    const minCollateral = formatBigNumber(await this.sdk.market.getMinCollateral(marketAddress), 18, 18, true) as number
-    const maxInputIncludingFees = await this.getMaxInputIncludingFees(marketId, address, leverage)
+    const formattedMinCollateral = formatBigNumber(minCollateral, 18, 18, true) as number
 
-    const showBalanceNotEnoughWarning = maxInputIncludingFees && minCollateral && +maxInputIncludingFees < minCollateral ? true : false
+    const showBalanceNotEnoughWarning = maxInputIncludingFees && formattedMinCollateral && +maxInputIncludingFees < formattedMinCollateral ? true : false
 
-    const currentAllowance = await this.sdk.ov.allowance({account: address, to: marketAddress})
     const showApprovalFlow = currentAllowance < collateral
 
-    const priceInfo = await this.getPriceInfo(marketId, collateral, leverage, slippage, isLong)
     const isPriceImpactHigh = Number(priceInfo.priceImpactPercentage) - Number(slippage) > 0
 
     const amountExceedsMaxInput = 
       Number(formatBigNumber(collateral, 18, 18)) > maxInputIncludingFees || 
-      Number(formatBigNumber(collateral, 18, 18)) < minCollateral
-
-    const tradingFeeRate = await this.getFee(marketId)
+      Number(formatBigNumber(collateral, 18, 18)) < formattedMinCollateral
 
     // determine estimated collateral
     const preAdjustedOi = Number(formatBigNumber(collateral, 18, 18)) * Number(formatBigNumber(leverage, 18, 18))
@@ -232,7 +245,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
 
     return {
       liquidationPriceEstimate,
-      expectedOi: formatBigNumber(rawExpectedOi, 18, 18),
+      expectedOi: formatBigNumber(BigInt(rawExpectedOi), 18, 18),
       maxInputIncludingFees,
       priceInfo,
       tradeState,
