@@ -1,5 +1,6 @@
 import useSDK from './hooks/useSDK'
 import { useAccount } from './hooks/useAccount';
+import { toWei } from 'overlay-sdk';
 
 const Market = () => {
   const { address: account } = useAccount();
@@ -111,20 +112,24 @@ const Market = () => {
   }
 
   // Market methods
+  const collateral = toWei(0.1)
+  const leverage = toWei(1)
+  const slippage = 1
 
   const build = async () => {
     try {
-      const result = await sdk.market.build({
+      const res = await sdk.market.build({
         account,
         marketAddress: '0x3a204d03e9b1fee01b8989333665b6c46cc1f79e',
-        collateral: 100000000000000000,
-        leverage: 1000000000000000000,
+        collateral,
+        leverage,
         isLong: true,
-        priceLimit: 141571275687020441,
-      })
-      console.log("Build result: ", result)
+        priceLimit: (await sdk.trade.getPriceInfo("ETH Dominance", collateral, leverage, slippage, true)).minPrice,
+       })
+      console.log("Build result: ", res)
+      console.log("Position ID: ", res.result.positionId)
     } catch (error) {
-      console.error('Error in building market', error)
+      console.error(JSON.stringify(error))
     }
   }
 
@@ -133,10 +138,10 @@ const Market = () => {
       const result = await sdk.market.populateBuild({
         account,
         marketAddress: '0x3a204d03e9b1fee01b8989333665b6c46cc1f79e',
-        collateral: 100000000000000000,
-        leverage: 1000000000000000000,
+        collateral,
+        leverage,
         isLong: true,
-        priceLimit: 141571275687020441,
+        priceLimit: (await sdk.trade.getPriceInfo("ETH Dominance", collateral, leverage, slippage, true)).minPrice,
       })
       console.log("Populate build result: ", result)
     } catch (error) {
@@ -149,10 +154,10 @@ const Market = () => {
       const result = await sdk.market.simulateBuild({
         account,
         marketAddress: '0x3a204d03e9b1fee01b8989333665b6c46cc1f79e',
-        collateral: 100000000000000000,
-        leverage: 1000000000000000000,
+        collateral,
+        leverage,
         isLong: true,
-        priceLimit: 141571275687020441,
+        priceLimit: (await sdk.trade.getPriceInfo("ETH Dominance", collateral, leverage, slippage, true)).minPrice,
       })
       console.log("Simulate build result: ", result)
     } catch (error) {
