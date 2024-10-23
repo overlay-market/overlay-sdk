@@ -8,8 +8,11 @@ import {
   toEventHash,
   getAbiItem,
   decodeEventLog,
+  keccak256,
+  encodePacked,
 } from "viem";
 import { OverlayV1MarketABI } from "./abis/OverlayV1Market.js";
+import { OverlayV1Market2ABI } from "./abis/OverlayV1Market2.js";
 import { OverlaySDKModule } from "../common/class-primitives/sdk-module.js";
 import { NoCallback, OverlaySDKCommonProps, TransactionOptions, TransactionResult } from "../core/types.js";
 import { BuildInnerProps, BuildProps, BuildResult, EmergencyWithdrawInnerProps, EmergencyWithdrawProps, UnwindInnerProps, UnwindProps } from "./types.js";
@@ -19,8 +22,12 @@ import { ERROR_CODE, invariant } from "../common/index.js";
 export class OverlaySDKMarket extends OverlaySDKModule {
   static readonly PRECISION = 10n ** 27n;
 
-  private static BUILD_SIGNATURE = toEventHash(
+  private static BUILD_SIGNATURE_V1_1 = toEventHash(
     getAbiItem({abi: OverlayV1MarketABI, name: "Build"})
+  )
+
+  private static BUILD_SIGNATURE_V1_2 = toEventHash(
+    getAbiItem({abi: OverlayV1Market2ABI, name: "Build"})
   )
 
   constructor(props: OverlaySDKCommonProps) {
@@ -70,6 +77,18 @@ export class OverlaySDKMarket extends OverlaySDKModule {
     const contract = await this.getContractV1Market(market);
     // capLeverage is at index 5
     return contract.read.params([5n]);
+  }
+
+  public async getOiShares(market: Address, positionId: bigint, owner: Address) {
+    const contract = await this.getContractV1Market(market);
+    const encodedParams = encodePacked(['address', 'uint256'], [owner, positionId]);
+    const hash = keccak256(encodedParams);
+
+    const position = await contract.read.positions([hash]);
+    return {
+      oiShares: position[6],
+      isLong: position[4],
+    }
   }
 
   // Build
@@ -235,15 +254,27 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   private submitParse(receipt: TransactionReceipt): BuildResult {
     let positionId: bigint | undefined;
     for (const log of receipt.logs) {
-      if (log.topics[0] !== OverlaySDKMarket.BUILD_SIGNATURE) {
+      if (log.topics[0] !== OverlaySDKMarket.BUILD_SIGNATURE_V1_1 && log.topics[0] !== OverlaySDKMarket.BUILD_SIGNATURE_V1_2) {
         continue;
       }
-      const parsedLog = decodeEventLog({
-        abi: OverlayV1MarketABI,
-        strict: true,
-        ...log,
-      });
-      positionId = BigInt(parsedLog.args.positionId);
+      let parsedLog;
+      if (log.topics[0] === OverlaySDKMarket.BUILD_SIGNATURE_V1_1) {
+        parsedLog = decodeEventLog({
+          abi: OverlayV1MarketABI,
+          strict: true,
+          ...log,
+        });
+      } else if (log.topics[0] === OverlaySDKMarket.BUILD_SIGNATURE_V1_2) {
+        parsedLog = decodeEventLog({
+          abi: OverlayV1Market2ABI,
+          strict: true,
+          ...log,
+        });
+      }
+      if (parsedLog && 'positionId' in parsedLog.args) {
+        positionId = BigInt(parsedLog.args.positionId);
+        break;
+      }
     }
     invariant(positionId, "Position ID not found in the transaction receipt", ERROR_CODE.TRANSACTION_ERROR);
     return { positionId };
