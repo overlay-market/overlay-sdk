@@ -96,6 +96,24 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     }
   }
 
+  public async getUnwindPrice(marketId: string, owner: Address, positionId: bigint, fraction: bigint, slippage: number, decimals?: number) {
+    const chainId = this.core.chainId
+    invariant(chainId in CHAINS, "Unsupported chainId");
+    // validate fraction is between 0 and 1 ** 18
+    invariant(fraction >= 0n && fraction <= 10n ** 18n, "Fraction must be between 0 and 1");
+
+    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
+
+    const {oiShares, isLong} = await this.sdk.market.getOiShares(marketAddress, positionId, owner)
+    console.log(oiShares, isLong)
+    const oiSharesFraction = oiShares * fraction / 10n ** 18n
+    console.log(oiSharesFraction)
+
+    const priceInfo = await this.getPriceInfo(marketId, oiSharesFraction, 10n ** 18n, slippage, !isLong, decimals)
+
+    return priceInfo.minPrice
+  }
+
   public async getBidAndAsk(marketId: string, decimals?: number) {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
