@@ -21,6 +21,7 @@ import { OverlaySDKCommonProps } from "../../core/types";
 import { getOpenPositions } from "../../subgraph";
 import { mainnet } from "viem/chains";
 import { CHAINS, invariant } from "../../common";
+import { paginate } from "../../common/utils/paginate";
 
 type OpenPosition = NonNullable<
   NonNullable<OpenPositionsQuery["account"]>["positions"]
@@ -45,7 +46,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     super(props);
     this.sdk = sdk;
   }
-  transformOpenPositions = async (account?: Address): Promise<TransformedOpen[]> => {
+  transformOpenPositions = async (page = 1, pageSize = 10, account?: Address): Promise<TransformedOpen[]> => {
     let walletClient = account;
     if (!walletClient) {
       invariant(this.sdk.core.web3Provider, "Web3 provider is not set");
@@ -212,6 +213,6 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
         parsedFunding: parsedFunding,
       });
     }
-    return transformedOpens;
+    return paginate(transformedOpens, page, pageSize);
   };
 }
