@@ -1,0 +1,1 @@
+{"version":3,"file":"walletAddress.js","sourceRoot":"","sources":["../src/walletAddress.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,kBAAkB,EAAE,IAAI,EAAE,MAAM,MAAM,CAAC;AAChD,OAAO,EAAE,OAAO,EAAE,MAAM,aAAa,CAAC;AAEtC,iDAAiD;AACjD,MAAM,CAAC,MAAM,YAAY,GAAG,kBAAkB,CAAC;IAC7C,KAAK,EAAE,OAAO;IACd,SAAS,EAAE,IAAI,EAAE;CAClB,CAAC,CAAC"}

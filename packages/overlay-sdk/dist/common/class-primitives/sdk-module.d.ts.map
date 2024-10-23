@@ -1,0 +1,1 @@
+{"version":3,"file":"sdk-module.d.ts","sourceRoot":"","sources":["../../../src/common/class-primitives/sdk-module.ts"],"names":[],"mappings":"AAAA,OAAO,cAAc,MAAM,oBAAoB,CAAC;AAChD,OAAO,KAAK,EAAE,qBAAqB,EAAE,MAAM,qBAAqB,CAAC;AACjE,OAAO,EAAE,mBAAmB,EAAE,MAAM,gBAAgB,CAAC;AAErD,8BAAsB,gBAAiB,SAAQ,mBAAmB;IAChE,QAAQ,CAAC,IAAI,EAAE,cAAc,CAAC;gBAElB,KAAK,EAAE,qBAAqB;CAOzC"}
