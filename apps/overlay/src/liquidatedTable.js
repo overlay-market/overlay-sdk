@@ -17,7 +17,7 @@ const LiquidatedPositionsTable = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const liquidatedPositions = await sdk.liquidatedPositions.transformLiquidatedPositions()
+        const liquidatedPositions = (await sdk.liquidatedPositions.transformLiquidatedPositions()).data;
 
         console.log("liquidatedPositions", liquidatedPositions);
         

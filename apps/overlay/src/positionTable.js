@@ -27,8 +27,8 @@ const PositionsTable = () => {
         const transformedLiquidations = await sdk.liquidatedPositions.transformLiquidatedPositions(1, 10, "ETH / SOL");
         console.log("liquidated positions", transformedLiquidations);
 
-        setPositions(transformUnwindPositions);
-        setOpenPositions(transformedOpenPositions);
+        setPositions(transformUnwindPositions.data);
+        setOpenPositions(transformedOpenPositions.data);
       } catch (error) {
         console.error("Error fetching positions:", error);
         if (
