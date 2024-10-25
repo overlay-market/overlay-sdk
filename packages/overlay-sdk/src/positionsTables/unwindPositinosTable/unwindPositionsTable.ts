@@ -37,7 +37,7 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
     super(props);
     this.sdk = sdk;
   }
-  transformUnwindPositions = async (page = 1, pageSize = 10, account?: Address): // unwindPositions: Unwind[]
+  transformUnwindPositions = async (page = 1, pageSize = 10, marketId?: string, account?: Address): // unwindPositions: Unwind[]
   Promise<TransformedUnwind[]> => {
     let walletClient = account;
     if (!walletClient) {
@@ -102,6 +102,13 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
           Math.abs(+unwind.pnl) > 10 ** +18 ? 4 : 6
         ),
       });
+    }
+    // filter by marketId
+    if (marketId) {
+      const filteredUnwinds = transformedUnwinds.filter(
+        (unwind) => unwind.marketName === marketId
+      );
+      return paginate(filteredUnwinds, page, pageSize);
     }
     return paginate(transformedUnwinds, page, pageSize);
   };
