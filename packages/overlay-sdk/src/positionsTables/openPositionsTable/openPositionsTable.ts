@@ -46,17 +46,19 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     super(props);
     this.sdk = sdk;
   }
-  transformOpenPositions = async (page = 1, pageSize = 10, account?: Address): Promise<TransformedOpen[]> => {
+  transformOpenPositions = async (page = 1, pageSize = 10, marketId?: string, account?: Address): Promise<TransformedOpen[]> => {
     let walletClient = account;
     if (!walletClient) {
       invariant(this.sdk.core.web3Provider, "Web3 provider is not set");
       walletClient = account ?? (await this.sdk.core.web3Provider?.requestAddresses())[0] as Address;
     }
     const chainId = this.core.chainId;
+    const {marketAddress} = marketId ? (await this.sdk.markets.getMarketDetails(marketId)) : {marketAddress: undefined};
     const rawOpenData = await getOpenPositions({
       chainId: chainId,
       account: walletClient.toLowerCase(),
       first: FIRST,
+      marketId: marketAddress,
     });
     const transformedOpens: TransformedOpen[] = [];
     const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
