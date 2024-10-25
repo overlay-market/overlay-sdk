@@ -37,8 +37,12 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
     super(props);
     this.sdk = sdk;
   }
-  transformUnwindPositions = async (page = 1, pageSize = 10, marketId?: string, account?: Address): // unwindPositions: Unwind[]
-  Promise<TransformedUnwind[]> => {
+  transformUnwindPositions = async (
+    page = 1, 
+    pageSize = 10, 
+    marketId?: string, 
+    account?: Address
+  ): Promise<{ data: TransformedUnwind[]; total: number }> => {
     let walletClient = account;
     if (!walletClient) {
       invariant(this.sdk.core.web3Provider, "Web3 provider is not set");
