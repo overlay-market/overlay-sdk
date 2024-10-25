@@ -34,7 +34,7 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
     this.sdk = sdk;
   }
 
-  transformLiquidatedPositions = async (page = 1, pageSize = 10, account: Address): Promise<TransformedLiquidated[]> => {
+  transformLiquidatedPositions = async (page = 1, pageSize = 10, marketId?: string, account?: Address): Promise<TransformedLiquidated[]> => {
     let walletClient = account;
     if (!walletClient) {
       invariant(this.sdk.core.web3Provider, "Web3 provider is not set");
@@ -95,6 +95,13 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
         created: parsedCreatedTimestamp,
         liquidated: parsedClosedTimestamp,
       });
+    }
+    // filter by marketId
+    if (marketId) {
+      const filteredLiquidated = transformedLiquidated.filter(
+        (liquidated) => liquidated.marketName === marketId
+      );
+      return paginate(filteredLiquidated, page, pageSize);
     }
     return paginate(transformedLiquidated, page, pageSize);
   };
