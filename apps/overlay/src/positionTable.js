@@ -18,13 +18,13 @@ const PositionsTable = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const transformUnwindPositions = await sdk.unwindPositions.transformUnwindPositions();
+        const transformUnwindPositions = await sdk.unwindPositions.transformUnwindPositions(1, 10, "AI Index");
         console.log("unwind positions", transformUnwindPositions);
 
-        const transformedOpenPositions = await sdk.openPositions.transformOpenPositions(1, 5, "ETH Dominance");
+        const transformedOpenPositions = await sdk.openPositions.transformOpenPositions(1, 10, "ETH Dominance");
         console.log("open positions", transformedOpenPositions);
 
-        const transformedLiquidations = await sdk.liquidatedPositions.transformLiquidatedPositions();
+        const transformedLiquidations = await sdk.liquidatedPositions.transformLiquidatedPositions(1, 10, "ETH / SOL");
         console.log("liquidated positions", transformedLiquidations);
 
         setPositions(transformUnwindPositions);
