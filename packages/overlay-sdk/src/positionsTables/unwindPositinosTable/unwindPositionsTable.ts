@@ -13,6 +13,7 @@ import {
 import { FIRST, PRICE_CURRENCY_FROM_QUOTE } from "../../constants";
 import { getUnwindPositions } from "../../subgraph";
 import { CHAINS, invariant } from "../../common";
+import { paginate } from "../../common/utils/paginate";
 
 type Unwind = NonNullable<
   NonNullable<UnwindsQuery["account"]>["unwinds"]
@@ -36,7 +37,7 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
     super(props);
     this.sdk = sdk;
   }
-  transformUnwindPositions = async (account?: Address): // unwindPositions: Unwind[]
+  transformUnwindPositions = async (page = 1, pageSize = 10, marketId?: string, account?: Address): // unwindPositions: Unwind[]
   Promise<TransformedUnwind[]> => {
     let walletClient = account;
     if (!walletClient) {
@@ -102,6 +103,13 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
         ),
       });
     }
-    return transformedUnwinds;
+    // filter by marketId
+    if (marketId) {
+      const filteredUnwinds = transformedUnwinds.filter(
+        (unwind) => unwind.marketName === marketId
+      );
+      return paginate(filteredUnwinds, page, pageSize);
+    }
+    return paginate(transformedUnwinds, page, pageSize);
   };
 }
