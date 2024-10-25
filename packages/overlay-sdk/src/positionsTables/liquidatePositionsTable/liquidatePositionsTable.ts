@@ -34,7 +34,12 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
     this.sdk = sdk;
   }
 
-  transformLiquidatedPositions = async (page = 1, pageSize = 10, marketId?: string, account?: Address): Promise<TransformedLiquidated[]> => {
+  transformLiquidatedPositions = async (
+    page = 1, 
+    pageSize = 10, 
+    marketId?: string, 
+    account?: Address
+  ): Promise<{ data: TransformedLiquidated[]; total: number }> => {
     let walletClient = account;
     if (!walletClient) {
       invariant(this.sdk.core.web3Provider, "Web3 provider is not set");
