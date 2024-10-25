@@ -1,37 +1,40 @@
 import { gql } from "graphql-request";
 
-export const OpenPositionsQuery = gql`
-  query openPositions($account: ID!, $first: Int, $skip: Int) {
-    account(id: $account) {
-      positions(
-        where: {
-          isLiquidated: false
-          fractionUnwound_lt: "1000000000000000000"
-        }
-        orderBy: createdAtTimestamp
-        orderDirection: desc
-        first: $first
-        skip: $skip
-      ) {
-        fractionUnwound
-        id
-        createdAtTimestamp
-        currentOi
-        entryPrice
-        initialCollateral
-        isLiquidated
-        isLong
-        leverage
-        numberOfUniwnds
-        positionId
-        market {
-          feedAddress
+export const getOpenPositionsQuery = (filterByMarket: boolean) => {
+  return gql`
+    query openPositions($account: ID!, $first: Int, $skip: Int${filterByMarket ? ", $marketId: ID" : ""}) {
+      account(id: $account) {
+        positions(
+          where: {
+            isLiquidated: false
+            fractionUnwound_lt: "1000000000000000000"
+            ${filterByMarket ? "market_: {id: $marketId}" : ""}
+          }
+          orderBy: createdAtTimestamp
+          orderDirection: desc
+          first: $first
+          skip: $skip
+        ) {
+          fractionUnwound
           id
+          createdAtTimestamp
+          currentOi
+          entryPrice
+          initialCollateral
+          isLiquidated
+          isLong
+          leverage
+          numberOfUniwnds
+          positionId
+          market {
+            feedAddress
+            id
+          }
         }
       }
     }
-  }
-`;
+  `;
+}
 
 export const UnwindPositionsQuery = gql`
   query unwinds($account: ID!, $first: Int, $skip: Int) {

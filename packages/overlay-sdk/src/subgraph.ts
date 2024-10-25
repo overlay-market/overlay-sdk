@@ -1,10 +1,10 @@
 import axios from "axios";
 import { request, RequestExtendedOptions } from "graphql-request";
 import {
-  OpenPositionsQuery as OpenPositionsQueryDocument,
   UnwindPositionsQuery as UnwindPositionsQueryDocument,
   ActiveMarketsQuery as ActiveMarketsQueryDocument,
   LiquidatedPositionsQuery as LiquidatedPositionsQueryDocument,
+  getOpenPositionsQuery,
 } from "./queries";
 import {
   OpenPositionsQuery,
@@ -66,6 +66,7 @@ const requestAllWithStep = async <TResult, TResultEntry, TVariables>({
 export type GetOpenPositionsOptions = {
   chainId: CHAINS;
   account: string;
+  marketId?: string;
   first?: number;
   skip?: number;
 };
@@ -78,6 +79,7 @@ export const getOpenPositions = async ({
   chainId,
   account,
   first,
+  marketId,
 }: GetOpenPositionsOptions): Promise<OpenPosition[]> => {
   invariant(chainId in CHAINS, "Unsupported chainId");
   const url = NETWORKS[chainId].SUBGRAPH_URL;
@@ -87,11 +89,12 @@ export const getOpenPositions = async ({
     OpenPositionsQueryVariables
   >({
     url,
-    document: OpenPositionsQueryDocument,
+    document: getOpenPositionsQuery(!!marketId),
     step: first ?? 1000,
     extractArray: (result) => result?.account?.positions ?? [],
     variables: {
       account,
+      ...(marketId && { marketId }),
     },
   });
 };
