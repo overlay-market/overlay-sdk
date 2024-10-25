@@ -18,11 +18,16 @@ const PositionsTable = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const transformedData = await sdk.unwindPositions.transformUnwindPositions();
-        console.log("transformedDataFront", transformedData);
-        const transformedOpenPositions = await sdk.openPositions.transformOpenPositions();
-        console.log("transformedOpenPositions", transformedOpenPositions);
-        setPositions(transformedData);
+        const transformUnwindPositions = await sdk.unwindPositions.transformUnwindPositions();
+        console.log("unwind positions", transformUnwindPositions);
+
+        const transformedOpenPositions = await sdk.openPositions.transformOpenPositions(1, 5, "ETH Dominance");
+        console.log("open positions", transformedOpenPositions);
+
+        const transformedLiquidations = await sdk.liquidatedPositions.transformLiquidatedPositions();
+        console.log("liquidated positions", transformedLiquidations);
+
+        setPositions(transformUnwindPositions);
         setOpenPositions(transformedOpenPositions);
       } catch (error) {
         console.error("Error fetching positions:", error);
