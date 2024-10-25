@@ -13,7 +13,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "fil": [
+  "files": [
     "dist"
   ],
   "devDependencies": {
