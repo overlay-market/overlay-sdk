@@ -6,20 +6,23 @@ import { getMarketsDetailsByChainId } from "../../services/marketsDetails";
 import { OverlaySDKModule } from "../../common/class-primitives/sdk-module";
 import { getOpenPositions } from "../../subgraph";
 import { invariant } from "../../common";
+import { paginate } from "../../common/utils/paginate";
 export class OverlaySDKOpenPositions extends OverlaySDKModule {
     constructor(props, sdk) {
         super(props);
-        this.transformOpenPositions = async (account) => {
+        this.transformOpenPositions = async (page = 1, pageSize = 10, marketId, account) => {
             let walletClient = account;
             if (!walletClient) {
                 invariant(this.sdk.core.web3Provider, "Web3 provider is not set");
                 walletClient = account ?? (await this.sdk.core.web3Provider?.requestAddresses())[0];
             }
             const chainId = this.core.chainId;
+            const { marketAddress } = marketId ? (await this.sdk.markets.getMarketDetails(marketId)) : { marketAddress: undefined };
             const rawOpenData = await getOpenPositions({
                 chainId: chainId,
                 account: walletClient.toLowerCase(),
                 first: FIRST,
+                marketId: marketAddress,
             });
             const transformedOpens = [];
             const marketDetails = await getMarketsDetailsByChainId(chainId);
@@ -118,7 +121,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
                     parsedFunding: parsedFunding,
                 });
             }
-            return transformedOpens;
+            return paginate(transformedOpens, page, pageSize);
         };
         this.sdk = sdk;
     }

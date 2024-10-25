@@ -1,5 +1,5 @@
 import { request } from "graphql-request";
-import { OpenPositionsQuery as OpenPositionsQueryDocument, UnwindPositionsQuery as UnwindPositionsQueryDocument, ActiveMarketsQuery as ActiveMarketsQueryDocument, LiquidatedPositionsQuery as LiquidatedPositionsQueryDocument, } from "./queries";
+import { UnwindPositionsQuery as UnwindPositionsQueryDocument, ActiveMarketsQuery as ActiveMarketsQueryDocument, LiquidatedPositionsQuery as LiquidatedPositionsQueryDocument, getOpenPositionsQuery, } from "./queries";
 import { NETWORKS } from "./constants";
 import { CHAINS, invariant } from "./common";
 const parseSubgraphUrl = (value) => {
@@ -29,16 +29,17 @@ const requestAllWithStep = async ({ url, step, document, variables, extractArray
     }
     return results;
 };
-export const getOpenPositions = async ({ chainId, account, first, }) => {
+export const getOpenPositions = async ({ chainId, account, first, marketId, }) => {
     invariant(chainId in CHAINS, "Unsupported chainId");
     const url = NETWORKS[chainId].SUBGRAPH_URL;
     return requestAllWithStep({
         url,
-        document: OpenPositionsQueryDocument,
+        document: getOpenPositionsQuery(!!marketId),
         step: first ?? 1000,
         extractArray: (result) => result?.account?.positions ?? [],
         variables: {
             account,
+            ...(marketId && { marketId }),
         },
     });
 };

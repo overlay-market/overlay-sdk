@@ -6,10 +6,11 @@ import { getLiquidatedPositions } from "../../subgraph";
 import { toPercentUnit, toScientificNumber, } from "../../common/utils/toScientificNumber.js";
 import formatUnixTimestampToDate from "../../common/utils/formatUnixTimestampToDate.js";
 import { invariant } from "../../common/index.js";
+import { paginate } from "../../common/utils/paginate.js";
 export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
     constructor(props, sdk) {
         super(props);
-        this.transformLiquidatedPositions = async (account) => {
+        this.transformLiquidatedPositions = async (page = 1, pageSize = 10, marketId, account) => {
             let walletClient = account;
             if (!walletClient) {
                 invariant(this.sdk.core.web3Provider, "Web3 provider is not set");
@@ -55,7 +56,12 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
                     liquidated: parsedClosedTimestamp,
                 });
             }
-            return transformedLiquidated;
+            // filter by marketId
+            if (marketId) {
+                const filteredLiquidated = transformedLiquidated.filter((liquidated) => liquidated.marketName === marketId);
+                return paginate(filteredLiquidated, page, pageSize);
+            }
+            return paginate(transformedLiquidated, page, pageSize);
         };
         this.sdk = sdk;
     }

@@ -14,7 +14,10 @@ type TransformedLiquidated = {
 export declare class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
     private sdk;
     constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK);
-    transformLiquidatedPositions: (account: Address) => Promise<TransformedLiquidated[]>;
+    transformLiquidatedPositions: (page?: number, pageSize?: number, marketId?: string, account?: Address) => Promise<{
+        data: TransformedLiquidated[];
+        total: number;
+    }>;
 }
 export {};
 //# sourceMappingURL=liquidatePositionsTable.d.ts.map

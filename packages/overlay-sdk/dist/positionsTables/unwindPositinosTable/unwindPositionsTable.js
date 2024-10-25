@@ -4,10 +4,11 @@ import { formatBigNumber, formatUnixTimestampToDate, toPercentUnit, toScientific
 import { FIRST, PRICE_CURRENCY_FROM_QUOTE } from "../../constants";
 import { getUnwindPositions } from "../../subgraph";
 import { invariant } from "../../common";
+import { paginate } from "../../common/utils/paginate";
 export class OverlaySDKUnwindPositions extends OverlaySDKModule {
     constructor(props, sdk) {
         super(props);
-        this.transformUnwindPositions = async (account) => {
+        this.transformUnwindPositions = async (page = 1, pageSize = 10, marketId, account) => {
             let walletClient = account;
             if (!walletClient) {
                 invariant(this.sdk.core.web3Provider, "Web3 provider is not set");
@@ -54,7 +55,12 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
                     pnl: formatBigNumber(unwind.pnl, Number(18), Math.abs(+unwind.pnl) > 10 ** +18 ? 4 : 6),
                 });
             }
-            return transformedUnwinds;
+            // filter by marketId
+            if (marketId) {
+                const filteredUnwinds = transformedUnwinds.filter((unwind) => unwind.marketName === marketId);
+                return paginate(filteredUnwinds, page, pageSize);
+            }
+            return paginate(transformedUnwinds, page, pageSize);
         };
         this.sdk = sdk;
     }

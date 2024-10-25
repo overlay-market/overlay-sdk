@@ -8,11 +8,12 @@ export type SubgraphUrl = string | {
 export type GetOpenPositionsOptions = {
     chainId: CHAINS;
     account: string;
+    marketId?: string;
     first?: number;
     skip?: number;
 };
 type OpenPosition = NonNullable<NonNullable<OpenPositionsQuery["account"]>["positions"]>[number];
-export declare const getOpenPositions: ({ chainId, account, first, }: GetOpenPositionsOptions) => Promise<OpenPosition[]>;
+export declare const getOpenPositions: ({ chainId, account, first, marketId, }: GetOpenPositionsOptions) => Promise<OpenPosition[]>;
 export type GetUnwindPositionsOptions = {
     chainId: CHAINS;
     account: string;

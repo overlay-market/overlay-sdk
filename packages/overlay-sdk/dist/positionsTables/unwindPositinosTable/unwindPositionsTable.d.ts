@@ -15,7 +15,10 @@ type TransformedUnwind = {
 export declare class OverlaySDKUnwindPositions extends OverlaySDKModule {
     private sdk;
     constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK);
-    transformUnwindPositions: (account?: Address) => Promise<TransformedUnwind[]>;
+    transformUnwindPositions: (page?: number, pageSize?: number, marketId?: string, account?: Address) => Promise<{
+        data: TransformedUnwind[];
+        total: number;
+    }>;
 }
 export {};
 //# sourceMappingURL=unwindPositionsTable.d.ts.map

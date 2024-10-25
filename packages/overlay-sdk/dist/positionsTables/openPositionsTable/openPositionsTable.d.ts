@@ -16,7 +16,10 @@ type TransformedOpen = {
 export declare class OverlaySDKOpenPositions extends OverlaySDKModule {
     private sdk;
     constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK);
-    transformOpenPositions: (account?: Address) => Promise<TransformedOpen[]>;
+    transformOpenPositions: (page?: number, pageSize?: number, marketId?: string, account?: Address) => Promise<{
+        data: TransformedOpen[];
+        total: number;
+    }>;
 }
 export {};
 //# sourceMappingURL=openPositionsTable.d.ts.map
