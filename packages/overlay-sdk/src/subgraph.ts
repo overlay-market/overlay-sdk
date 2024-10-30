@@ -4,7 +4,8 @@ import {
   UnwindPositionsQuery as UnwindPositionsQueryDocument,
   ActiveMarketsQuery as ActiveMarketsQueryDocument,
   LiquidatedPositionsQuery as LiquidatedPositionsQueryDocument,
-  getOpenPositionsQuery,
+  OpenPositionsQuery as OpenPositionsQueryDocument,
+  NumberOfPositionsQuery as NumberOfPositionsQueryDocument,
 } from "./queries";
 import {
   OpenPositionsQuery,
@@ -14,6 +15,8 @@ import {
   ActiveMarketsQuery,
   LiquidatedPositionsQuery,
   LiquidatedPositionsQueryVariables,
+  NumberOfPositionsQuery,
+  NumberOfPositionsQueryVariables,
 } from "./types";
 import { NETWORKS } from "./constants";
 import { CHAINS, invariant } from "./common";
@@ -66,7 +69,6 @@ const requestAllWithStep = async <TResult, TResultEntry, TVariables>({
 export type GetOpenPositionsOptions = {
   chainId: CHAINS;
   account: string;
-  marketId?: string;
   first?: number;
   skip?: number;
 };
@@ -79,7 +81,6 @@ export const getOpenPositions = async ({
   chainId,
   account,
   first,
-  marketId,
 }: GetOpenPositionsOptions): Promise<OpenPosition[]> => {
   invariant(chainId in CHAINS, "Unsupported chainId");
   const url = NETWORKS[chainId].SUBGRAPH_URL;
@@ -89,12 +90,11 @@ export const getOpenPositions = async ({
     OpenPositionsQueryVariables
   >({
     url,
-    document: getOpenPositionsQuery(!!marketId),
+    document: OpenPositionsQueryDocument,
     step: first ?? 1000,
     extractArray: (result) => result?.account?.positions ?? [],
     variables: {
       account,
-      ...(marketId && { marketId }),
     },
   });
 };
@@ -174,3 +174,27 @@ export const getActiveMarketsFromSubgraph = async (chainId: CHAINS) => {
     return undefined;
   }
 };
+
+type NumberOfPositions = NonNullable<
+  NonNullable<NumberOfPositionsQuery["account"]>
+>;
+
+export const getNumberOfPositions = async (chainId: CHAINS, account: string) => {
+  invariant(chainId in CHAINS, "Unsupported chainId");
+  const url = NETWORKS[chainId].SUBGRAPH_URL;
+  try {
+    const result = await request<NumberOfPositionsQuery, NumberOfPositionsQueryVariables>({
+      document: NumberOfPositionsQueryDocument,
+      url,
+      variables: {
+        account,
+      },
+    });
+    console.log("result", result);
+    console.log("account", account);
+    return result;
+  } catch (error) {
+    console.error("Error fetching number of positions data:", error);
+    return undefined;
+  }
+}
