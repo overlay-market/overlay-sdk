@@ -42,7 +42,6 @@ export const UnwindPositionsQuery = gql`
         first: $first
         skip: $skip
       ) {
-        collateral
         currentDebt
         currentOi
         fraction
@@ -114,7 +113,6 @@ export const LiquidatedPositionsQuery = gql`
         first: $first
         skip: $skip
       ) {
-        collateral
         currentDebt
         currentOi
         id
