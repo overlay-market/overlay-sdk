@@ -42,12 +42,9 @@ export const UnwindPositionsQuery = gql`
         first: $first
         skip: $skip
       ) {
-        currentDebt
-        currentOi
         fraction
         fractionOfPosition
         id
-        isLong
         mint
         pnl
         price
@@ -55,7 +52,6 @@ export const UnwindPositionsQuery = gql`
         timestamp
         transferAmount
         unwindNumber
-        value
         position {
           createdAtTimestamp
           currentOi
@@ -113,14 +109,10 @@ export const LiquidatedPositionsQuery = gql`
         first: $first
         skip: $skip
       ) {
-        currentDebt
-        currentOi
         id
-        isLong
         mint
         price
         timestamp
-        value
         size
         position {
           createdAtTimestamp

@@ -70,7 +70,7 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
       const marketName =
         marketDetails?.get(liquidated.id.split("-")[0])?.marketName ?? "";
       const parsedSize = formatBigNumber(liquidated.size, Number(18));
-      const positionSide = liquidated.isLong ? "Long" : "Short";
+      const positionSide = liquidated.position.isLong ? "Long" : "Short";
       const parsedEntryPrice = formatBigNumber(
         liquidated.position.entryPrice,
         Number(18)
