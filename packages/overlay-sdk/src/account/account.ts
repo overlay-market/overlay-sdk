@@ -11,13 +11,14 @@ type IntervalType = '1D' | '1W' | '1M' | '6M' | '1Y'
 
 export class OverlaySDKAccountDetails extends OverlaySDKModule {
   private sdk: OverlaySDK;
+  private overviewCache: Record<string, { data: any; lastUpdated: number }> = {};
 
   constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK) {
     super(props);
     this.sdk = sdk;
   }
 
-  getOverview = async (interval: IntervalType = '1D', account?: Address) => {
+  getOverview = async (interval: IntervalType = '1D', account?: Address, noCaching?: boolean) => {
     let walletClient = account;
     if (!walletClient) {
       invariant(this.sdk.core.web3Provider, "Web3 provider is not set");
@@ -25,22 +26,28 @@ export class OverlaySDKAccountDetails extends OverlaySDKModule {
     }
     const chainId = this.core.chainId;
 
-    const unwindPositions = await getUnwindPositions({
+    // check if we have the data in cache and if it's not too old
+    const cacheKey = `${walletClient}-${chainId}`;
+    if (!noCaching && this.overviewCache[cacheKey]) {
+      const cachedData = this.overviewCache[cacheKey];
+      const isCacheValid = Date.now() - cachedData.lastUpdated < 300 * 1000; // 5 minutes
+      if (isCacheValid) {
+        return cachedData.data;
+      }
+    }
+
+    const [unwindPositions, liquidatedPositions, openPositions, numberOfPositions] = await Promise.all([
+      getUnwindPositions({
       chainId: chainId,
       account: walletClient.toLowerCase()
-    });
-
-    const liquidatedPositions = await getLiquidatedPositions({
+      }),
+      getLiquidatedPositions({
       chainId: chainId,
       account: walletClient.toLowerCase()
-    });
-
-    const openPositions = (await this.sdk.openPositions.transformOpenPositions(1, Infinity)).data;
-
-    const numberOfPositions = await getNumberOfPositions(
-      chainId,
-      walletClient.toLowerCase(),
-    );
+      }),
+      this.sdk.openPositions.transformOpenPositions(1, 1000, undefined, walletClient).then(result => result.data),
+      getNumberOfPositions(chainId, walletClient.toLowerCase())
+    ]);
     
     const formattedUnwindRows = unwindPositions.map((row: {timestamp: string; pnl: string}) => ({
       ...row,
@@ -64,15 +71,20 @@ export class OverlaySDKAccountDetails extends OverlaySDKModule {
       unrealizedPnL += position.unrealizedPnL ? parseFloat(position.unrealizedPnL as string) : 0
     })
 
-    return {
+    const overviewData = {
       numberOfOpenPositions: numberOfPositions?.account?.numberOfOpenPositions ?? 0,
       realizedPnl: numberOfPositions?.account?.realizedPnl ? formatBigNumber(numberOfPositions.account.realizedPnl, 18, 6) : '0',
-      totalValueLocked,
-      unrealizedPnL,
+      totalValueLocked: totalValueLocked.toFixed(2),
+      unrealizedPnL: unrealizedPnL.toFixed(6),
+      lockedPlusUnrealized: (totalValueLocked + unrealizedPnL).toFixed(2),
       dataByPeriod,
     };
 
+    if (!noCaching) {
+      this.overviewCache[cacheKey] = { data: overviewData, lastUpdated: Date.now() };
+    }
 
+    return overviewData;
   }
 
   private getDataByPeriod = (
