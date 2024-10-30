@@ -74,6 +74,9 @@ const MarketsTable = () => {
         const ethDominanceBuildState = await sdk.trade.getTradeState("ETH Dominance", collateral, leverage, slippage, isLong, address);
         console.log("ETH Dominance Build State", ethDominanceBuildState);
 
+        const overviewData = await sdk.accountDetails.getOverview('1M');
+        console.log(" ================= Overview Data", overviewData);
+
         activeMarkets && setMarkets(activeMarkets);
       } catch (error) {
         console.error("Error fetching markets:", error);
