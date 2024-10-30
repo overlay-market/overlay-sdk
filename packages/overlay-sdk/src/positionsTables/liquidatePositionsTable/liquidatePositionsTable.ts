@@ -93,7 +93,7 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
 
       transformedLiquidated.push({
         marketName: marketName,
-        size: parsedSize + "OVL",
+        size: parsedSize,
         position: liquidated.position.leverage + "x " + positionSide,
         entryPrice: `${priceCurrency ? priceCurrency : ""}${
           parsedEntryPrice
