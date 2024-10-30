@@ -6,6 +6,7 @@ import { OverlaySDKUnwindPositions } from "./positionsTables/unwindPositinosTabl
 import { OverlaySDKOverlayToken } from "./ov/index.js";
 import { OverlaySDKTrade } from "./trade/index.js";
 import { OverlaySDKLiquidatedPositions } from "./positionsTables/liquidatePositionsTable/liquidatePositionsTable.js";
+import { OverlaySDKAccountDetails } from "./account/account.js";
 
 export class OverlaySDK {
   readonly core: OverlaySDKCore;
@@ -17,6 +18,7 @@ export class OverlaySDK {
   readonly openPositions: OverlaySDKOpenPositions;
   readonly unwindPositions: OverlaySDKUnwindPositions;
   readonly liquidatedPositions: OverlaySDKLiquidatedPositions;
+  readonly accountDetails: OverlaySDKAccountDetails;
 
   constructor(props: OverlaySDKCoreProps) {
     // Core functionality
@@ -33,6 +35,10 @@ export class OverlaySDK {
       this
     );
     this.liquidatedPositions = new OverlaySDKLiquidatedPositions(
+      { ...props, core },
+      this
+    );
+    this.accountDetails = new OverlaySDKAccountDetails(
       { ...props, core },
       this
     );
