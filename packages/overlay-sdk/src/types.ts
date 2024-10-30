@@ -4653,3 +4653,10 @@ export type LiquidatedPositionsQueryVariables = Exact<{
 
 
 export type LiquidatedPositionsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', liquidates: Array<{ __typename?: 'Liquidate', collateral: any, currentDebt: any, currentOi: any, id: string, isLong: boolean, mint: any, price: any, timestamp: any, value: any, size: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, fractionUnwound: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, market: { __typename?: 'Market', feedAddress: string, id: string } } }> } | null };
+
+export type NumberOfPositionsQueryVariables = Exact<{
+  account: Scalars['ID']['input'];
+}>;
+
+
+export type NumberOfPositionsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', numberOfLiquidatedPositions: any, numberOfOpenPositions: any, numberOfUnwinds: any, realizedPnl: any } | null };
