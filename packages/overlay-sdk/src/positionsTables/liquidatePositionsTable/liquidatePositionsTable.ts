@@ -28,6 +28,7 @@ type TransformedLiquidated = {
 
 export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
   private sdk: OverlaySDK;
+  private liquidatedPositionsCache: Record<string, { data: any; lastUpdated: number }> = {};
 
   constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK) {
     super(props);
@@ -38,7 +39,8 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
     page = 1, 
     pageSize = 10, 
     marketId?: string, 
-    account?: Address
+    account?: Address,
+    noCaching?: boolean
   ): Promise<{ data: TransformedLiquidated[]; total: number }> => {
     let walletClient = account;
     if (!walletClient) {
@@ -46,10 +48,20 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
       walletClient = account ?? (await this.sdk.core.web3Provider?.requestAddresses())[0] as Address;
     }
     const chainId = this.core.chainId;
+
+    // check if we have the data in cache and if it's not too old
+    const cacheKey = `${walletClient}-${chainId}`;
+    if (!noCaching && this.liquidatedPositionsCache[cacheKey]) {
+      const cachedData = this.liquidatedPositionsCache[cacheKey];
+      const isCacheValid = Date.now() - cachedData.lastUpdated < 300 * 1000; // 5 minutes
+      if (isCacheValid) {
+        return paginate(this.filterLiquidatedPositionsByMarketId(cachedData.data, marketId), page, pageSize);
+      }
+    }
+
     const rawliquidatedPositions = await getLiquidatedPositions({
       chainId: chainId,
-      account: walletClient.toLowerCase(),
-      first: 10,
+      account: walletClient.toLowerCase()
     });
     const transformedLiquidated: TransformedLiquidated[] = [];
     const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
@@ -101,13 +113,26 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
         liquidated: parsedClosedTimestamp,
       });
     }
-    // filter by marketId
-    if (marketId) {
-      const filteredLiquidated = transformedLiquidated.filter(
-        (liquidated) => liquidated.marketName === marketId
-      );
-      return paginate(filteredLiquidated, page, pageSize);
+
+    // cache the data
+    if (!noCaching) {
+      this.liquidatedPositionsCache[cacheKey] = {
+        data: transformedLiquidated,
+        lastUpdated: Date.now(),
+      };
     }
-    return paginate(transformedLiquidated, page, pageSize);
+
+    return paginate(this.filterLiquidatedPositionsByMarketId(transformedLiquidated, marketId), page, pageSize);
   };
+
+  // private method to filter liquidated positions by marketId
+  private filterLiquidatedPositionsByMarketId = (
+    liquidatedPositions: TransformedLiquidated[],
+    marketId?: string
+  ): TransformedLiquidated[] => {
+    if (!marketId) return liquidatedPositions;
+    return liquidatedPositions.filter(
+      (liquidated) => liquidated.marketName === marketId
+    );
+  }
 }
