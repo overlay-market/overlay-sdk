@@ -41,16 +41,19 @@ type TransformedOpen = {
 
 export class OverlaySDKOpenPositions extends OverlaySDKModule {
   private sdk: OverlaySDK;
+  private openPositionsCache: Record<string, { data: any; lastUpdated: number }> = {};
 
   constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK) {
     super(props);
     this.sdk = sdk;
   }
+
   transformOpenPositions = async (
     page = 1, 
     pageSize = 10, 
     marketId?: string, 
-    account?: Address
+    account?: Address,
+    noCaching?: boolean
   ): Promise<{ data: TransformedOpen[]; total: number }> => {
     let walletClient = account;
     if (!walletClient) {
@@ -58,12 +61,20 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       walletClient = account ?? (await this.sdk.core.web3Provider?.requestAddresses())[0] as Address;
     }
     const chainId = this.core.chainId;
-    const {marketAddress} = marketId ? (await this.sdk.markets.getMarketDetails(marketId)) : {marketAddress: undefined};
+
+    // check if we have the data in cache and if it's not too old
+    const cacheKey = `${walletClient}-${chainId}`;
+    if (!noCaching && this.openPositionsCache[cacheKey]) {
+      const cachedData = this.openPositionsCache[cacheKey];
+      const isCacheValid = Date.now() - cachedData.lastUpdated < 300 * 1000; // 5 minutes
+      if (isCacheValid) {
+        return paginate(this.filterOpenPositionsByMarketId(cachedData.data, marketId), page, pageSize);
+      }
+    }
+
     const rawOpenData = await getOpenPositions({
       chainId: chainId,
-      account: walletClient.toLowerCase(),
-      first: FIRST,
-      marketId: marketAddress,
+      account: walletClient.toLowerCase()
     });
     const transformedOpens: TransformedOpen[] = [];
     const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
@@ -220,6 +231,26 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
         parsedFunding: parsedFunding,
       });
     }
-    return paginate(transformedOpens, page, pageSize);
+
+    // cache the data
+    if (!noCaching) {
+      this.openPositionsCache[cacheKey] = {
+        data: transformedOpens,
+        lastUpdated: Date.now(),
+      };
+    }
+
+    return paginate(this.filterOpenPositionsByMarketId(transformedOpens, marketId), page, pageSize);
   };
+
+  // private method to filter open positions by marketId
+  private filterOpenPositionsByMarketId = (
+    openPositions: TransformedOpen[],
+    marketId?: string
+  ): TransformedOpen[] => {
+    if (!marketId) return openPositions;
+    return openPositions.filter(
+      (open) => open.marketName === marketId
+    );
+  }
 }
