@@ -143,3 +143,60 @@ export const NumberOfPositionsQuery = gql`
     }
   }
 `;
+
+export const PositionQuery = gql`
+query queryPosition($account: ID!, $marketPositionId: ID!) {
+  account(id: $account) {
+    positions(
+      first: 1000
+      orderBy: createdAtTimestamp
+      orderDirection: desc
+      where: { id: $marketPositionId }
+    ) {
+      id
+      positionId
+      market {
+        id
+        feedAddress
+        isShutdown
+      }
+      initialOi
+      initialDebt
+      initialCollateral
+      initialNotional
+      leverage
+      isLong
+      entryPrice
+      isLiquidated
+      currentOi
+      currentDebt
+      mint
+      createdAtTimestamp
+      createdAtBlockNumber
+      numberOfUniwnds
+      fractionUnwound
+      builds {
+        id
+        price
+        timestamp
+      }
+      liquidates {
+        id
+        mint
+        price
+        timestamp
+      }
+      unwinds(orderBy: unwindNumber, orderDirection: asc) {
+        fraction
+        id
+        mint
+        timestamp
+        price
+        unwindNumber
+        transferAmount
+        pnl
+        size
+      }
+    }
+  }
+}`
