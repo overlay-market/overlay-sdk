@@ -38,6 +38,8 @@ type TransformedOpen = {
   size: number | string | undefined;
   unrealizedPnL: string | number | undefined;
   parsedFunding: string | number | undefined;
+  marketAddress: Address;
+  positionId: number;
 };
 
 export class OverlaySDKOpenPositions extends OverlaySDKModule {
@@ -206,6 +208,8 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
 
     return {
       marketName: marketName,
+      marketAddress: marketId,
+      positionId: Number(positionId),
       size: parsedValue,
       positionSide: leverage + "x " + (isLong ? "Long" : "Short"),
       entryPrice: `${priceCurrency ? priceCurrency : ""}${
@@ -239,7 +243,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     };
   }
 
-  private async getOpenPositionData(
+  async getOpenPositionData(
     chainId: CHAINS,
     walletClient: Address,
     marketId: Address,
@@ -260,12 +264,33 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     };
     cost: bigint;
     tradingFee: bigint;
-    marketMid: bigint
+    marketMid: bigint;
+    debt: bigint;
+    collateral: bigint;
+    notional: bigint;
+    maintenanceMargin: bigint;
+    prices: {
+      bid: bigint;
+      ask: bigint;
+      mid: bigint;
+    }
   }> {
     const contract = { address: V1_PERIPHERY_ADDRESS[chainId], abi: OverlayV1StateABI };
 
-    const [positionValue, currentOi, liquidatePrice, info, cost, tradingFee, marketMid] = 
-      await this.core.rpcProvider.multicall({
+    const [
+      positionValue,
+      currentOi,
+      liquidatePrice,
+      info,
+      cost,
+      tradingFee,
+      marketMid,
+      debt,
+      collateral,
+      notional,
+      maintenanceMargin,
+      prices,
+    ] = await this.core.rpcProvider.multicall({
         allowFailure: false,
         contracts: [
           {
@@ -303,6 +328,31 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
             functionName: "mid",
             args: [marketId],
           },
+          {
+            ...contract,
+            functionName: "debt",
+            args: [marketId, walletClient, positionId],
+          },
+          {
+            ...contract,
+            functionName: "collateral",
+            args: [marketId, walletClient, positionId],
+          },
+          {
+            ...contract,
+            functionName: "notional",
+            args: [marketId, walletClient, positionId],
+          },
+          {
+            ...contract,
+            functionName: "maintenanceMargin",
+            args: [marketId, walletClient, positionId],
+          },
+          {
+            ...contract,
+            functionName: "prices",
+            args: [marketId],
+          }
         ] as const,
       });
 
@@ -314,6 +364,15 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       cost,
       tradingFee,
       marketMid,
+      debt,
+      collateral,
+      notional,
+      maintenanceMargin,
+      prices: {
+        bid: prices[0],
+        ask: prices[1],
+        mid: prices[2]
+      }
     };
   }
 
