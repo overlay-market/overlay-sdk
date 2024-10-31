@@ -77,6 +77,14 @@ const MarketsTable = () => {
         const overviewData = await sdk.accountDetails.getOverview('1M');
         console.log(" ================= Overview Data", overviewData);
 
+        try {
+          // replace by your own trade id
+          const positionDetails = await sdk.trade.getUnwindState("ETH Dominance", address, 462522, 1n ** 18n, 4)
+          console.log(" ================= Position Details", positionDetails);
+        } catch (error) {
+          console.log(" ================= Position Details ERROR", error);
+        }
+
         activeMarkets && setMarkets(activeMarkets);
       } catch (error) {
         console.error("Error fetching markets:", error);
