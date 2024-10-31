@@ -296,7 +296,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
         error: "Market is shutdown", 
         isShutdown: true, 
         cost: decimals ? formatBigNumber(cost, 18, decimals) : cost,
-        unwindState: UnwindState.Unwind
+        unwindState: UnwindState.Withdraw
       }
     } 
 
@@ -326,8 +326,8 @@ export class OverlaySDKTrade extends OverlaySDKModule {
 
     const pnl = positionValue - cost
 
-    const priceImpactValue = info.isLong ? prices.bid - estimatedPrice : estimatedPrice - prices.ask
-    const priceImpactPercentage = (info.isLong ? Number(priceImpactValue) / Number(prices.bid) : Number(priceImpactValue) / Number(prices.ask)) * 100
+    const priceImpactValue = info.isLong ? estimatedPrice - prices.ask : prices.bid - estimatedPrice
+    const priceImpactPercentage = (info.isLong ? Number(priceImpactValue) / Number(prices.ask) : Number(priceImpactValue) / Number(prices.bid)) * 100
 
     let unwindState: UnwindState = UnwindState.Unwind
     if (positionValue < fraction) unwindState = UnwindState.UnwindAmountTooHigh

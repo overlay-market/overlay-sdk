@@ -15,4 +15,5 @@ export enum UnwindState {
   UnwindAmountTooHigh = "Unwind Amount Too High",
   Unwind = "Unwind",
   PositionNotFound = "Position Not Found",
+  Withdraw = "Withdraw OVL",
 }
