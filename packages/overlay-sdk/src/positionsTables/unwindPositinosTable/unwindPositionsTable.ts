@@ -28,6 +28,8 @@ type TransformedUnwind = {
   size: string | undefined;
   exitPrice: string | undefined;
   pnl: string | number | undefined;
+  unwindNumber: number;
+  positionId: number;
 };
 
 export class OverlaySDKUnwindPositions extends OverlaySDKModule {
@@ -118,6 +120,8 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
           Number(18),
           Math.abs(+unwind.pnl) > 10 ** +18 ? 4 : 6
         ),
+        unwindNumber: Number(unwind.unwindNumber),
+        positionId: Number(unwind.position.positionId),
       });
     }
     
