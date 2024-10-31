@@ -6,6 +6,7 @@ import {
   LiquidatedPositionsQuery as LiquidatedPositionsQueryDocument,
   OpenPositionsQuery as OpenPositionsQueryDocument,
   NumberOfPositionsQuery as NumberOfPositionsQueryDocument,
+  PositionQuery as PositionQueryDocument,
 } from "./queries";
 import {
   OpenPositionsQuery,
@@ -17,6 +18,8 @@ import {
   LiquidatedPositionsQueryVariables,
   NumberOfPositionsQuery,
   NumberOfPositionsQueryVariables,
+  QueryPositionQuery,
+  QueryPositionQueryVariables,
 } from "./types";
 import { NETWORKS } from "./constants";
 import { CHAINS, invariant } from "./common";
@@ -190,8 +193,25 @@ export const getNumberOfPositions = async (chainId: CHAINS, account: string) => 
         account,
       },
     });
-    console.log("result", result);
-    console.log("account", account);
+    return result;
+  } catch (error) {
+    console.error("Error fetching number of positions data:", error);
+    return undefined;
+  }
+}
+
+export const getPositionDetails = async (chainId: CHAINS, account: string, marketPositionId: string) => {
+  invariant(chainId in CHAINS, "Unsupported chainId");
+  const url = NETWORKS[chainId].SUBGRAPH_URL;
+  try {
+    const result = await request<QueryPositionQuery, QueryPositionQueryVariables>({
+      document: PositionQueryDocument,
+      url,
+      variables: {
+        account,
+        marketPositionId,
+      },
+    });
     return result;
   } catch (error) {
     console.error("Error fetching number of positions data:", error);
