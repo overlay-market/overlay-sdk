@@ -1,40 +1,37 @@
 import { gql } from "graphql-request";
 
-export const getOpenPositionsQuery = (filterByMarket: boolean) => {
-  return gql`
-    query openPositions($account: ID!, $first: Int, $skip: Int${filterByMarket ? ", $marketId: ID" : ""}) {
-      account(id: $account) {
-        positions(
-          where: {
-            isLiquidated: false
-            fractionUnwound_lt: "1000000000000000000"
-            ${filterByMarket ? "market_: {id: $marketId}" : ""}
-          }
-          orderBy: createdAtTimestamp
-          orderDirection: desc
-          first: $first
-          skip: $skip
-        ) {
-          fractionUnwound
+export const OpenPositionsQuery = gql`
+  query openPositions($account: ID!, $first: Int, $skip: Int) {
+    account(id: $account) {
+      positions(
+        where: {
+          isLiquidated: false
+          fractionUnwound_lt: "1000000000000000000"
+        }
+        orderBy: createdAtTimestamp
+        orderDirection: desc
+        first: $first
+        skip: $skip
+      ) {
+        fractionUnwound
+        id
+        createdAtTimestamp
+        currentOi
+        entryPrice
+        initialCollateral
+        isLiquidated
+        isLong
+        leverage
+        numberOfUniwnds
+        positionId
+        market {
+          feedAddress
           id
-          createdAtTimestamp
-          currentOi
-          entryPrice
-          initialCollateral
-          isLiquidated
-          isLong
-          leverage
-          numberOfUniwnds
-          positionId
-          market {
-            feedAddress
-            id
-          }
         }
       }
     }
-  `;
-}
+  }
+`;
 
 export const UnwindPositionsQuery = gql`
   query unwinds($account: ID!, $first: Int, $skip: Int) {
@@ -45,13 +42,9 @@ export const UnwindPositionsQuery = gql`
         first: $first
         skip: $skip
       ) {
-        collateral
-        currentDebt
-        currentOi
         fraction
         fractionOfPosition
         id
-        isLong
         mint
         pnl
         price
@@ -59,7 +52,6 @@ export const UnwindPositionsQuery = gql`
         timestamp
         transferAmount
         unwindNumber
-        value
         position {
           createdAtTimestamp
           currentOi
@@ -117,15 +109,10 @@ export const LiquidatedPositionsQuery = gql`
         first: $first
         skip: $skip
       ) {
-        collateral
-        currentDebt
-        currentOi
         id
-        isLong
         mint
         price
         timestamp
-        value
         size
         position {
           createdAtTimestamp
@@ -145,3 +132,71 @@ export const LiquidatedPositionsQuery = gql`
     }
   }
 `;
+
+export const NumberOfPositionsQuery = gql`
+  query numberOfPositions($account: ID!) {
+    account(id: $account) {
+      numberOfLiquidatedPositions
+      numberOfOpenPositions
+      numberOfUnwinds
+      realizedPnl
+    }
+  }
+`;
+
+export const PositionQuery = gql`
+query queryPosition($account: ID!, $marketPositionId: ID!) {
+  account(id: $account) {
+    positions(
+      first: 1000
+      orderBy: createdAtTimestamp
+      orderDirection: desc
+      where: { id: $marketPositionId }
+    ) {
+      id
+      positionId
+      market {
+        id
+        feedAddress
+        isShutdown
+      }
+      initialOi
+      initialDebt
+      initialCollateral
+      initialNotional
+      leverage
+      isLong
+      entryPrice
+      isLiquidated
+      currentOi
+      currentDebt
+      mint
+      createdAtTimestamp
+      createdAtBlockNumber
+      numberOfUniwnds
+      fractionUnwound
+      builds {
+        id
+        price
+        timestamp
+      }
+      liquidates {
+        id
+        mint
+        price
+        timestamp
+      }
+      unwinds(orderBy: unwindNumber, orderDirection: asc) {
+        fraction
+        id
+        mint
+        timestamp
+        price
+        unwindNumber
+        transferAmount
+        pnl
+        size
+      }
+    }
+  }
+}`

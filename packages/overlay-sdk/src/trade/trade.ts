@@ -5,7 +5,8 @@ import { V1_PERIPHERY_ADDRESS } from "../constants";
 import { OverlaySDKCommonProps } from "../core/types";
 import { OverlaySDK } from "../sdk";
 import { formatBigNumber, formatFundingRateToDaily } from "../common/utils";
-import { TradeState } from "./types";
+import { TradeState, UnwindState } from "./types";
+import { getPositionDetails } from "../subgraph";
 
 export class OverlaySDKTrade extends OverlaySDKModule {
   private sdk: OverlaySDK;
@@ -269,6 +270,94 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       tradeState,
       tradingFeeRate,
       estimatedCollateral
+    }
+  }
+
+  public async getUnwindState(
+    marketId: string,
+    account: Address,
+    positionId: bigint,
+    fraction: bigint,
+    decimals?: number
+  ) {
+    const chainId = this.core.chainId
+    invariant(chainId in CHAINS, "Unsupported chainId");
+
+    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
+    const marketPositionId = `${marketAddress.toLowerCase()}-0x${Number(positionId).toString(16)}`
+
+    const positionDetails = (await getPositionDetails(chainId, account.toLowerCase(), marketPositionId))?.account?.positions[0] ?? null
+
+    if (!positionDetails) return { error: "Position not found", isShutdown: false, cost: 0, unwindState: UnwindState.PositionNotFound }
+
+    if (positionDetails.market.isShutdown) {
+      const cost = await this.sdk.state.getCost(V1_PERIPHERY_ADDRESS[chainId], marketAddress, account, positionId)
+      return { 
+        error: "Market is shutdown", 
+        isShutdown: true, 
+        cost: decimals ? formatBigNumber(cost, 18, decimals) : cost,
+        unwindState: UnwindState.Withdraw
+      }
+    } 
+
+    const { 
+      cost, 
+      currentOi, 
+      info, 
+      liquidatePrice, 
+      marketMid, 
+      positionValue, 
+      debt,
+      collateral,
+      notional,
+      maintenanceMargin,
+      prices
+    } = await this.sdk.openPositions.getOpenPositionData(chainId, account, marketAddress, positionId)
+
+    const fractionOfCapOi = await this.sdk.state.getFractionOfCapOi(V1_PERIPHERY_ADDRESS[chainId], marketAddress, currentOi)
+
+    let estimatedPrice: bigint
+
+    if (info.isLong) {
+      estimatedPrice = await this.sdk.state.getAsk(V1_PERIPHERY_ADDRESS[chainId], marketAddress, fractionOfCapOi)
+    } else {
+      estimatedPrice = await this.sdk.state.getBid(V1_PERIPHERY_ADDRESS[chainId], marketAddress, fractionOfCapOi)
+    }
+
+    const pnl = positionValue - cost
+
+    const priceImpactValue = info.isLong ? estimatedPrice - prices.ask : prices.bid - estimatedPrice
+    const priceImpactPercentage = (info.isLong ? Number(priceImpactValue) / Number(prices.ask) : Number(priceImpactValue) / Number(prices.bid)) * 100
+
+    let unwindState: UnwindState = UnwindState.Unwind
+    if (positionValue < fraction) unwindState = UnwindState.UnwindAmountTooHigh
+
+    const showUnderwaterFlow = info.isLong ? Number(liquidatePrice) > Number(marketMid) : Number(liquidatePrice) < Number(marketMid)
+    if (showUnderwaterFlow) unwindState = UnwindState.PositionUnderwater
+
+    const fractionOfPosition = Number(fraction) / Number(positionValue)
+    const isUnwindAmountTooLow = 0.01 < fractionOfPosition
+    if (isUnwindAmountTooLow) unwindState = UnwindState.PercentageBelowMinimum
+
+    return {
+      pnl: formatBigNumber(pnl, 18, 2),
+      side: info.isLong ? "Long" : "Short",
+      value: formatBigNumber(positionValue, 18, 4),
+      oi: formatBigNumber(currentOi, 18, 4),
+      leverage: Number(positionDetails.leverage).toFixed(1),
+      debt: formatBigNumber(debt, 18, 4),
+      cost: formatBigNumber(cost, 18, 4),
+      currentCollateral: formatBigNumber(collateral, 18, 4),
+      currentNotional: formatBigNumber(notional, 18, 4),
+      initialCollateral: formatBigNumber(positionDetails.initialCollateral, 18, 4),
+      initialNotional: formatBigNumber(positionDetails.initialNotional, 18, 4),
+      maintenanceMargin: formatBigNumber(maintenanceMargin, 18, 4),
+      entryPrice: decimals ? formatBigNumber(positionDetails.entryPrice, 18, decimals) : positionDetails.entryPrice,
+      currentPrice: info.isLong ? decimals ? formatBigNumber(prices.bid, 18, decimals) : prices.bid : decimals ? formatBigNumber(prices.ask, 18, decimals) : prices.ask,
+      estimatedReceivedPrice: decimals ? formatBigNumber(estimatedPrice, 18, decimals) : estimatedPrice,
+      priceImpact: priceImpactPercentage.toFixed(6),
+      liquidationPrice: decimals ? formatBigNumber(liquidatePrice, 18, decimals) : liquidatePrice,
+      unwindState,
     }
   }
 }
