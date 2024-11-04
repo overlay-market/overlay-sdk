@@ -31,6 +31,10 @@ const MarketsTable = () => {
     const fetchData = async () => {
       try {
         const activeMarkets = await sdk.markets.getActiveMarkets();
+
+        const transformedMarketData = await sdk.markets.transformMarketsData()
+        console.log(' ================= Transformed Market Data', transformedMarketData)
+
         const ethDominance = await sdk.markets.getMarketDetails("ETH Dominance");
         console.log("ETH Dominance", ethDominance);
 
