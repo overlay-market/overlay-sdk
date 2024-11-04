@@ -274,16 +274,16 @@ export class OverlaySDKTrade extends OverlaySDKModule {
   }
 
   public async getUnwindState(
-    marketId: string,
+    marketAddress: Address,
     account: Address,
-    positionId: bigint,
+    posId: number,
     fraction: bigint,
     decimals?: number
   ) {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
 
-    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
+    const positionId = BigInt(posId)
     const marketPositionId = `${marketAddress.toLowerCase()}-0x${Number(positionId).toString(16)}`
 
     const positionDetails = (await getPositionDetails(chainId, account.toLowerCase(), marketPositionId))?.account?.positions[0] ?? null
@@ -336,7 +336,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     if (showUnderwaterFlow) unwindState = UnwindState.PositionUnderwater
 
     const fractionOfPosition = Number(fraction) / Number(positionValue)
-    const isUnwindAmountTooLow = 0.01 < fractionOfPosition
+    const isUnwindAmountTooLow = 0.01 > fractionOfPosition
     if (isUnwindAmountTooLow) unwindState = UnwindState.PercentageBelowMinimum
 
     return {
