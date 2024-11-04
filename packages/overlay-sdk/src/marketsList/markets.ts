@@ -154,4 +154,35 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
 
     return expandedMarketsData
   }
+
+  public async transformMarketsData() {
+    const activeMarkets = await this.getActiveMarkets()
+    const chainId = this.core.chainId
+    invariant(chainId in CHAINS, "Unsupported chainId");
+
+    const transformedMarketsDataPromises = activeMarkets.map(async (market: any) => {
+      const marketAddress = market.id as Address
+
+      const {oiLong, oiShort} = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketAddress)
+
+      const shortPercentageOfTotalOi = (Number(oiShort) / (Number(oiLong) + Number(oiShort)) * 100).toFixed(2)
+      const longPercentageOfTotalOi = (Number(oiLong) / (Number(oiLong) + Number(oiShort)) * 100).toFixed(2)
+
+      return {
+        marketId: market.marketId,
+        marketAddress,
+        price: market.parsedMid,
+        funding: market.parsedDailyFundingRate,
+        longPercentageOfTotalOi: longPercentageOfTotalOi,
+        shortPercentageOfTotalOi: shortPercentageOfTotalOi,
+        oracleLogo: market.oracleLogo,
+        marketLogo: market.marketLogo,
+        priceCurrency: market.priceCurrency,
+      };
+    });
+
+    const transformedMarketsData = await Promise.all(transformedMarketsDataPromises);
+
+    return transformedMarketsData;
+  }
 }
