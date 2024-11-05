@@ -240,6 +240,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       ),
       unrealizedPnL: unrealizedPnL,
       parsedFunding: parsedFunding,
+      priceCurrency: priceCurrency,
     };
   }
 
