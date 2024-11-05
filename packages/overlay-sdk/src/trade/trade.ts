@@ -287,6 +287,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const marketPositionId = `${marketAddress.toLowerCase()}-0x${Number(positionId).toString(16)}`
 
     const positionDetails = (await getPositionDetails(chainId, account.toLowerCase(), marketPositionId))?.account?.positions[0] ?? null
+    invariant(positionDetails, `Position not found for ${marketPositionId}; ${account.toLowerCase()}; ${positionId}; marketAddress: ${marketAddress}; chainId: ${chainId}`)
 
     if (!positionDetails) return { error: "Position not found", isShutdown: false, cost: 0, unwindState: UnwindState.PositionNotFound }
 
