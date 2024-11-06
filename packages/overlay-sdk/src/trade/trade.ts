@@ -278,6 +278,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     account: Address,
     posId: number,
     fraction: bigint,
+    slippage: number,
     decimals?: number
   ) {
     const chainId = this.core.chainId
@@ -320,9 +321,9 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     let estimatedPrice: bigint
 
     if (info.isLong) {
-      estimatedPrice = await this.sdk.state.getAsk(V1_PERIPHERY_ADDRESS[chainId], marketAddress, fractionOfCapOi)
-    } else {
       estimatedPrice = await this.sdk.state.getBid(V1_PERIPHERY_ADDRESS[chainId], marketAddress, fractionOfCapOi)
+    } else {
+      estimatedPrice = await this.sdk.state.getAsk(V1_PERIPHERY_ADDRESS[chainId], marketAddress, fractionOfCapOi)
     }
 
     const pnl = positionValue - cost
@@ -339,6 +340,8 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const fractionOfPosition = Number(fraction) / Number(positionValue)
     const isUnwindAmountTooLow = 0.01 > fractionOfPosition
     if (isUnwindAmountTooLow) unwindState = UnwindState.PercentageBelowMinimum
+
+    const priceLimit = info.isLong ?  Number(estimatedPrice) * (1 - slippage / 100) : Number(estimatedPrice) * (1 + slippage / 100)
 
     return {
       pnl: formatBigNumber(pnl, 18, 2),
@@ -359,6 +362,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       priceImpact: priceImpactPercentage.toFixed(6),
       liquidationPrice: decimals ? formatBigNumber(liquidatePrice, 18, decimals) : liquidatePrice,
       unwindState,
+      priceLimit
     }
   }
 }
