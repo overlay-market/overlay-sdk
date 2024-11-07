@@ -40,6 +40,7 @@ type TransformedOpen = {
   parsedFunding: string | number | undefined;
   marketAddress: Address;
   positionId: number;
+  priceCurrency: string;
 };
 
 export class OverlaySDKOpenPositions extends OverlaySDKModule {
