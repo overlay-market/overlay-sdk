@@ -328,7 +328,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
 
     const pnl = positionValue - cost
 
-    const priceImpactValue = info.isLong ? estimatedPrice - prices.ask : prices.bid - estimatedPrice
+    const priceImpactValue = info.isLong ? prices.bid - estimatedPrice : estimatedPrice - prices.ask
     const priceImpactPercentage = (info.isLong ? Number(priceImpactValue) / Number(prices.ask) : Number(priceImpactValue) / Number(prices.bid)) * 100
 
     let unwindState: UnwindState = UnwindState.Unwind
@@ -341,7 +341,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const isUnwindAmountTooLow = 0.01 > fractionOfPosition
     if (isUnwindAmountTooLow) unwindState = UnwindState.PercentageBelowMinimum
 
-    const priceLimit = info.isLong ?  Number(estimatedPrice) * (1 - slippage / 100) : Number(estimatedPrice) * (1 + slippage / 100)
+    const priceLimit = BigInt(info.isLong ?  Number(estimatedPrice) * (1 - slippage / 100) : Number(estimatedPrice) * (1 + slippage / 100))
 
     return {
       pnl: formatBigNumber(pnl, 18, 2),
