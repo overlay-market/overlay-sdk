@@ -283,6 +283,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
   ) {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
+    invariant(Math.round(slippage * 100) === slippage * 100, "Slippage should be a number with at most 2 decimal places")
 
     const positionId = BigInt(posId)
     const marketPositionId = `${marketAddress.toLowerCase()}-0x${Number(positionId).toString(16)}`
@@ -341,12 +342,18 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const isUnwindAmountTooLow = 0.01 > fractionOfPosition
     if (isUnwindAmountTooLow) unwindState = UnwindState.PercentageBelowMinimum
 
-    const priceLimit = BigInt(info.isLong ?  Number(estimatedPrice) * (1 - slippage / 100) : Number(estimatedPrice) * (1 + slippage / 100))
+    const slippageFactor = BigInt(Math.round(slippage * 100)); // Convert slippage to an integer representation
+    const base = BigInt(10000); // Base factor to avoid decimals
+
+    const priceLimit = info.isLong
+      ? (estimatedPrice * (base - slippageFactor)) / base
+      : (estimatedPrice * (base + slippageFactor)) / base;
 
     return {
       pnl: formatBigNumber(pnl, 18, 2),
       side: info.isLong ? "Long" : "Short",
       value: formatBigNumber(positionValue, 18, 4),
+      rawValue: positionValue,
       oi: formatBigNumber(currentOi, 18, 4),
       leverage: Number(positionDetails.leverage).toFixed(1),
       debt: formatBigNumber(debt, 18, 4),
