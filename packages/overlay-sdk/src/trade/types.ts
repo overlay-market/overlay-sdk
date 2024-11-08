@@ -19,12 +19,12 @@ export enum UnwindState {
 }
 
 export type TradeStateData = {
-  liquidationPriceEstimate: string;
-  expectedOi: string;
+  liquidationPriceEstimate: string | number;
+  expectedOi: string | number;
   maxInputIncludingFees: number;
   priceInfo: {
-    price: string;
-    minPrice: string;
+    price: string | number | bigint;
+    minPrice: string | number | bigint;
     priceImpactPercentage: string;
   };
   tradeState: TradeState;
@@ -38,6 +38,7 @@ export type UnwindStateSuccess = {
   value: string | number;
   rawValue: bigint;
   oi: string | number;
+  rawOi: bigint;
   leverage: string;
   debt: string | number;
   cost: string;

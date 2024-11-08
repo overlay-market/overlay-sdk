@@ -333,12 +333,12 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const priceImpactPercentage = (info.isLong ? Number(priceImpactValue) / Number(prices.ask) : Number(priceImpactValue) / Number(prices.bid)) * 100
 
     let unwindState: UnwindState = UnwindState.Unwind
-    if (positionValue < fraction) unwindState = UnwindState.UnwindAmountTooHigh
+    if (currentOi < fraction) unwindState = UnwindState.UnwindAmountTooHigh
 
     const showUnderwaterFlow = info.isLong ? Number(liquidatePrice) > Number(marketMid) : Number(liquidatePrice) < Number(marketMid)
     if (showUnderwaterFlow) unwindState = UnwindState.PositionUnderwater
 
-    const fractionOfPosition = Number(fraction) / Number(positionValue)
+    const fractionOfPosition = Number(fraction) / Number(currentOi)
     const isUnwindAmountTooLow = 0.01 > fractionOfPosition
     if (isUnwindAmountTooLow) unwindState = UnwindState.PercentageBelowMinimum
 
@@ -355,6 +355,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       value: formatBigNumber(positionValue, 18, 4),
       rawValue: positionValue,
       oi: formatBigNumber(currentOi, 18, 4),
+      rawOi: currentOi,
       leverage: Number(positionDetails.leverage).toFixed(1),
       debt: formatBigNumber(debt, 18, 4),
       cost: formatBigNumber(cost, 18, 4),
