@@ -38,6 +38,7 @@ export type UnwindStateSuccess = {
   value: string | number;
   rawValue: bigint;
   oi: string | number;
+  rawOi: bigint;
   leverage: string;
   debt: string | number;
   cost: string;
