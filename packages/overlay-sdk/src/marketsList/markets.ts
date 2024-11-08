@@ -48,6 +48,7 @@ export type ExpandedMarketData = MarketData & {
 
 export type TransformedMarketData = {
   marketId: string;
+  marketName: string;
   marketAddress: Address;
   price: string | number | undefined;
   funding: string | number | undefined;
@@ -220,6 +221,7 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
 
       return {
         marketId: market.marketId,
+        marketName: market.marketName,
         marketAddress,
         price: market.parsedMid,
         funding: market.parsedDailyFundingRate,
