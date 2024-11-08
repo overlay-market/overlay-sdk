@@ -18,3 +18,4 @@ export { TradeState, UnwindState } from '../trade/index.js';
 export type { LiquidatedPositionData } from '../positionsTables/liquidatePositionsTable/liquidatePositionsTable.js';
 export type { OpenPositionData } from '../positionsTables/openPositionsTable/openPositionsTable.js';
 export type { UnwindPositionData } from '../positionsTables/unwindPositinosTable/unwindPositionsTable.js';
+export type { MarketData, ExpandedMarketData, TransformedMarketData } from '../marketsList/markets.js';
