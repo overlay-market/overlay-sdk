@@ -6,12 +6,11 @@ import { invariant } from "../common";
 import { getLiquidatedPositions, getNumberOfPositions, getUnwindPositions } from "../subgraph";
 import { formatBigNumber } from "../common/utils";
 import moment from "moment";
-
-type IntervalType = '1D' | '1W' | '1M' | '6M' | '1Y'
+import { IntervalType, OverviewData } from "./types";
 
 export class OverlaySDKAccountDetails extends OverlaySDKModule {
   private sdk: OverlaySDK;
-  private overviewCache: Record<string, { data: any; lastUpdated: number }> = {};
+  private overviewCache: Record<string, { data: OverviewData; lastUpdated: number }> = {};
 
   constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK) {
     super(props);
@@ -71,8 +70,8 @@ export class OverlaySDKAccountDetails extends OverlaySDKModule {
       unrealizedPnL += position.unrealizedPnL ? parseFloat(position.unrealizedPnL as string) : 0
     })
 
-    const overviewData = {
-      numberOfOpenPositions: numberOfPositions?.account?.numberOfOpenPositions ?? 0,
+    const overviewData: OverviewData = {
+      numberOfOpenPositions: Number(numberOfPositions?.account?.numberOfOpenPositions ?? 0),
       realizedPnl: numberOfPositions?.account?.realizedPnl ? formatBigNumber(numberOfPositions.account.realizedPnl, 18, 6) : '0',
       totalValueLocked: totalValueLocked.toFixed(2),
       unrealizedPnL: unrealizedPnL.toFixed(6),

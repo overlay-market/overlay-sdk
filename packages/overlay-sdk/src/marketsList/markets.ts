@@ -1,17 +1,67 @@
 import {type Address} from "viem";
 import { OverlaySDKModule } from "../common/class-primitives/sdk-module.js";
 import { OverlaySDKCommonProps } from "../core/types.js";
-import { getActiveMarketsFromSubgraph } from "../subgraph.js";
 import { MARKET_LOGO, PRICE_CURRENCY_FROM_QUOTE, V1_PERIPHERY_ADDRESS, ORACLE_LOGO } from "../constants.js";
 import { OverlaySDK } from "../sdk.js";
 import { formatBigNumber } from "../common/utils/formatBigNumber.js";
 import { formatFundingRateToAnnual, formatFundingRateToDaily } from "../common/utils/formatWei.js";
 import { getMarketDetailsById, getMarketsDetailsByChainId } from "../services/marketsDetails.js";
 import { CHAINS, invariant } from "../common/index.js";
+
+export type MarketData = {
+  id: string;
+  marketName: string;
+  disabled: boolean;
+  logo: string;
+  currency: string;
+  descriptionText?: string;
+  fullLogo?: string;
+  oracleLogo?: string;
+  bid: bigint;
+  ask: bigint;
+  mid: bigint;
+  volumeBid: bigint;
+  volumeAsk: bigint;
+  oiLong: bigint;
+  oiShort: bigint;
+  capOi: bigint;
+  circuitBreakerLevel: bigint;
+  fundingRate: bigint;
+  parsedBid: string | number | undefined;
+  parsedAsk: string | number | undefined;
+  parsedMid: string | number | undefined;
+  parsedOiLong: string | number | undefined;
+  parsedOiShort: string | number | undefined;
+  parsedCapOi: string | number | undefined;
+  parsedDailyFundingRate: string | number | undefined;
+  parsedAnnualFundingRate: string | number | undefined;
+};
+
+export type ExpandedMarketData = MarketData & {
+  marketAddress: Address;
+  capLeverage: string | number | undefined;
+  priceCurrency: string;
+  marketLogo: string;
+  oracleLogo: string;
+  marketId: string;
+};
+
+export type TransformedMarketData = {
+  marketId: string;
+  marketAddress: Address;
+  price: string | number | undefined;
+  funding: string | number | undefined;
+  longPercentageOfTotalOi: string;
+  shortPercentageOfTotalOi: string;
+  oracleLogo: string;
+  marketLogo: string;
+  priceCurrency: string;
+};
+
 export class OverlaySDKMarkets extends OverlaySDKModule {
   private sdk: OverlaySDK;
   private marketDetailsCache: Record<string, { data: any; lastUpdated: number }> = {};
-  private activeMarketsCache?: { data: any; lastUpdated: number };
+  private activeMarketsCache?: { data: ExpandedMarketData[]; lastUpdated: number };
 
   constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK) {
     super(props);
@@ -95,19 +145,19 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
           parsedCapOi = decimals && formatBigNumber(result.capOi, decimals, 18)
           parsedDailyFundingRate = decimals && formatFundingRateToDaily(result.fundingRate, 18, 2)
           parsedAnnualFundingRate = decimals && formatFundingRateToAnnual(result.fundingRate, 18, 2)
-           
-        return {
-          ...market,
-          ...result,
-          parsedBid,
-          parsedAsk,
-          parsedMid,
-          parsedOiLong,
-          parsedOiShort,
-          parsedCapOi,
-          parsedDailyFundingRate,
-          parsedAnnualFundingRate,
-        }
+
+          return {
+            ...market,
+            ...result,
+            parsedBid,
+            parsedAsk,
+            parsedMid,
+            parsedOiLong,
+            parsedOiShort,
+            parsedCapOi,
+            parsedDailyFundingRate,
+            parsedAnnualFundingRate,
+          } as MarketData
         } else {
           return undefined
         }
@@ -139,7 +189,7 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
               priceCurrency,
               marketLogo,
               oracleLogo
-            }
+            } as ExpandedMarketData
           }
            else {
             return undefined
@@ -148,19 +198,19 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
         .filter(item => item !== undefined) 
       : undefined
 
-    if (!noCaching) {
+    if (!noCaching && expandedMarketsData) {
       this.activeMarketsCache = { data: expandedMarketsData, lastUpdated: Date.now() };
     }
 
-    return expandedMarketsData
+    return expandedMarketsData || [];
   }
 
-  public async transformMarketsData() {
+  public async transformMarketsData(): Promise<TransformedMarketData[]> {
     const activeMarkets = await this.getActiveMarkets()
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
 
-    const transformedMarketsDataPromises = activeMarkets.map(async (market: any) => {
+    const transformedMarketsDataPromises = activeMarkets.map(async (market: ExpandedMarketData) => {
       const marketAddress = market.id as Address
 
       const {oiLong, oiShort} = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketAddress)
@@ -183,6 +233,6 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
 
     const transformedMarketsData = await Promise.all(transformedMarketsDataPromises);
 
-    return transformedMarketsData;
+    return transformedMarketsData || [];
   }
 }

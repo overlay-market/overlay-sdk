@@ -17,3 +17,49 @@ export enum UnwindState {
   PositionNotFound = "Position Not Found",
   Withdraw = "Withdraw OVL",
 }
+
+export type TradeStateData = {
+  liquidationPriceEstimate: string;
+  expectedOi: string;
+  maxInputIncludingFees: number;
+  priceInfo: {
+    price: string;
+    minPrice: string;
+    priceImpactPercentage: string;
+  };
+  tradeState: TradeState;
+  tradingFeeRate: number;
+  estimatedCollateral: number;
+}
+
+export type UnwindStateSuccess = {
+  pnl: string | number;
+  side: string;
+  value: string | number;
+  rawValue: bigint;
+  oi: string | number;
+  leverage: string;
+  debt: string | number;
+  cost: string;
+  currentCollateral: string | number;
+  currentNotional: string | number;
+  initialCollateral: string | number;
+  initialNotional: string | number;
+  maintenanceMargin: string | number;
+  entryPrice: string;
+  currentPrice: string | number | bigint;
+  estimatedReceivedPrice: string | number | bigint;
+  priceImpact: string;
+  liquidationPrice: string | number | bigint;
+  unwindState: UnwindState;
+  priceLimit: bigint;
+}
+
+export type UnwindStateError = {
+  error: string;
+  isShutdown: boolean;
+  cost: number | string | bigint;
+  unwindState: UnwindState;
+}
+
+export type UnwindStateData = UnwindStateSuccess | UnwindStateError;

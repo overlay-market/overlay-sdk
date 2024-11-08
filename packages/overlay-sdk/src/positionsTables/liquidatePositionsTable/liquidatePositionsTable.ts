@@ -1,4 +1,4 @@
-import { createWalletClient, http, type Address } from "viem";
+import { type Address } from "viem";
 import { OverlaySDKModule } from "../../common/class-primitives/sdk-module.js";
 import { OverlaySDKCommonProps } from "../../core/types.js";
 import { PRICE_CURRENCY_FROM_QUOTE } from "../../constants.js";
@@ -11,12 +11,11 @@ import {
   toScientificNumber,
 } from "../../common/utils/toScientificNumber.js";
 import formatUnixTimestampToDate from "../../common/utils/formatUnixTimestampToDate.js";
-import { mainnet } from "viem/chains";
 import { CHAINS } from "../../common/constants.js";
 import { invariant } from "../../common/index.js";
 import { paginate } from "../../common/utils/paginate.js";
 
-type TransformedLiquidated = {
+export type LiquidatedPositionData = {
   marketName: string | undefined;
   size: string | number | undefined;
   position: string | undefined;
@@ -41,7 +40,7 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
     marketId?: string, 
     account?: Address,
     noCaching?: boolean
-  ): Promise<{ data: TransformedLiquidated[]; total: number }> => {
+  ): Promise<{ data: LiquidatedPositionData[]; total: number }> => {
     let walletClient = account;
     if (!walletClient) {
       invariant(this.sdk.core.web3Provider, "Web3 provider is not set");
@@ -63,7 +62,7 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
       chainId: chainId,
       account: walletClient.toLowerCase()
     });
-    const transformedLiquidated: TransformedLiquidated[] = [];
+    const transformedLiquidated: LiquidatedPositionData[] = [];
     const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
 
     for (const liquidated of rawliquidatedPositions) {
@@ -127,9 +126,9 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
 
   // private method to filter liquidated positions by marketId
   private filterLiquidatedPositionsByMarketId = (
-    liquidatedPositions: TransformedLiquidated[],
+    liquidatedPositions: LiquidatedPositionData[],
     marketId?: string
-  ): TransformedLiquidated[] => {
+  ): LiquidatedPositionData[] => {
     if (!marketId) return liquidatedPositions;
     return liquidatedPositions.filter(
       (liquidated) => liquidated.marketName === marketId

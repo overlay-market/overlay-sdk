@@ -1,7 +1,6 @@
 import { OverlaySDK } from "../../sdk";
 import { OverlaySDKModule } from "../../common/class-primitives/sdk-module";
 import { OverlaySDKCommonProps } from "../../core/types";
-import { UnwindsQuery } from "../../types";
 import { getMarketsDetailsByChainId } from "../../services/marketsDetails";
 import { Address } from "viem";
 import {
@@ -10,16 +9,12 @@ import {
   toPercentUnit,
   toScientificNumber,
 } from "../../common/utils";
-import { FIRST, PRICE_CURRENCY_FROM_QUOTE } from "../../constants";
+import { PRICE_CURRENCY_FROM_QUOTE } from "../../constants";
 import { getUnwindPositions } from "../../subgraph";
 import { CHAINS, invariant } from "../../common";
 import { paginate } from "../../common/utils/paginate";
 
-type Unwind = NonNullable<
-  NonNullable<UnwindsQuery["account"]>["unwinds"]
->[number];
-
-type TransformedUnwind = {
+export type UnwindPositionData = {
   marketName: string | undefined;
   positionSide: string | undefined;
   parsedCreatedTimestamp: string | undefined;
@@ -47,7 +42,7 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
     marketId?: string, 
     account?: Address,
     noCaching?: boolean
-  ): Promise<{ data: TransformedUnwind[]; total: number }> => {
+  ): Promise<{ data: UnwindPositionData[]; total: number }> => {
     let walletClient = account;
     if (!walletClient) {
       invariant(this.sdk.core.web3Provider, "Web3 provider is not set");
@@ -69,7 +64,7 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
       chainId: chainId,
       account: walletClient.toLowerCase()
     });
-    const transformedUnwinds: TransformedUnwind[] = [];
+    const transformedUnwinds: UnwindPositionData[] = [];
     const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
     for (const unwind of rawUnwindData) {
       const marketName =
@@ -135,9 +130,9 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
 
   // private method to filter unwind positions by marketId
   private filterUnwindPositionsByMarketId = (
-    unwindPositions: TransformedUnwind[],
+    unwindPositions: UnwindPositionData[],
     marketId?: string
-  ): TransformedUnwind[] => {
+  ): UnwindPositionData[] => {
     if (!marketId) return unwindPositions;
     return unwindPositions.filter(
       (unwind) => unwind.marketName === marketId

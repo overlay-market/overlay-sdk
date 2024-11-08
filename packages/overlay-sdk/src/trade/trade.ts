@@ -5,7 +5,7 @@ import { V1_PERIPHERY_ADDRESS } from "../constants";
 import { OverlaySDKCommonProps } from "../core/types";
 import { OverlaySDK } from "../sdk";
 import { formatBigNumber, formatFundingRateToDaily } from "../common/utils";
-import { TradeState, UnwindState } from "./types";
+import { TradeState, UnwindState, UnwindStateData } from "./types";
 import { getPositionDetails } from "../subgraph";
 
 export class OverlaySDKTrade extends OverlaySDKModule {
@@ -280,7 +280,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     fraction: bigint,
     slippage: number,
     decimals?: number
-  ) {
+  ): Promise<UnwindStateData> {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
     invariant(Math.round(slippage * 100) === slippage * 100, "Slippage should be a number with at most 2 decimal places")
@@ -370,6 +370,6 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       liquidationPrice: decimals ? formatBigNumber(liquidatePrice, 18, decimals) : liquidatePrice,
       unwindState,
       priceLimit
-    }
+    } as UnwindStateData
   }
 }

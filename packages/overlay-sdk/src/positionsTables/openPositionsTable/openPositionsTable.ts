@@ -6,11 +6,10 @@ import {
   toPercentUnit,
   toScientificNumber,
 } from "../../common/utils";
-import { Address, createWalletClient, http } from "viem";
+import { Address } from "viem";
 import JSBI from "jsbi";
 import { TickMath } from "@uniswap/v3-sdk";
 import {
-  FIRST,
   ONE_BN,
   PRICE_CURRENCY_FROM_QUOTE,
   V1_PERIPHERY_ADDRESS,
@@ -19,7 +18,6 @@ import { getMarketsDetailsByChainId } from "../../services/marketsDetails";
 import { OverlaySDKModule } from "../../common/class-primitives/sdk-module";
 import { OverlaySDKCommonProps } from "../../core/types";
 import { getOpenPositions } from "../../subgraph";
-import { mainnet } from "viem/chains";
 import { CHAINS, invariant } from "../../common";
 import { paginate } from "../../common/utils/paginate";
 import { OverlayV1StateABI } from "../../markets/abis/OverlayV1State";
@@ -28,8 +26,8 @@ type OpenPosition = NonNullable<
   NonNullable<OpenPositionsQuery["account"]>["positions"]
 >[number];
 
-type TransformedOpen = {
-  marketName: string | Address | undefined;
+export type OpenPositionData = {
+  marketName: string | undefined;
   positionSide: string | undefined;
   parsedCreatedTimestamp: string | undefined;
   entryPrice: string | undefined;
@@ -58,7 +56,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     marketId?: string, 
     account?: Address,
     noCaching?: boolean
-  ): Promise<{ data: TransformedOpen[]; total: number }> => {
+  ): Promise<{ data: OpenPositionData[]; total: number }> => {
     let walletClient = account;
     if (!walletClient) {
       invariant(this.sdk.core.web3Provider, "Web3 provider is not set");
@@ -80,7 +78,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       chainId: chainId,
       account: walletClient.toLowerCase()
     });
-    const transformedOpens: TransformedOpen[] = [];
+    const transformedOpens: OpenPositionData[] = [];
     const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
     invariant(marketDetails, "Failed to get market details");
 
@@ -380,9 +378,9 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
 
   // private method to filter open positions by marketId
   private filterOpenPositionsByMarketId = (
-    openPositions: TransformedOpen[],
+    openPositions: OpenPositionData[],
     marketId?: string
-  ): TransformedOpen[] => {
+  ): OpenPositionData[] => {
     if (!marketId) return openPositions;
     return openPositions.filter(
       (open) => open.marketName === marketId
