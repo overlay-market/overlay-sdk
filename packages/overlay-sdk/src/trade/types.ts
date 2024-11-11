@@ -36,9 +36,9 @@ export type UnwindStateSuccess = {
   pnl: string | number;
   side: string;
   value: string | number;
-  rawValue: bigint;
+  fractionValue: string | number;
   oi: string | number;
-  rawOi: bigint;
+  fractionOi: string | number;
   leverage: string;
   debt: string | number;
   cost: string;
