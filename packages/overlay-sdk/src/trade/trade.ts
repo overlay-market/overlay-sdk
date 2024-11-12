@@ -277,7 +277,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     marketAddress: Address,
     account: Address,
     posId: number,
-    fraction: bigint,
+    unwindPercentage: number, // 0.01 - 1
     slippage: number,
     decimals?: number
   ): Promise<UnwindStateData> {
@@ -333,14 +333,14 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const priceImpactPercentage = (info.isLong ? Number(priceImpactValue) / Number(prices.ask) : Number(priceImpactValue) / Number(prices.bid)) * 100
 
     let unwindState: UnwindState = UnwindState.Unwind
-    if (currentOi < fraction) unwindState = UnwindState.UnwindAmountTooHigh
+    if (1 < unwindPercentage) unwindState = UnwindState.UnwindAmountTooHigh
+    if (0.01 > unwindPercentage) unwindState = UnwindState.PercentageBelowMinimum
+
+    const fractionValue = BigInt(unwindPercentage * Number(positionValue))
+    const fractionOI = BigInt(unwindPercentage * Number(currentOi))
 
     const showUnderwaterFlow = info.isLong ? Number(liquidatePrice) > Number(marketMid) : Number(liquidatePrice) < Number(marketMid)
     if (showUnderwaterFlow) unwindState = UnwindState.PositionUnderwater
-
-    const fractionOfPosition = Number(fraction) / Number(currentOi)
-    const isUnwindAmountTooLow = 0.01 > fractionOfPosition
-    if (isUnwindAmountTooLow) unwindState = UnwindState.PercentageBelowMinimum
 
     const slippageFactor = BigInt(Math.round(slippage * 100)); // Convert slippage to an integer representation
     const base = BigInt(10000); // Base factor to avoid decimals
@@ -353,9 +353,9 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       pnl: formatBigNumber(pnl, 18, 2),
       side: info.isLong ? "Long" : "Short",
       value: formatBigNumber(positionValue, 18, 4),
-      rawValue: positionValue,
+      fractionValue: formatBigNumber(fractionValue, 18, 4),
       oi: formatBigNumber(currentOi, 18, 4),
-      rawOi: currentOi,
+      fractionOi: formatBigNumber(fractionOI, 18, 4),
       leverage: Number(positionDetails.leverage).toFixed(1),
       debt: formatBigNumber(debt, 18, 4),
       cost: formatBigNumber(cost, 18, 4),
