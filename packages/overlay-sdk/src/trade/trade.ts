@@ -336,8 +336,9 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     if (1 < unwindPercentage) unwindState = UnwindState.UnwindAmountTooHigh
     if (0.01 > unwindPercentage) unwindState = UnwindState.PercentageBelowMinimum
 
-    const fractionValue = BigInt(unwindPercentage * Number(positionValue))
-    const fractionOI = BigInt(unwindPercentage * Number(currentOi))
+    const percentageBigInt = BigInt(Math.round(unwindPercentage * 10000));
+    const fractionValue = percentageBigInt * positionValue / 10000n
+    const fractionOI = percentageBigInt * currentOi / 10000n
 
     const showUnderwaterFlow = info.isLong ? Number(liquidatePrice) > Number(marketMid) : Number(liquidatePrice) < Number(marketMid)
     if (showUnderwaterFlow) unwindState = UnwindState.PositionUnderwater
