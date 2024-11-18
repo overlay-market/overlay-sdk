@@ -6,7 +6,7 @@ import {
   toPercentUnit,
   toScientificNumber,
 } from "../../common/utils";
-import { Address } from "viem";
+import { Abi, Address } from "viem";
 import JSBI from "jsbi";
 import { TickMath } from "@uniswap/v3-sdk";
 import {
@@ -39,6 +39,25 @@ export type OpenPositionData = {
   marketAddress: Address;
   positionId: number;
   priceCurrency: string;
+};
+
+export type PositionData = {
+  positionValue: bigint;
+  currentOi: bigint;
+  liquidatePrice: bigint;
+  info: {
+    notionalInitial: bigint;
+    debtInitial: bigint;
+    midTick: number;
+    entryTick: number;
+    isLong: boolean;
+    liquidated: boolean;
+    oiShares: bigint;
+    fractionRemaining: number;
+  };
+  cost: bigint;
+  tradingFee: bigint;
+  marketMid: bigint;
 };
 
 export class OverlaySDKOpenPositions extends OverlaySDKModule {
@@ -74,23 +93,38 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       }
     }
 
-    const rawOpenData = await getOpenPositions({
+    const [rawOpenData, marketDetails] = await Promise.all([
+      getOpenPositions({
       chainId: chainId,
       account: walletClient.toLowerCase()
-    });
+      }),
+      getMarketsDetailsByChainId(chainId as CHAINS)
+    ]);
+
     const transformedOpens: OpenPositionData[] = [];
-    const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
     invariant(marketDetails, "Failed to get market details");
 
-    const formattedOpens = await Promise.all(
-      rawOpenData.map(async (open) => {
-        return this.formatOpenPosition(open, walletClient, marketDetails);
-      })
-    );
+    const positionsData: {
+      [key: string]: PositionData | undefined
+    } = {};
+    // get positions data in batch of 15 positions
+    for (let i = 0; i < rawOpenData.length; i += 15) {
+      const positions = rawOpenData.slice(i, i + 15).map((position) => ({
+        marketId: position.market.id as Address,
+        positionId: BigInt(position.id.split("-")[1])
+      }));
+      Object.assign(positionsData, await this.getPositionsData(chainId, walletClient, positions));
+    }
 
-    for (const formattedOpen of formattedOpens) {
-      if (formattedOpen) {
-        transformedOpens.push(formattedOpen);
+    for (const open of rawOpenData) {
+      const positionId = BigInt(open.id.split("-")[1]);
+      const marketId = open.market.id as Address;
+      const positionData = positionsData[`${marketId}-${positionId}`];
+      if (positionData) {
+        const formattedOpen = await this.formatOpenPosition(open, marketDetails, positionData);
+        if (formattedOpen) {
+          transformedOpens.push(formattedOpen);
+        }
       }
     }
 
@@ -107,8 +141,8 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
 
   private async formatOpenPosition(
     open: OpenPosition,
-    walletClient: Address,
-    marketDetails: Map<string, { marketName: string; currency: string }>
+    marketDetails: Map<string, { marketName: string; currency: string }>,
+    positionData: PositionData
   ) {
     const positionId = BigInt(open.id.split("-")[1]);
     const marketId = open.market.id as Address;
@@ -116,136 +150,237 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     const isLong = open.isLong;
     const leverage = open.leverage;
 
-    try {
-      const {
-        positionValue,
-        currentOi,
-        liquidatePrice,
-        info,
-        cost,
-        tradingFee,
-        marketMid
-      } = await this.getOpenPositionData(
-        this.core.chainId,
-        walletClient,
-        marketId,
-        positionId
-      );
+    const {
+      positionValue,
+      currentOi,
+      liquidatePrice,
+      info,
+      cost,
+      tradingFee,
+      marketMid,
+    } = positionData;
   
-      if (positionValue === BigInt(0)) {
-        return
-      }
-  
-      const marketName =
-        marketDetails?.get(open.id.split("-")[0])?.marketName ?? "";
-      const marketDetailsCurrency = marketDetails
-        ?.get(open.id.split("-")[0])
-        ?.currency.trim();
-      const priceCurrency = marketDetailsCurrency
-        ? PRICE_CURRENCY_FROM_QUOTE[
-            marketDetailsCurrency as keyof typeof PRICE_CURRENCY_FROM_QUOTE
-          ]
-        : "";
-      const parsedEntryPrice = formatBigNumber(entryPrice, Number(18));
-      const parsedValue: string | number | undefined = (() => {
-        if (!positionValue && positionValue === undefined) return undefined;
-        const fullValue = formatBigNumber(positionValue, 18, 18);
-        if (fullValue === undefined) return "-";
-        return +fullValue < 1
-          ? formatBigNumber(positionValue, 18, 6)
-          : formatBigNumber(positionValue, 18, 2);
-      })();
-      const unrealizedPnL: string | number | undefined = (() => {
-        if (
-          positionValue === undefined ||
-          cost === undefined ||
-          tradingFee === undefined
-        )
-          return undefined;
-        const diff =
-          (Number(positionValue) - Number(cost) - Number(tradingFee)) /
-          10 ** 18;
-        return diff < 1 ? diff.toFixed(6) : diff.toFixed(2);
-      })();
-      function tickToPrice(tick: number): bigint {
-        const Q96 = JSBI.exponentiate(JSBI.BigInt(2), JSBI.BigInt(96));
-        const Q192 = JSBI.exponentiate(Q96, JSBI.BigInt(2));
-        const ONE_JSBI = JSBI.exponentiate(JSBI.BigInt(10), JSBI.BigInt(18));
-        const sqrtRatio = TickMath.getSqrtRatioAtTick(tick);
-        const ratio = JSBI.multiply(sqrtRatio, sqrtRatio);
-        const ratio18 = JSBI.multiply(ratio, ONE_JSBI);
-        const priceJSBI = JSBI.divide(ratio18, Q192);
-        return BigInt(priceJSBI.toString());
-      }
-      const parsedFunding: string | number | undefined = (() => {
-        if (info === undefined || !currentOi || !marketMid) return undefined;
-        const baseFractionRemaining = 10000n;
-        const remainingNotionalInitial =
-          (BigInt(info.notionalInitial) * BigInt(info.fractionRemaining)) /
-          baseFractionRemaining;
-  
-        const remainingOiInitial =
-          (remainingNotionalInitial * ONE_BN) / tickToPrice(info.midTick);
-  
-        if (remainingOiInitial === 0n) return undefined;
-  
-        const fundingPayments =
-          (BigInt(marketMid) * (BigInt(currentOi) - remainingOiInitial)) /
-          ONE_BN;
-  
-        const fullValue = formatBigNumber(
-          fundingPayments < 0n ? -fundingPayments : fundingPayments,
-          18,
-          18
-        );
-  
-        if (fullValue === undefined) return "-";
-  
-        return +fullValue < 1
-          ? formatBigNumber(fundingPayments, 18, 6)
-          : formatBigNumber(fundingPayments, 18, 2);
-      })();
-  
-      return {
-        marketName: marketName,
-        marketAddress: marketId,
-        positionId: Number(positionId),
-        size: parsedValue,
-        positionSide: leverage + "x " + (isLong ? "Long" : "Short"),
-        entryPrice: `${priceCurrency ? priceCurrency : ""}${
-          parsedEntryPrice
-            ? priceCurrency === "%"
-              ? toPercentUnit(parsedEntryPrice)
-              : toScientificNumber(parsedEntryPrice)
-            : "-"
-        }`,
-        liquidatePrice: `${priceCurrency ? priceCurrency : ""}${
-          formatBigNumber(liquidatePrice, Number(18), 4)
-            ? priceCurrency === "%"
-              ? toPercentUnit(formatBigNumber(liquidatePrice, Number(18), 4))
-              : toScientificNumber(
-                  formatBigNumber(liquidatePrice, Number(18), 4)
-                )
-            : "-"
-        }`,
-        currentPrice: `${priceCurrency ? priceCurrency : ""}${
-          formatBigNumber(marketMid, Number(18), 4)
-            ? priceCurrency === "%"
-              ? toPercentUnit(formatBigNumber(marketMid, Number(18), 4))
-              : toScientificNumber(formatBigNumber(marketMid, Number(18), 4))
-            : "-"
-        }`,
-        parsedCreatedTimestamp: formatUnixTimestampToDate(
-          open.createdAtTimestamp
-        ),
-        unrealizedPnL: unrealizedPnL,
-        parsedFunding: parsedFunding,
-        priceCurrency: priceCurrency,
-      };
-    } catch (error) {
-      console.error("Failed to format open position", error);
-      return;
+    const marketName =
+      marketDetails?.get(open.id.split("-")[0])?.marketName ?? "";
+    const marketDetailsCurrency = marketDetails
+      ?.get(open.id.split("-")[0])
+      ?.currency.trim();
+    const priceCurrency = marketDetailsCurrency
+      ? PRICE_CURRENCY_FROM_QUOTE[
+          marketDetailsCurrency as keyof typeof PRICE_CURRENCY_FROM_QUOTE
+        ]
+      : "";
+    const parsedEntryPrice = formatBigNumber(entryPrice, Number(18));
+    const parsedValue: string | number | undefined = (() => {
+      if (!positionValue && positionValue === undefined) return undefined;
+      const fullValue = formatBigNumber(positionValue, 18, 18);
+      if (fullValue === undefined) return "-";
+      return +fullValue < 1
+        ? formatBigNumber(positionValue, 18, 6)
+        : formatBigNumber(positionValue, 18, 2);
+    })();
+    const unrealizedPnL: string | number | undefined = (() => {
+      if (
+        positionValue === undefined ||
+        cost === undefined ||
+        tradingFee === undefined
+      )
+        return undefined;
+      const diff =
+        (Number(positionValue) - Number(cost) - Number(tradingFee)) /
+        10 ** 18;
+      return diff < 1 ? diff.toFixed(6) : diff.toFixed(2);
+    })();
+    function tickToPrice(tick: number): bigint {
+      const Q96 = JSBI.exponentiate(JSBI.BigInt(2), JSBI.BigInt(96));
+      const Q192 = JSBI.exponentiate(Q96, JSBI.BigInt(2));
+      const ONE_JSBI = JSBI.exponentiate(JSBI.BigInt(10), JSBI.BigInt(18));
+      const sqrtRatio = TickMath.getSqrtRatioAtTick(tick);
+      const ratio = JSBI.multiply(sqrtRatio, sqrtRatio);
+      const ratio18 = JSBI.multiply(ratio, ONE_JSBI);
+      const priceJSBI = JSBI.divide(ratio18, Q192);
+      return BigInt(priceJSBI.toString());
     }
+    const parsedFunding: string | number | undefined = (() => {
+      if (info === undefined || !currentOi || !marketMid) return undefined;
+      const baseFractionRemaining = 10000n;
+      const remainingNotionalInitial =
+        (BigInt(info.notionalInitial) * BigInt(info.fractionRemaining)) /
+        baseFractionRemaining;
+
+      const remainingOiInitial =
+        (remainingNotionalInitial * ONE_BN) / tickToPrice(info.midTick);
+
+      if (remainingOiInitial === 0n) return undefined;
+
+      const fundingPayments =
+        (BigInt(marketMid) * (BigInt(currentOi) - remainingOiInitial)) /
+        ONE_BN;
+
+      const fullValue = formatBigNumber(
+        fundingPayments < 0n ? -fundingPayments : fundingPayments,
+        18,
+        18
+      );
+
+      if (fullValue === undefined) return "-";
+
+      return +fullValue < 1
+        ? formatBigNumber(fundingPayments, 18, 6)
+        : formatBigNumber(fundingPayments, 18, 2);
+    })();
+
+    return {
+      marketName: marketName,
+      marketAddress: marketId,
+      positionId: Number(positionId),
+      size: parsedValue,
+      positionSide: leverage + "x " + (isLong ? "Long" : "Short"),
+      entryPrice: `${priceCurrency ? priceCurrency : ""}${
+        parsedEntryPrice
+          ? priceCurrency === "%"
+            ? toPercentUnit(parsedEntryPrice)
+            : toScientificNumber(parsedEntryPrice)
+          : "-"
+      }`,
+      liquidatePrice: `${priceCurrency ? priceCurrency : ""}${
+        formatBigNumber(liquidatePrice, Number(18), 4)
+          ? priceCurrency === "%"
+            ? toPercentUnit(formatBigNumber(liquidatePrice, Number(18), 4))
+            : toScientificNumber(
+                formatBigNumber(liquidatePrice, Number(18), 4)
+              )
+          : "-"
+      }`,
+      currentPrice: `${priceCurrency ? priceCurrency : ""}${
+        formatBigNumber(marketMid, Number(18), 4)
+          ? priceCurrency === "%"
+            ? toPercentUnit(formatBigNumber(marketMid, Number(18), 4))
+            : toScientificNumber(formatBigNumber(marketMid, Number(18), 4))
+          : "-"
+      }`,
+      parsedCreatedTimestamp: formatUnixTimestampToDate(
+        open.createdAtTimestamp
+      ),
+      unrealizedPnL: unrealizedPnL,
+      parsedFunding: parsedFunding,
+      priceCurrency: priceCurrency,
+    };
+  }
+
+  async getPositionsData(
+    chainId: CHAINS,
+    walletClient: Address,
+    positions: { marketId: Address; positionId: bigint }[]
+  ): Promise<{
+    [key: string]: PositionData | undefined
+  }> {
+    const OverlayV1StateABIFunctions = OverlayV1StateABI.filter((abi) => abi.type === "function")
+    const OverlayV1StateABIPositionFunctions = OverlayV1StateABIFunctions.filter(
+      (abi) => abi.name === "value" || 
+      abi.name === "oi" || 
+      abi.name === "liquidationPrice" || 
+      abi.name === "position" || 
+      abi.name === "cost" || 
+      abi.name === "tradingFee" ||
+      abi.name === "mid"
+    );
+
+    const calls: {
+      address: Address;
+      abi: Abi;
+      functionName: string;
+      args: readonly unknown[];
+    }[] = [];
+
+    for (const { marketId, positionId } of positions) {
+      const positionCalls = [
+        {
+          address: V1_PERIPHERY_ADDRESS[chainId],
+          abi: OverlayV1StateABIPositionFunctions.filter((abi) => abi.name === "value"),
+          functionName: "value",
+          args: [marketId, walletClient, positionId],
+        },
+        {
+          address: V1_PERIPHERY_ADDRESS[chainId],
+          abi: OverlayV1StateABIPositionFunctions.filter((abi) => abi.name === "oi"),
+          functionName: "oi",
+          args: [marketId, walletClient, positionId],
+        },
+        {
+          address: V1_PERIPHERY_ADDRESS[chainId],
+          abi: OverlayV1StateABIPositionFunctions.filter((abi) => abi.name === "liquidationPrice"),
+          functionName: "liquidationPrice",
+          args: [marketId, walletClient, positionId],
+        },
+        {
+          address: V1_PERIPHERY_ADDRESS[chainId],
+          abi: OverlayV1StateABIPositionFunctions.filter((abi) => abi.name === "position"),
+          functionName: "position",
+          args: [marketId, walletClient, positionId],
+        },
+        {
+          address: V1_PERIPHERY_ADDRESS[chainId],
+          abi: OverlayV1StateABIPositionFunctions.filter((abi) => abi.name === "cost"),
+          functionName: "cost",
+          args: [marketId, walletClient, positionId],
+        },
+        {
+          address: V1_PERIPHERY_ADDRESS[chainId],
+          abi: OverlayV1StateABIPositionFunctions.filter((abi) => abi.name === "tradingFee"),
+          functionName: "tradingFee",
+          args: [marketId, walletClient, positionId],
+        },
+        {
+          address: V1_PERIPHERY_ADDRESS[chainId],
+          abi: OverlayV1StateABIPositionFunctions.filter((abi) => abi.name === "mid"),
+          functionName: "mid",
+          args: [marketId],
+        }
+      ];
+
+      calls.push(...positionCalls);
+    }
+
+    const results = await this.core.rpcProvider.multicall({
+      allowFailure: true,
+      contracts: calls,
+    });
+
+    const data: {
+      [key: string]: PositionData | undefined
+    } = {};
+
+    for (let i = 0; i < positions.length; i++) {
+      const { marketId, positionId } = positions[i];
+
+      if (results[i * 7].status === 'success' && results[i * 7].result as bigint === BigInt(0)) {
+        data[`${marketId}-${positionId}`] = undefined;
+        console.log('position not found', marketId, positionId);
+        continue;
+      }
+
+      data[`${marketId}-${positionId}`] = {
+        positionValue: results[i * 7].result as bigint,
+        currentOi: results[i * 7 + 1].result as bigint,
+        liquidatePrice: results[i * 7 + 2].result as bigint,
+        info: results[i * 7 + 3].result as {
+          notionalInitial: bigint;
+          debtInitial: bigint;
+          midTick: number;
+          entryTick: number;
+          isLong: boolean;
+          liquidated: boolean;
+          oiShares: bigint;
+          fractionRemaining: number;
+        },
+        cost: results[i * 7 + 4].result as bigint,
+        tradingFee: results[i * 7 + 5].result as bigint,
+        marketMid: results[i * 7 + 6].result as bigint,
+      };
+    }
+
+    return data;
   }
 
   async getOpenPositionData(
