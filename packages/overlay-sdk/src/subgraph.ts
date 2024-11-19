@@ -7,6 +7,7 @@ import {
   OpenPositionsQuery as OpenPositionsQueryDocument,
   NumberOfPositionsQuery as NumberOfPositionsQueryDocument,
   PositionQuery as PositionQueryDocument,
+  TotalSupplyHistory as TotalSupplyHistoryDocument,
 } from "./queries";
 import {
   OpenPositionsQuery,
@@ -20,6 +21,8 @@ import {
   NumberOfPositionsQueryVariables,
   QueryPositionQuery,
   QueryPositionQueryVariables,
+  TotalSupplyHistoryQuery,
+  TotalSupplyHistoryQueryVariables
 } from "./types";
 import { NETWORKS } from "./constants";
 import { CHAINS, invariant } from "./common";
@@ -213,6 +216,28 @@ export const getPositionDetails = async (chainId: CHAINS, account: string, marke
       },
     });
     return result;
+  } catch (error) {
+    console.error("Error fetching number of positions data:", error);
+    return undefined;
+  }
+}
+
+export const getTotalSupplyDayHistory = async (chainId: CHAINS) => {
+  invariant(chainId in CHAINS, "Unsupported chainId");
+  if (chainId === CHAINS.ArbitrumSepolia) return undefined;
+  const url = NETWORKS[chainId].SUBGRAPH_URL;
+  try {
+    const result = await request<TotalSupplyHistoryQuery, TotalSupplyHistoryQueryVariables>({
+      document: TotalSupplyHistoryDocument,
+      url,
+      variables: {
+        first: 24 // first 24 hours
+      },
+    });
+
+    if (result.totalSupplyHourDatas.length < 1) return undefined;
+
+    return result.totalSupplyHourDatas;
   } catch (error) {
     console.error("Error fetching number of positions data:", error);
     return undefined;
