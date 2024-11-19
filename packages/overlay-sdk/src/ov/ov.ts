@@ -7,6 +7,7 @@ import { parseValue } from "../common/utils/parse-value";
 import { CHAINS, invariant, NOOP } from "../common";
 import { OV_ADDRESS } from "../constants";
 import { formatBigNumber } from "../common/utils";
+import { getTotalSupplyDayHistory } from "../subgraph";
 
 export class OverlaySDKOverlayToken extends OverlaySDKModule {
   public async contractAddress() {
@@ -164,6 +165,18 @@ export class OverlaySDKOverlayToken extends OverlaySDKModule {
   // @ErrorHandler()
   public async totalSupply(): Promise<bigint> {
     return (await this.getContract()).read.totalSupply();
+  }
+
+  public async totalSupplyDayChange(): Promise<number> {
+    const chainId = this.core.chainId;
+    const totalSupplyHistory = await getTotalSupplyDayHistory(chainId);
+
+    if (!totalSupplyHistory) return 0
+
+    const currentTotalSupply = totalSupplyHistory[0].close
+    const dayAgoTotalSupply = totalSupplyHistory[totalSupplyHistory.length -1].close
+
+    return 100 * (currentTotalSupply - dayAgoTotalSupply) / dayAgoTotalSupply
   }
 
   private async parseProps<
