@@ -200,3 +200,15 @@ query queryPosition($account: ID!, $marketPositionId: ID!) {
     }
   }
 }`
+
+export const TotalSupplyHistory = gql`
+query TotalSupplyHistory($first: Int!) {
+  totalSupplyHourDatas(
+    orderBy: periodStartUnix
+    orderDirection: desc
+    first: $first
+  ) {
+    periodStartUnix
+    close
+  }
+}`;
