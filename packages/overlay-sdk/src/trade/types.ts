@@ -64,3 +64,28 @@ export type UnwindStateError = {
 }
 
 export type UnwindStateData = UnwindStateSuccess | UnwindStateError;
+
+export type TradeStateOnchainData = {
+  midPrice: bigint,
+  oiEstimated: bigint,
+  ois: [bigint, bigint],
+  capOi: bigint,
+  circuitBreakerLevel: bigint,
+  liquidationPrice: bigint,
+  marketState: {
+    bid: bigint;
+    ask: bigint;
+    mid: bigint;
+    volumeBid: bigint;
+    volumeAsk: bigint;
+    oiLong: bigint;
+    oiShort: bigint;
+    capOi: bigint;
+    circuitBreakerLevel: bigint;
+    fundingRate: bigint;
+  },
+  minCollateral: bigint,
+  tradingFeeRate: bigint,
+  balance: bigint,
+  currentAllowance: bigint
+}
