@@ -224,7 +224,6 @@ export const getPositionDetails = async (chainId: CHAINS, account: string, marke
 
 export const getTotalSupplyDayHistory = async (chainId: CHAINS) => {
   invariant(chainId in CHAINS, "Unsupported chainId");
-  if (chainId === CHAINS.ArbitrumSepolia) return undefined;
   const url = NETWORKS[chainId].SUBGRAPH_URL;
   try {
     const result = await request<TotalSupplyHistoryQuery, TotalSupplyHistoryQueryVariables>({
