@@ -64,8 +64,11 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
     });
     const transformedLiquidated: LiquidatedPositionData[] = [];
     const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
+    
+    // slice the raw data using page and pageSize
+    const liquidatedPositions = paginate(rawliquidatedPositions, page, pageSize).data;
 
-    for (const liquidated of rawliquidatedPositions) {
+    for (const liquidated of liquidatedPositions) {
       const marketName =
         marketDetails?.get(liquidated.id.split("-")[0])?.marketName ?? "";
       const parsedSize = formatBigNumber(liquidated.size, Number(18));

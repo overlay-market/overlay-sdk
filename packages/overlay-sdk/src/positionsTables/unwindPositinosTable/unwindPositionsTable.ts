@@ -66,7 +66,11 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
     });
     const transformedUnwinds: UnwindPositionData[] = [];
     const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
-    for (const unwind of rawUnwindData) {
+
+    // slice the raw data using page and pageSize
+    const unwindPositions = paginate(rawUnwindData, page, pageSize).data;
+
+    for (const unwind of unwindPositions) {
       const marketName =
         marketDetails?.get(unwind.id.split("-")[0])?.marketName ?? "";
       const marketDetailsCurrency = marketDetails
