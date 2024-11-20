@@ -103,20 +103,22 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
 
     const transformedOpens: OpenPositionData[] = [];
     invariant(marketDetails, "Failed to get market details");
+    // slice the raw data using page and pageSize
+    const openPositions = paginate(rawOpenData, page, pageSize).data;
 
     const positionsData: {
       [key: string]: PositionData | undefined
     } = {};
     // get positions data in batch of 15 positions
-    for (let i = 0; i < rawOpenData.length; i += 15) {
-      const positions = rawOpenData.slice(i, i + 15).map((position) => ({
+    for (let i = 0; i < openPositions.length; i += 15) {
+      const positions = openPositions.slice(i, i + 15).map((position) => ({
         marketId: position.market.id as Address,
         positionId: BigInt(position.id.split("-")[1])
       }));
       Object.assign(positionsData, await this.getPositionsData(chainId, walletClient, positions));
     }
 
-    for (const open of rawOpenData) {
+    for (const open of openPositions) {
       const positionId = BigInt(open.id.split("-")[1]);
       const marketId = open.market.id as Address;
       const positionData = positionsData[`${marketId}-${positionId}`];

@@ -1,12 +1,15 @@
 import { Address } from "viem";
 import { CHAINS, invariant } from "../common";
 import { OverlaySDKModule } from "../common/class-primitives/sdk-module";
-import { V1_PERIPHERY_ADDRESS } from "../constants";
+import { OV_ADDRESS, V1_PERIPHERY_ADDRESS } from "../constants";
 import { OverlaySDKCommonProps } from "../core/types";
 import { OverlaySDK } from "../sdk";
 import { formatBigNumber, formatFundingRateToDaily } from "../common/utils";
-import { TradeState, UnwindState, UnwindStateData } from "./types";
+import { TradeState, TradeStateOnchainData, UnwindState, UnwindStateData } from "./types";
 import { getPositionDetails } from "../subgraph";
+import { OverlayV1StateABI } from "../markets/abis/OverlayV1State";
+import { OverlayV1Market2ABI } from "../markets/abis/OverlayV1Market2";
+import { erc20abi } from "../ov/abi/erc20abi";
 
 export class OverlaySDKTrade extends OverlaySDKModule {
   private sdk: OverlaySDK;
@@ -16,10 +19,15 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     this.sdk = sdk;
   }
 
-  public async getFunding(marketId: string) { 
+  private _getMarketAddressAndChainId = async (marketId: string) => {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
     const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
+    return {marketAddress, chainId}
+  }
+
+  public async getFunding(marketId: string) {
+    const {marketAddress, chainId} = await this._getMarketAddressAndChainId(marketId)
 
     const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketAddress)
     invariant(result, "Market state not found");
@@ -28,9 +36,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
   }
 
   public async getOIBalance(marketId: string, decimals?: number) {
-    const chainId = this.core.chainId
-    invariant(chainId in CHAINS, "Unsupported chainId");
-    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
+    const {marketAddress, chainId} = await this._getMarketAddressAndChainId(marketId)
 
     const {oiLong, oiShort} = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketAddress)
 
@@ -46,9 +52,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
   }
 
   public async getPrice(marketId: string, collateral?: bigint, leverage?: bigint, isLong?: boolean, decimals?: number) {
-    const chainId = this.core.chainId
-    invariant(chainId in CHAINS, "Unsupported chainId");
-    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
+    const {marketAddress, chainId} = await this._getMarketAddressAndChainId(marketId)
 
     if (!collateral || !leverage || isLong === undefined) {
       const midPrice = await this.sdk.state.getMidPrice(V1_PERIPHERY_ADDRESS[chainId], marketAddress)
@@ -58,6 +62,10 @@ export class OverlaySDKTrade extends OverlaySDKModule {
 
     const oiEstimated = await this.sdk.state.getOiEstimate(V1_PERIPHERY_ADDRESS[chainId], marketAddress, collateral, leverage, isLong)
 
+    return this._getPrice(chainId, marketAddress, oiEstimated, isLong, decimals)
+  }
+
+  private async _getPrice(chainId: CHAINS, marketAddress: Address, oiEstimated: bigint, isLong: boolean, decimals?: number) {
     const fractionOfCapOi = await this.sdk.state.getFractionOfCapOi(V1_PERIPHERY_ADDRESS[chainId], marketAddress, oiEstimated)
 
     let estimatedPrice: bigint
@@ -80,6 +88,10 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const bid = BigInt(res.bid)
     const ask = BigInt(res.ask)
 
+    return this._getPriceInfo(slippage, isLong, price, ask, bid, decimals)
+  }
+
+  private _getPriceInfo(slippage: number, isLong: boolean, price: bigint, ask: bigint, bid: bigint, decimals?: number) {
     // calculate min or max price
     const increasePercentage = (slippage + 100) * 100
     const decreasePercentage = (100 - slippage) * 100
@@ -98,12 +110,9 @@ export class OverlaySDKTrade extends OverlaySDKModule {
   }
 
   public async getUnwindPrice(marketId: string, owner: Address, positionId: bigint, fraction: bigint, slippage: number, decimals?: number) {
-    const chainId = this.core.chainId
-    invariant(chainId in CHAINS, "Unsupported chainId");
     // validate fraction is between 0 and 1 ** 18
     invariant(fraction >= 0n && fraction <= 10n ** 18n, "Fraction must be between 0 and 1");
-
-    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
+    const {marketAddress} = await this._getMarketAddressAndChainId(marketId)
 
     const {oiShares, isLong} = await this.sdk.market.getOiShares(marketAddress, positionId, owner)
     console.log(oiShares, isLong)
@@ -116,12 +125,9 @@ export class OverlaySDKTrade extends OverlaySDKModule {
   }
 
   public async getBidAndAsk(marketId: string, decimals?: number) {
-    const chainId = this.core.chainId
-    invariant(chainId in CHAINS, "Unsupported chainId");
+    const {marketAddress, chainId} = await this._getMarketAddressAndChainId(marketId)
 
-    const marketDetails = await this.sdk.markets.getMarketDetails(marketId)
-
-    const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketDetails.marketAddress)
+    const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketAddress)
 
     return {
       bid: decimals ? formatBigNumber(result.bid, 18, decimals) : result.bid,
@@ -130,51 +136,49 @@ export class OverlaySDKTrade extends OverlaySDKModule {
   }
 
   public async getMaxInputIncludingFees(marketId: string, address: Address, leverage: bigint) {
-    const chainId = this.core.chainId
-    invariant(chainId in CHAINS, "Unsupported chainId");
+    const {marketAddress} = await this._getMarketAddressAndChainId(marketId)
 
-    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
+    const tradingFeeRate = await this.sdk.market.getTradingFeeRate(marketAddress)
+    const balance = await this.sdk.ov.balance(address) as bigint
 
-    const tradingFeeRate = formatBigNumber(await this.sdk.market.getTradingFeeRate(marketAddress), 18, 6, true) as number
+    return this._getMaxInputIncludingFees(tradingFeeRate, balance, leverage)
+  }
 
-    // const balance = formatBigNumber(await this.sdk.ov.balance((await this.core.useAccount()).address) as bigint, 18, 18, true) as number
-    const balance = formatBigNumber(await this.sdk.ov.balance(address) as bigint, 18, 18, true) as number
+  private _getMaxInputIncludingFees(tradingFeeRate: bigint, balance: bigint, leverage: bigint) {
+    const tradingFeeRateParsed = formatBigNumber(tradingFeeRate, 18, 6, true) as number
+    const balanceParsed = formatBigNumber(balance, 18, 18, true) as number
 
-    const buildFeeValueFromMaxInput = balance * tradingFeeRate * (formatBigNumber(leverage, 18, 18, true) as number)
-
-    const returnValue = balance - buildFeeValueFromMaxInput
+    const buildFeeValueFromMaxInput = balanceParsed * tradingFeeRateParsed * (formatBigNumber(leverage, 18, 18, true) as number)
+    const returnValue = balanceParsed - buildFeeValueFromMaxInput
   
     return Math.trunc(returnValue * Math.pow(10, 18)) / Math.pow(10, 18)
   }
 
   public async getFee(marketId: string) {
-    const chainId = this.core.chainId
-    invariant(chainId in CHAINS, "Unsupported chainId");
+    const {marketAddress} = await this._getMarketAddressAndChainId(marketId)
+    const tradingFeeRate = await this.sdk.market.getTradingFeeRate(marketAddress)
 
-    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
+    return this._getFee(tradingFeeRate)
+  }
 
-    const tradingFeeRate = formatBigNumber(await this.sdk.market.getTradingFeeRate(marketAddress), 18, 6, true) as number
-
-    return tradingFeeRate * 100
+  private _getFee(tradingFeeRate: bigint) {
+    const tradingFeeRateParsed = formatBigNumber(tradingFeeRate, 18, 6, true) as number
+    return tradingFeeRateParsed * 100
   }
 
   public async getLiquidationPriceEstimate(marketId: string, collateral: bigint, leverage: bigint, isLong: boolean, decimals?: number) {
-    const chainId = this.core.chainId
-    invariant(chainId in CHAINS, "Unsupported chainId");
-
-    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
-
+    const {marketAddress, chainId} = await this._getMarketAddressAndChainId(marketId)
     const liquidationPrice = await this.sdk.state.getLiquidationPriceEstimate(V1_PERIPHERY_ADDRESS[chainId], marketAddress, collateral, leverage, isLong)
 
+    return this._getLiquidationPriceEstimate(liquidationPrice, decimals)
+  }
+
+  private _getLiquidationPriceEstimate (liquidationPrice: bigint, decimals?: number) {
     return formatBigNumber(liquidationPrice, 18, decimals || 5)
   }
 
   public async getOiEstimate(marketId: string, collateral: bigint, leverage: bigint, isLong: boolean, decimals?: number) {
-    const chainId = this.core.chainId
-    invariant(chainId in CHAINS, "Unsupported chainId");
-
-    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
-
+    const {marketAddress, chainId} = await this._getMarketAddressAndChainId(marketId)
     const oi = await this.sdk.state.getOiEstimate(V1_PERIPHERY_ADDRESS[chainId], marketAddress, collateral, leverage, isLong)
 
     return decimals ? formatBigNumber(oi, 18, decimals) : oi
@@ -190,36 +194,27 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     isLong: boolean,
     address: Address,
   ) {
-    const chainId = this.core.chainId
-    invariant(chainId in CHAINS, "Unsupported chainId");
+    const {marketAddress, chainId} = await this._getMarketAddressAndChainId(marketId)
 
-    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId)
-
-    const [
+    const {
       midPrice,
-      liquidationPriceEstimate,
+      oiEstimated: rawExpectedOi,
       ois,
       capOi,
       circuitBreakerLevel,
-      rawExpectedOi,
+      liquidationPrice,
+      marketState,
       minCollateral,
-      maxInputIncludingFees,
-      currentAllowance,
-      priceInfo,
-      tradingFeeRate
-    ] = await Promise.all([
-      this.getPrice(marketId, undefined, undefined, undefined, 5),
-      this.getLiquidationPriceEstimate(marketId, collateral, leverage, isLong),
-      this.sdk.state.getOIs(V1_PERIPHERY_ADDRESS[chainId], marketAddress),
-      this.sdk.state.getCapOi(V1_PERIPHERY_ADDRESS[chainId], marketAddress),
-      this.sdk.state.getCircuitBreakerLevel(V1_PERIPHERY_ADDRESS[chainId], marketAddress),
-      this.getOiEstimate(marketId, collateral, leverage, isLong),
-      this.sdk.market.getMinCollateral(marketAddress),
-      this.getMaxInputIncludingFees(marketId, address, leverage),
-      this.sdk.ov.allowance({ account: address, to: marketAddress }),
-      this.getPriceInfo(marketId, collateral, leverage, slippage, isLong, 18),
-      this.getFee(marketId)
-    ]);
+      tradingFeeRate: rawTradingFeeRate,
+      balance,
+      currentAllowance
+    } = await this._getTradeStateData(chainId, marketAddress, collateral, leverage, isLong, address)
+
+    const liquidationPriceEstimate = this._getLiquidationPriceEstimate(liquidationPrice)
+    const maxInputIncludingFees = this._getMaxInputIncludingFees(rawTradingFeeRate, balance, leverage)
+    const price = await this._getPrice(chainId, marketAddress, rawExpectedOi, isLong) as bigint
+    const priceInfo = await this._getPriceInfo(slippage, isLong, price, marketState.ask, marketState.bid, 18)
+    const tradingFeeRate = this._getFee(rawTradingFeeRate)
 
     invariant(ois[0] && ois[1], "OIs not found");
     invariant(capOi, "Cap OI not found");
@@ -373,5 +368,109 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       unwindState,
       priceLimit
     } as UnwindStateData
+  }
+
+  private async _getTradeStateData(
+    chainId: CHAINS,
+    marketAddress: Address,
+    collateral: bigint,
+    leverage: bigint,
+    isLong: boolean,
+    userAddress: Address
+  ): Promise<TradeStateOnchainData> {
+    const OverlayV1MarketABIFunctions = OverlayV1Market2ABI.filter((abi) => abi.type === "function")
+    const OverlayV1StateABIFunctions = OverlayV1StateABI.filter((abi) => abi.type === "function")
+    const OVTokenABIFunctions = erc20abi.filter((abi) => abi.type === "function")
+
+    const marketContract = { address: marketAddress, abi: OverlayV1MarketABIFunctions }
+    const stateContract = { address: V1_PERIPHERY_ADDRESS[chainId], abi: OverlayV1StateABIFunctions }
+    const ovContract = { address: OV_ADDRESS[chainId], abi: OVTokenABIFunctions }
+    
+    const [
+      midPrice,
+      oiEstimated,
+      ois,
+      capOi,
+      circuitBreakerLevel,
+      liquidationPrice,
+      marketState,
+      minCollateral,
+      tradingFeeRate,
+      balance,
+      currentAllowance
+    ] = await this.core.rpcProvider.multicall({
+        allowFailure: false,
+        contracts: [
+          {
+            ...stateContract,
+            functionName: "mid",
+            args: [marketAddress],
+          },
+          {
+            ...stateContract,
+            functionName: "oiEstimate",
+            args: [marketAddress, collateral, leverage, isLong],
+          },
+          {
+            ...stateContract,
+            functionName: "ois",
+            args: [marketAddress],
+          },
+          {
+            ...stateContract,
+            functionName: "capOi",
+            args: [marketAddress],
+          },
+          {
+            ...stateContract,
+            functionName: "circuitBreakerLevel",
+            args: [marketAddress],
+          },
+          {
+            ...stateContract,
+            functionName: "liquidationPriceEstimate",
+            args: [marketAddress, collateral, leverage, isLong],
+          },
+          {
+            ...stateContract,
+            functionName: "marketState",
+            args: [marketAddress],
+          },
+          {
+            ...marketContract,
+            functionName: "params",
+            args: [12n], // getMinCollateral
+          },
+          {
+            ...marketContract,
+            functionName: "params",
+            args: [11n], // getTradingFeeRate
+          },
+          {
+            ...ovContract,
+            functionName: "balanceOf",
+            args: [userAddress],
+          },
+          {
+            ...ovContract,
+            functionName: "allowance",
+            args: [userAddress, marketAddress],
+          },
+        ] as const
+    });
+
+    return {
+      midPrice,
+      oiEstimated,
+      ois: [ois[0], ois[1]],
+      capOi,
+      circuitBreakerLevel,
+      liquidationPrice,
+      marketState,
+      minCollateral,
+      tradingFeeRate,
+      balance,
+      currentAllowance
+    }
   }
 }
