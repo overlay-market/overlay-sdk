@@ -1,4 +1,4 @@
-import {type Address} from "viem";
+import {Abi, type Address} from "viem";
 import { OverlaySDKModule } from "../common/class-primitives/sdk-module.js";
 import { OverlaySDKCommonProps } from "../core/types.js";
 import { MARKET_LOGO, PRICE_CURRENCY_FROM_QUOTE, V1_PERIPHERY_ADDRESS, ORACLE_LOGO } from "../constants.js";
@@ -7,6 +7,8 @@ import { formatBigNumber } from "../common/utils/formatBigNumber.js";
 import { formatFundingRateToAnnual, formatFundingRateToDaily } from "../common/utils/formatWei.js";
 import { getMarketDetailsById, getMarketsDetailsByChainId } from "../services/marketsDetails.js";
 import { CHAINS, invariant } from "../common/index.js";
+import { OverlayV1Market2ABI } from "../markets/abis/OverlayV1Market2.js";
+import { OverlayV1StateABI } from "../markets/abis/OverlayV1State.js";
 
 export type MarketData = {
   id: string;
@@ -58,6 +60,26 @@ export type TransformedMarketData = {
   marketLogo: string;
   priceCurrency: string;
 };
+
+export type MarketOnchainData = {
+  [key: string]: {
+    marketState: MarketState;
+    isShutdown: boolean;
+  }
+}
+
+type MarketState = {
+  bid: bigint;
+  ask: bigint;
+  mid: bigint;
+  volumeBid: bigint;
+  volumeAsk: bigint;
+  oiLong: bigint;
+  oiShort: bigint;
+  capOi: bigint;
+  circuitBreakerLevel: bigint;
+  fundingRate: bigint;
+}
 
 export class OverlaySDKMarkets extends OverlaySDKModule {
   private sdk: OverlaySDK;
@@ -119,12 +141,17 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
     const marketDetails = await getMarketsDetailsByChainId(chainId)
     const marketDetailsValues = marketDetails && Array.from(marketDetails?.values())
 
+    const marketAddresses = marketDetailsValues ? marketDetailsValues.map(market => market.id as Address) : []
+    const marketOnchainData = await this._getMarketOnchainData(marketAddresses, chainId)
+
     const transformedMarketsData = marketDetailsValues 
     ?  
       await Promise.allSettled(marketDetailsValues.map(async(market) => {
         if (market.disabled) return undefined
         const marketId = market.id as Address
-        const result = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketId)
+        
+        const {marketState: result, isShutdown} = marketOnchainData[marketId]
+        if (isShutdown) return undefined
        
         if (result) {
           let parsedBid: string | number | undefined = undefined
@@ -236,5 +263,56 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
     const transformedMarketsData = await Promise.all(transformedMarketsDataPromises);
 
     return transformedMarketsData || [];
+  }
+
+  private async _getMarketOnchainData(markets: Address[], chainId: CHAINS): Promise<MarketOnchainData> {
+    console.log("_getMarketOnchainData")
+    const OverlayV1MarketABIFunctions = OverlayV1Market2ABI.filter((abi) => abi.type === "function")
+    const OverlayV1StateABIFunctions = OverlayV1StateABI.filter((abi) => abi.type === "function")
+
+    const stateContract = { address: V1_PERIPHERY_ADDRESS[chainId], abi: OverlayV1StateABIFunctions }
+
+    const marketsData: MarketOnchainData = {}
+
+    const calls: {
+      address: Address;
+      abi: Abi;
+      functionName: string;
+      args: readonly unknown[];
+    }[] = [];
+
+    for (const marketAddress of markets) {
+      const marketContract = { address: marketAddress, abi: OverlayV1MarketABIFunctions }
+      
+      calls.push({
+        ...stateContract,
+        functionName: "marketState",
+        args: [marketAddress],
+      })
+
+      calls.push({
+        ...marketContract,
+        functionName: "isShutdown",
+        args: [],
+      })
+    }
+
+    const results = await this.core.rpcProvider.multicall({
+      allowFailure: false,
+      contracts: calls
+    })
+
+    for (let i = 0; i < results.length; i += 2) {
+      const marketAddress = markets[i / 2]
+      const marketState = results[i] as MarketState
+      const isShutdown = results[i + 1] as boolean
+
+      marketsData[marketAddress] = {
+        marketState,
+        isShutdown,
+      }
+    }
+
+    return marketsData
   }
 }
