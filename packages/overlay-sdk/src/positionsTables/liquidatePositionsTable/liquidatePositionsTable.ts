@@ -27,7 +27,6 @@ export type LiquidatedPositionData = {
 
 export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
   private sdk: OverlaySDK;
-  private liquidatedPositionsCache: Record<string, { data: any; lastUpdated: number }> = {};
 
   constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK) {
     super(props);
@@ -47,16 +46,6 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
       walletClient = account ?? (await this.sdk.core.web3Provider?.requestAddresses())[0] as Address;
     }
     const chainId = this.core.chainId;
-
-    // check if we have the data in cache and if it's not too old
-    const cacheKey = `${walletClient}-${chainId}`;
-    if (!noCaching && this.liquidatedPositionsCache[cacheKey]) {
-      const cachedData = this.liquidatedPositionsCache[cacheKey];
-      const isCacheValid = Date.now() - cachedData.lastUpdated < 300 * 1000; // 5 minutes
-      if (isCacheValid) {
-        return paginate(this.filterLiquidatedPositionsByMarketId(cachedData.data, marketId), page, pageSize);
-      }
-    }
 
     const rawliquidatedPositions = await getLiquidatedPositions({
       chainId: chainId,
@@ -114,14 +103,6 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
         created: parsedCreatedTimestamp,
         liquidated: parsedClosedTimestamp,
       });
-    }
-
-    // cache the data
-    if (!noCaching) {
-      this.liquidatedPositionsCache[cacheKey] = {
-        data: transformedLiquidated,
-        lastUpdated: Date.now(),
-      };
     }
 
     return paginate(this.filterLiquidatedPositionsByMarketId(transformedLiquidated, marketId), page, pageSize);

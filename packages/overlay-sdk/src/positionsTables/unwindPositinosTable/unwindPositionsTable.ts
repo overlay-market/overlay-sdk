@@ -29,7 +29,6 @@ export type UnwindPositionData = {
 
 export class OverlaySDKUnwindPositions extends OverlaySDKModule {
   private sdk: OverlaySDK;
-  private unwindPositionsCache: Record<string, { data: any; lastUpdated: number }> = {};
 
   constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK) {
     super(props);
@@ -49,16 +48,6 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
       walletClient = account ?? (await this.sdk.core.web3Provider?.requestAddresses())[0] as Address;
     }
     const chainId = this.core.chainId;
-
-    // check if we have the data in cache and if it's not too old
-    const cacheKey = `${walletClient}-${chainId}`;
-    if (!noCaching && this.unwindPositionsCache[cacheKey]) {
-      const cachedData = this.unwindPositionsCache[cacheKey];
-      const isCacheValid = Date.now() - cachedData.lastUpdated < 300 * 1000; // 5 minutes
-      if (isCacheValid) {
-        return paginate(this.filterUnwindPositionsByMarketId(cachedData.data, marketId), page, pageSize);
-      }
-    }
 
     const rawUnwindData = await getUnwindPositions({
       chainId: chainId,
@@ -122,11 +111,6 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
         unwindNumber: Number(unwind.unwindNumber),
         positionId: Number(unwind.position.positionId),
       });
-    }
-    
-    // cache the data
-    if (!noCaching) {
-      this.unwindPositionsCache[cacheKey] = { data: transformedUnwinds, lastUpdated: Date.now() };
     }
 
     return paginate(this.filterUnwindPositionsByMarketId(transformedUnwinds, marketId), page, pageSize);
