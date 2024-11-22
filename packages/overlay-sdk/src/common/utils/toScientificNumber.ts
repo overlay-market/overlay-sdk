@@ -35,7 +35,7 @@ const toPrecisionTrim = (value: BigNumber, significantFigures: number) => {
   return isNegative ? `-${formattedValue}` : formattedValue
 }
 
-export const toScientificNumber = (input: string | BigNumber | bigint | number | null | undefined) => {
+export const toScientificNumber = (input: string | BigNumber | bigint | number | null | undefined, significantFigures?: number) => {
   const value = parseBigNumberOrZero(input || 0)
 
   // Check if the value is zero
@@ -55,26 +55,26 @@ export const toScientificNumber = (input: string | BigNumber | bigint | number |
       exponent--
     }
 
-    return `${sign}${toPrecisionTrim(absValue, 3)}e-${-exponent}`
+    return `${sign}${toPrecisionTrim(absValue, significantFigures ?? 3)}e-${-exponent}`
   }
 
   // Check if the value is less than 1 million
   if (value.abs().lt(MILLION)) {
-    return toPrecisionTrim(value, 6)
+    return toPrecisionTrim(value, significantFigures ?? 6)
   }
 
   // Check if the value is less than 1 billion
   if (value.abs().lt(BILLION)) {
-    return `${toPrecisionTrim(value.div(MILLION), 6)} M`
+    return `${toPrecisionTrim(value.div(MILLION), significantFigures ?? 6)} M`
   }
 
   // Check if the value is less than 1 trillion
   if (value.abs().lt(TRILLION)) {
-    return `${toPrecisionTrim(value.div(BILLION), 6)} B`
+    return `${toPrecisionTrim(value.div(BILLION), significantFigures ?? 6)} B`
   }
 
   // Value is greater than or equal to 1 trillion
-  return `${toPrecisionTrim(value.div(TRILLION), 6)} T`
+  return `${toPrecisionTrim(value.div(TRILLION), significantFigures ?? 6)} T`
 }
 
 export const toPercentUnit = (input: string | number | null | undefined) => {
