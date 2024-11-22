@@ -96,7 +96,8 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     const transformedOpens: OpenPositionData[] = [];
     invariant(marketDetails, "Failed to get market details");
     // slice the raw data using page and pageSize
-    const openPositions = paginate(rawOpenData, page, pageSize).data;
+    const positionsFiltered = await this.filterOpenPositionsByMarketId(rawOpenData, marketId);
+    const openPositions = paginate(positionsFiltered, page, pageSize).data;
 
     let positionsData: {
       [key: string]: PositionData | null | undefined
@@ -156,7 +157,10 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       }
     }
 
-    return paginate(this.filterOpenPositionsByMarketId(transformedOpens, marketId), page, pageSize);
+    return {
+      data: transformedOpens,
+      total: positionsFiltered.length
+    }
   };
 
   private async formatOpenPosition(
@@ -537,13 +541,14 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
   }
 
   // private method to filter open positions by marketId
-  private filterOpenPositionsByMarketId = (
-    openPositions: OpenPositionData[],
+  private filterOpenPositionsByMarketId = async (
+    openPositions: any[],
     marketId?: string
-  ): OpenPositionData[] => {
+  ) => {
     if (!marketId) return openPositions;
+    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId);
     return openPositions.filter(
-      (open) => open.marketName === marketId
+      (open) => open.id.split("-")[0] === marketAddress
     );
   }
 }

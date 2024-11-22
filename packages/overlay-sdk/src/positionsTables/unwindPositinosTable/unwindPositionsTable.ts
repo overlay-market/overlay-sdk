@@ -57,7 +57,8 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
     const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
 
     // slice the raw data using page and pageSize
-    const unwindPositions = paginate(rawUnwindData, page, pageSize).data;
+    const positionsFiltered = await this.filterUnwindPositionsByMarketId(rawUnwindData, marketId);
+    const unwindPositions = paginate(positionsFiltered, page, pageSize).data;
 
     for (const unwind of unwindPositions) {
       const marketName =
@@ -113,17 +114,21 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
       });
     }
 
-    return paginate(this.filterUnwindPositionsByMarketId(transformedUnwinds, marketId), page, pageSize);
+    return {
+      data: transformedUnwinds,
+      total: positionsFiltered.length,
+    };
   };
 
   // private method to filter unwind positions by marketId
-  private filterUnwindPositionsByMarketId = (
-    unwindPositions: UnwindPositionData[],
+  private filterUnwindPositionsByMarketId = async (
+    unwindPositions: any[],
     marketId?: string
-  ): UnwindPositionData[] => {
+  ) => {
     if (!marketId) return unwindPositions;
+    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId);
     return unwindPositions.filter(
-      (unwind) => unwind.marketName === marketId
+      (unwind) => unwind.id.split("-")[0] === marketAddress
     );
   }
 }

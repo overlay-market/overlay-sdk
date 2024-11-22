@@ -55,7 +55,8 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
     const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
     
     // slice the raw data using page and pageSize
-    const liquidatedPositions = paginate(rawliquidatedPositions, page, pageSize).data;
+    const positionsFiltered = await this.filterLiquidatedPositionsByMarketId(rawliquidatedPositions, marketId);
+    const liquidatedPositions = paginate(positionsFiltered, page, pageSize).data;
 
     for (const liquidated of liquidatedPositions) {
       const marketName =
@@ -105,17 +106,21 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
       });
     }
 
-    return paginate(this.filterLiquidatedPositionsByMarketId(transformedLiquidated, marketId), page, pageSize);
+    return {
+      data: transformedLiquidated,
+      total: positionsFiltered.length,
+    }
   };
 
   // private method to filter liquidated positions by marketId
-  private filterLiquidatedPositionsByMarketId = (
-    liquidatedPositions: LiquidatedPositionData[],
+  private filterLiquidatedPositionsByMarketId = async (
+    liquidatedPositions: any[],
     marketId?: string
-  ): LiquidatedPositionData[] => {
+  ) => {
     if (!marketId) return liquidatedPositions;
+    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId);
     return liquidatedPositions.filter(
-      (liquidated) => liquidated.marketName === marketId
+      (liquidated) => liquidated.id.split("-")[0] === marketAddress
     );
   }
 }
