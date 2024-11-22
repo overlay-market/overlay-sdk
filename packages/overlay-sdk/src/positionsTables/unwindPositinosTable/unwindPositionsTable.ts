@@ -29,7 +29,6 @@ export type UnwindPositionData = {
 
 export class OverlaySDKUnwindPositions extends OverlaySDKModule {
   private sdk: OverlaySDK;
-  private unwindPositionsCache: Record<string, { data: any; lastUpdated: number }> = {};
 
   constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK) {
     super(props);
@@ -50,16 +49,6 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
     }
     const chainId = this.core.chainId;
 
-    // check if we have the data in cache and if it's not too old
-    const cacheKey = `${walletClient}-${chainId}`;
-    if (!noCaching && this.unwindPositionsCache[cacheKey]) {
-      const cachedData = this.unwindPositionsCache[cacheKey];
-      const isCacheValid = Date.now() - cachedData.lastUpdated < 300 * 1000; // 5 minutes
-      if (isCacheValid) {
-        return paginate(this.filterUnwindPositionsByMarketId(cachedData.data, marketId), page, pageSize);
-      }
-    }
-
     const rawUnwindData = await getUnwindPositions({
       chainId: chainId,
       account: walletClient.toLowerCase()
@@ -68,7 +57,8 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
     const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
 
     // slice the raw data using page and pageSize
-    const unwindPositions = paginate(rawUnwindData, page, pageSize).data;
+    const positionsFiltered = await this.filterUnwindPositionsByMarketId(rawUnwindData, marketId);
+    const unwindPositions = paginate(positionsFiltered, page, pageSize).data;
 
     for (const unwind of unwindPositions) {
       const marketName =
@@ -123,23 +113,22 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
         positionId: Number(unwind.position.positionId),
       });
     }
-    
-    // cache the data
-    if (!noCaching) {
-      this.unwindPositionsCache[cacheKey] = { data: transformedUnwinds, lastUpdated: Date.now() };
-    }
 
-    return paginate(this.filterUnwindPositionsByMarketId(transformedUnwinds, marketId), page, pageSize);
+    return {
+      data: transformedUnwinds,
+      total: positionsFiltered.length,
+    };
   };
 
   // private method to filter unwind positions by marketId
-  private filterUnwindPositionsByMarketId = (
-    unwindPositions: UnwindPositionData[],
+  private filterUnwindPositionsByMarketId = async (
+    unwindPositions: any[],
     marketId?: string
-  ): UnwindPositionData[] => {
+  ) => {
     if (!marketId) return unwindPositions;
+    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId);
     return unwindPositions.filter(
-      (unwind) => unwind.marketName === marketId
+      (unwind) => unwind.id.split("-")[0] === marketAddress
     );
   }
 }
