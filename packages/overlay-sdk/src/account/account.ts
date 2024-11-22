@@ -10,7 +10,6 @@ import { IntervalType, OverviewData } from "./types";
 
 export class OverlaySDKAccountDetails extends OverlaySDKModule {
   private sdk: OverlaySDK;
-  private overviewCache: Record<string, { data: OverviewData; lastUpdated: number }> = {};
 
   constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK) {
     super(props);
@@ -24,16 +23,6 @@ export class OverlaySDKAccountDetails extends OverlaySDKModule {
       walletClient = account ?? (await this.sdk.core.web3Provider?.requestAddresses())[0] as Address;
     }
     const chainId = this.core.chainId;
-
-    // check if we have the data in cache and if it's not too old
-    const cacheKey = `${walletClient}-${chainId}`;
-    if (!noCaching && this.overviewCache[cacheKey]) {
-      const cachedData = this.overviewCache[cacheKey];
-      const isCacheValid = Date.now() - cachedData.lastUpdated < 300 * 1000; // 5 minutes
-      if (isCacheValid) {
-        return cachedData.data;
-      }
-    }
 
     const [unwindPositions, liquidatedPositions, openPositions, numberOfPositions] = await Promise.all([
       getUnwindPositions({
@@ -78,10 +67,6 @@ export class OverlaySDKAccountDetails extends OverlaySDKModule {
       lockedPlusUnrealized: (totalValueLocked + unrealizedPnL).toFixed(2),
       dataByPeriod,
     };
-
-    if (!noCaching) {
-      this.overviewCache[cacheKey] = { data: overviewData, lastUpdated: Date.now() };
-    }
 
     return overviewData;
   }
