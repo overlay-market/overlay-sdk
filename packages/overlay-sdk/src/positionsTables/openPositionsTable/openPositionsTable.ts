@@ -87,17 +87,11 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
 
     const [rawOpenData, marketDetails] = await Promise.all([
       getOpenPositions({
-      chainId: chainId,
-      account: walletClient.toLowerCase()
+        chainId: chainId,
+        account: walletClient.toLowerCase()
       }),
       getMarketsDetailsByChainId(chainId as CHAINS)
     ]);
-
-    const transformedOpens: OpenPositionData[] = [];
-    invariant(marketDetails, "Failed to get market details");
-    // slice the raw data using page and pageSize
-    const positionsFiltered = await this.filterOpenPositionsByMarketId(rawOpenData, marketId);
-    const openPositions = paginate(positionsFiltered, page, pageSize).data;
 
     let positionsData: {
       [key: string]: PositionData | null | undefined
@@ -106,22 +100,42 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     if (!noCaching && this.openPositionsCache[cacheKey]) {
       // console.log('using cached data');
       const cachedData = this.openPositionsCache[cacheKey];
-      // 3 minutes cache
-      const isCacheValid = Date.now() - cachedData.lastUpdated < 3 * 60 * 1000;
+      const isCacheValid = Date.now() - cachedData.lastUpdated < 3 * 60 * 1000; // 3 minutes
       if (isCacheValid) {
+        // console.log('cache valid');
         positionsData = cachedData.data;
+      } else {
+        // console.log('cache expired');
+        delete this.openPositionsCache[cacheKey];
       }
-    } else {
+    }
+
+    if (noCaching || !this.openPositionsCache[cacheKey]) {
       // console.log('fetching data');
-      // get positions data in batch of 15 positions
-      for (let i = 0; i < openPositions.length; i += 15) {
-        const positions = openPositions.slice(i, i + 15).map((position) => ({
+      for (let i = 0; i < rawOpenData.length; i += 15) {
+        const positions = rawOpenData.slice(i, i + 15).map((position) => ({
           marketId: position.market.id as Address,
           positionId: BigInt(position.id.split("-")[1])
         }));
         Object.assign(positionsData, await this.getPositionsData(chainId, walletClient, positions));
       }
+
+      if (!noCaching) {
+        // console.log('caching data');
+        this.openPositionsCache[cacheKey] = {
+          data: positionsData,
+          lastUpdated: Date.now()
+        }
+      } else {
+        // console.log('not caching data');
+      }
     }
+
+    const transformedOpens: OpenPositionData[] = [];
+    invariant(marketDetails, "Failed to get market details");
+    // slice the raw data using page and pageSize
+    const positionsFiltered = await this.filterOpenPositionsByMarketId(rawOpenData, marketId);
+    const openPositions = paginate(positionsFiltered, page, pageSize).data;
 
     for (const open of openPositions) {
       const positionId = BigInt(open.id.split("-")[1]);
@@ -144,16 +158,6 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
         if (formattedOpen) {
           transformedOpens.push(formattedOpen);
         }
-      } else {
-        console.log('position not found', marketId, positionId, positionData);
-      }
-    }
-
-    // cache the data
-    if (!noCaching) {
-      this.openPositionsCache[cacheKey] = {
-        data: positionsData,
-        lastUpdated: Date.now()
       }
     }
 
