@@ -29,6 +29,7 @@ export type UnwindPositionData = {
 
 export class OverlaySDKUnwindPositions extends OverlaySDKModule {
   private sdk: OverlaySDK;
+  private unwindPositionsCache: Record<string, { data: any; lastUpdated: number }> = {};
 
   constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK) {
     super(props);
@@ -40,7 +41,7 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
     pageSize = 10, 
     marketId?: string, 
     account?: Address,
-    noCaching?: boolean
+    refreshData?: boolean
   ): Promise<{ data: UnwindPositionData[]; total: number }> => {
     let walletClient = account;
     if (!walletClient) {
@@ -49,86 +50,107 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
     }
     const chainId = this.core.chainId;
 
-    const rawUnwindData = await getUnwindPositions({
-      chainId: chainId,
-      account: walletClient.toLowerCase()
-    });
-    const transformedUnwinds: UnwindPositionData[] = [];
-    const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
+    const cacheKey = `${walletClient}-${chainId}`;
 
-    // slice the raw data using page and pageSize
-    const positionsFiltered = await this.filterUnwindPositionsByMarketId(rawUnwindData, marketId);
-    const unwindPositions = paginate(positionsFiltered, page, pageSize).data;
+    let unwindPositionsData: UnwindPositionData[] = [];
 
-    for (const unwind of unwindPositions) {
-      const marketName =
-        marketDetails?.get(unwind.id.split("-")[0])?.marketName ?? "";
-      const marketDetailsCurrency = marketDetails
-        ?.get(unwind.id.split("-")[0])
-        ?.currency.trim();
-      const priceCurrency = marketDetailsCurrency
-        ? PRICE_CURRENCY_FROM_QUOTE[
-            marketDetailsCurrency as keyof typeof PRICE_CURRENCY_FROM_QUOTE
-          ]
-        : "";
-      const parsedEntryPrice = formatBigNumber(
-        unwind.position.entryPrice,
-        Number(18)
-      );
-      const parsedExitPrice = formatBigNumber(unwind.price, Number(18));
-      transformedUnwinds.push({
-        marketName: marketName,
-        size:
-          +unwind.size / 10 ** 18 < 1
-            ? (+unwind.size / 10 ** 18).toFixed(6)
-            : (+unwind.size / 10 ** 18).toFixed(2),
-        positionSide:
-          unwind.position.leverage +
-          "x " +
-          (unwind.position.isLong ? "Long" : "Short"),
-        entryPrice: `${priceCurrency ? priceCurrency : ""}${
-          parsedEntryPrice
-            ? priceCurrency === "%"
-              ? toPercentUnit(parsedEntryPrice)
-              : toScientificNumber(parsedEntryPrice)
-            : "-"
-        }`,
-        exitPrice: `${priceCurrency ? priceCurrency : ""}${
-          parsedExitPrice
-            ? priceCurrency === "%"
-              ? toPercentUnit(parsedExitPrice)
-              : toScientificNumber(parsedExitPrice)
-            : "-"
-        }`,
-        parsedCreatedTimestamp: formatUnixTimestampToDate(
-          unwind.position.createdAtTimestamp
-        ),
-        parsedClosedTimestamp: formatUnixTimestampToDate(unwind.timestamp),
-        pnl: formatBigNumber(
-          unwind.pnl,
-          Number(18),
-          Math.abs(+unwind.pnl) > 10 ** +18 ? 4 : 6
-        ),
-        unwindNumber: Number(unwind.unwindNumber),
-        positionId: Number(unwind.position.positionId),
+    if (this.unwindPositionsCache[cacheKey] && !refreshData) {
+      const cachedData = this.unwindPositionsCache[cacheKey];
+      const isCacheValid = Date.now() - cachedData.lastUpdated < 3 * 60 * 1000; // 3 minutes
+      if (isCacheValid) {
+        unwindPositionsData = cachedData.data;
+      } else {
+        delete this.unwindPositionsCache[cacheKey];
+      }
+    }
+
+    if (!this.unwindPositionsCache[cacheKey] || refreshData) {
+      const rawUnwindData = await getUnwindPositions({
+        chainId: chainId,
+        account: walletClient.toLowerCase()
       });
+      const transformedUnwinds: UnwindPositionData[] = [];
+      const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
+  
+      for (const unwind of rawUnwindData) {
+        const marketName =
+          marketDetails?.get(unwind.id.split("-")[0])?.marketName ?? "";
+        const marketDetailsCurrency = marketDetails
+          ?.get(unwind.id.split("-")[0])
+          ?.currency.trim();
+        const priceCurrency = marketDetailsCurrency
+          ? PRICE_CURRENCY_FROM_QUOTE[
+              marketDetailsCurrency as keyof typeof PRICE_CURRENCY_FROM_QUOTE
+            ]
+          : "";
+        const parsedEntryPrice = formatBigNumber(
+          unwind.position.entryPrice,
+          Number(18)
+        );
+        const parsedExitPrice = formatBigNumber(unwind.price, Number(18));
+        transformedUnwinds.push({
+          marketName: marketName,
+          size:
+            +unwind.size / 10 ** 18 < 1
+              ? (+unwind.size / 10 ** 18).toFixed(6)
+              : (+unwind.size / 10 ** 18).toFixed(2),
+          positionSide:
+            unwind.position.leverage +
+            "x " +
+            (unwind.position.isLong ? "Long" : "Short"),
+          entryPrice: `${priceCurrency ? priceCurrency : ""}${
+            parsedEntryPrice
+              ? priceCurrency === "%"
+                ? toPercentUnit(parsedEntryPrice)
+                : toScientificNumber(parsedEntryPrice)
+              : "-"
+          }`,
+          exitPrice: `${priceCurrency ? priceCurrency : ""}${
+            parsedExitPrice
+              ? priceCurrency === "%"
+                ? toPercentUnit(parsedExitPrice)
+                : toScientificNumber(parsedExitPrice)
+              : "-"
+          }`,
+          parsedCreatedTimestamp: formatUnixTimestampToDate(
+            unwind.position.createdAtTimestamp
+          ),
+          parsedClosedTimestamp: formatUnixTimestampToDate(unwind.timestamp),
+          pnl: formatBigNumber(
+            unwind.pnl,
+            Number(18),
+            Math.abs(+unwind.pnl) > 10 ** +18 ? 4 : 6
+          ),
+          unwindNumber: Number(unwind.unwindNumber),
+          positionId: Number(unwind.position.positionId),
+        });
+      }
+
+      this.unwindPositionsCache[cacheKey] = {
+        data: transformedUnwinds,
+        lastUpdated: Date.now(),
+      };
+
+      unwindPositionsData = this.filterUnwindPositionsByMarketId(
+        transformedUnwinds,
+        marketId
+      );
     }
 
     return {
-      data: transformedUnwinds,
-      total: positionsFiltered.length,
+      data: paginate(unwindPositionsData, page, pageSize).data,
+      total: unwindPositionsData.length,
     };
   };
 
   // private method to filter unwind positions by marketId
-  private filterUnwindPositionsByMarketId = async (
-    unwindPositions: any[],
+  private filterUnwindPositionsByMarketId = (
+    unwindPositions: UnwindPositionData[],
     marketId?: string
-  ) => {
+  ): UnwindPositionData[] => {
     if (!marketId) return unwindPositions;
-    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId);
     return unwindPositions.filter(
-      (unwind) => unwind.id.split("-")[0] === marketAddress
+      (unwind) => unwind.marketName === marketId
     );
   }
 }

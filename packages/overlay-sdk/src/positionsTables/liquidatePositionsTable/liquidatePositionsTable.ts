@@ -27,6 +27,7 @@ export type LiquidatedPositionData = {
 
 export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
   private sdk: OverlaySDK;
+  private liquidatedPositionsCache: Record<string, { data: any; lastUpdated: number }> = {};
 
   constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK) {
     super(props);
@@ -38,7 +39,7 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
     pageSize = 10, 
     marketId?: string, 
     account?: Address,
-    noCaching?: boolean
+    refreshData?: boolean
   ): Promise<{ data: LiquidatedPositionData[]; total: number }> => {
     let walletClient = account;
     if (!walletClient) {
@@ -47,80 +48,98 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
     }
     const chainId = this.core.chainId;
 
-    const rawliquidatedPositions = await getLiquidatedPositions({
-      chainId: chainId,
-      account: walletClient.toLowerCase()
-    });
-    const transformedLiquidated: LiquidatedPositionData[] = [];
-    const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
-    
-    // slice the raw data using page and pageSize
-    const positionsFiltered = await this.filterLiquidatedPositionsByMarketId(rawliquidatedPositions, marketId);
-    const liquidatedPositions = paginate(positionsFiltered, page, pageSize).data;
+    const cacheKey = `${walletClient}-${chainId}`;
 
-    for (const liquidated of liquidatedPositions) {
-      const marketName =
-        marketDetails?.get(liquidated.id.split("-")[0])?.marketName ?? "";
-      const parsedSize = formatBigNumber(liquidated.size, Number(18));
-      const positionSide = liquidated.position.isLong ? "Long" : "Short";
-      const parsedEntryPrice = formatBigNumber(
-        liquidated.position.entryPrice,
-        Number(18)
-      );
-      const marketDetailsCurrency = marketDetails
-        ?.get(liquidated.id.split("-")[0])
-        ?.currency.trim();
-      const priceCurrency = marketDetailsCurrency
-        ? PRICE_CURRENCY_FROM_QUOTE[
-            marketDetailsCurrency as keyof typeof PRICE_CURRENCY_FROM_QUOTE
-          ]
-        : "";
-      const parsedExitPrice = formatBigNumber(liquidated.price, Number(18));
-      const parsedCreatedTimestamp = formatUnixTimestampToDate(
-        liquidated.position.createdAtTimestamp
-      );
-      const parsedClosedTimestamp = formatUnixTimestampToDate(
-        liquidated.timestamp
-      );
+    let liquidatedPositionsData: LiquidatedPositionData[] = [];
 
-      transformedLiquidated.push({
-        marketName: marketName,
-        size: parsedSize,
-        position: liquidated.position.leverage + "x " + positionSide,
-        entryPrice: `${priceCurrency ? priceCurrency : ""}${
-          parsedEntryPrice
-            ? priceCurrency === "%"
-              ? toPercentUnit(parsedEntryPrice)
-              : toScientificNumber(parsedEntryPrice)
-            : "-"
-        }`,
-        exitPrice: `${priceCurrency ? priceCurrency : ""}${
-          parsedExitPrice
-            ? priceCurrency === "%"
-              ? toPercentUnit(parsedExitPrice)
-              : toScientificNumber(parsedExitPrice)
-            : "-"
-        }`,
-        created: parsedCreatedTimestamp,
-        liquidated: parsedClosedTimestamp,
+    if (this.liquidatedPositionsCache[cacheKey] && !refreshData) {
+      const cachedData = this.liquidatedPositionsCache[cacheKey];
+      const isCacheValid = Date.now() - cachedData.lastUpdated < 3 * 60 * 1000; // 3 minutes
+      if (isCacheValid) {
+        liquidatedPositionsData = cachedData.data;
+      } else {
+        delete this.liquidatedPositionsCache[cacheKey];
+      }
+    }
+
+    if (!this.liquidatedPositionsCache[cacheKey] || refreshData) {
+      const rawliquidatedPositions = await getLiquidatedPositions({
+        chainId: chainId,
+        account: walletClient.toLowerCase()
       });
+      const transformedLiquidated: LiquidatedPositionData[] = [];
+      const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
+
+      for (const liquidated of rawliquidatedPositions) {
+        const marketName =
+          marketDetails?.get(liquidated.id.split("-")[0])?.marketName ?? "";
+        const parsedSize = formatBigNumber(liquidated.size, Number(18));
+        const positionSide = liquidated.position.isLong ? "Long" : "Short";
+        const parsedEntryPrice = formatBigNumber(
+          liquidated.position.entryPrice,
+          Number(18)
+        );
+        const marketDetailsCurrency = marketDetails
+          ?.get(liquidated.id.split("-")[0])
+          ?.currency.trim();
+        const priceCurrency = marketDetailsCurrency
+          ? PRICE_CURRENCY_FROM_QUOTE[
+              marketDetailsCurrency as keyof typeof PRICE_CURRENCY_FROM_QUOTE
+            ]
+          : "";
+        const parsedExitPrice = formatBigNumber(liquidated.price, Number(18));
+        const parsedCreatedTimestamp = formatUnixTimestampToDate(
+          liquidated.position.createdAtTimestamp
+        );
+        const parsedClosedTimestamp = formatUnixTimestampToDate(
+          liquidated.timestamp
+        );
+  
+        transformedLiquidated.push({
+          marketName: marketName,
+          size: parsedSize,
+          position: liquidated.position.leverage + "x " + positionSide,
+          entryPrice: `${priceCurrency ? priceCurrency : ""}${
+            parsedEntryPrice
+              ? priceCurrency === "%"
+                ? toPercentUnit(parsedEntryPrice)
+                : toScientificNumber(parsedEntryPrice)
+              : "-"
+          }`,
+          exitPrice: `${priceCurrency ? priceCurrency : ""}${
+            parsedExitPrice
+              ? priceCurrency === "%"
+                ? toPercentUnit(parsedExitPrice)
+                : toScientificNumber(parsedExitPrice)
+              : "-"
+          }`,
+          created: parsedCreatedTimestamp,
+          liquidated: parsedClosedTimestamp,
+        });
+      }
+
+      this.liquidatedPositionsCache[cacheKey] = {
+        data: transformedLiquidated,
+        lastUpdated: Date.now(),
+      };
+
+      liquidatedPositionsData = this.filterLiquidatedPositionsByMarketId(transformedLiquidated, marketId);
     }
 
     return {
-      data: transformedLiquidated,
-      total: positionsFiltered.length,
+      data: paginate(liquidatedPositionsData, page, pageSize).data,
+      total: liquidatedPositionsData.length,
     }
   };
 
   // private method to filter liquidated positions by marketId
-  private filterLiquidatedPositionsByMarketId = async (
-    liquidatedPositions: any[],
+  private filterLiquidatedPositionsByMarketId = (
+    liquidatedPositions: LiquidatedPositionData[],
     marketId?: string
-  ) => {
+  ): LiquidatedPositionData[] => {
     if (!marketId) return liquidatedPositions;
-    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId);
     return liquidatedPositions.filter(
-      (liquidated) => liquidated.id.split("-")[0] === marketAddress
+      (liquidated) => liquidated.marketName === marketId
     );
   }
 }

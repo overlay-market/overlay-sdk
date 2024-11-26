@@ -16,7 +16,7 @@ export class OverlaySDKAccountDetails extends OverlaySDKModule {
     this.sdk = sdk;
   }
 
-  getOverview = async (interval: IntervalType = '1D', account?: Address, noCaching?: boolean) => {
+  getOverview = async (interval: IntervalType = '1D', account?: Address) => {
     let walletClient = account;
     if (!walletClient) {
       invariant(this.sdk.core.web3Provider, "Web3 provider is not set");
