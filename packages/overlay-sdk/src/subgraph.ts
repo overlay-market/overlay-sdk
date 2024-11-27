@@ -8,6 +8,7 @@ import {
   NumberOfPositionsQuery as NumberOfPositionsQueryDocument,
   PositionQuery as PositionQueryDocument,
   TotalSupplyHistory as TotalSupplyHistoryDocument,
+  LastBlockQuery as LastBlockQueryDocument
 } from "./queries";
 import {
   OpenPositionsQuery,
@@ -22,7 +23,8 @@ import {
   QueryPositionQuery,
   QueryPositionQueryVariables,
   TotalSupplyHistoryQuery,
-  TotalSupplyHistoryQueryVariables
+  TotalSupplyHistoryQueryVariables,
+  LastBlockQueryQuery
 } from "./types";
 import { NETWORKS } from "./constants";
 import { CHAINS, invariant } from "./common";
@@ -239,6 +241,24 @@ export const getTotalSupplyDayHistory = async (chainId: CHAINS) => {
     return result.totalSupplyHourDatas;
   } catch (error) {
     console.error("Error fetching number of positions data:", error);
+    return undefined;
+  }
+}
+
+export const getLastProcessedBlock = async (chainId: CHAINS) => {
+  invariant(chainId in CHAINS, "Unsupported chainId");
+  const url = NETWORKS[chainId].SUBGRAPH_URL;
+  try {
+    const result = await request<LastBlockQueryQuery>({
+      document: LastBlockQueryDocument,
+      url,
+    });
+
+    if (!result._meta) return undefined
+
+    return result._meta.block.number;
+  } catch (error) {
+    console.error("Error fetching block number data:", error);
     return undefined;
   }
 }

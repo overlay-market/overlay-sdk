@@ -6089,3 +6089,9 @@ export type TotalSupplyHistoryQueryVariables = Exact<{
 
 
 export type TotalSupplyHistoryQuery = { __typename?: 'Query', totalSupplyHourDatas: Array<{ __typename?: 'TotalSupplyHourData', periodStartUnix: number, close: any }> };
+
+
+export type LastBlockQueryQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type LastBlockQueryQuery = { __typename?: 'Query', _meta?: { __typename?: '_Meta_', block: { __typename?: '_Block_', number: number } } | null };
