@@ -23,6 +23,7 @@ import {
 } from "../common/constants.js";
 import { type OverlaySDKCoreProps, type LOG_MODE, type AccountValue, type PerformTransactionOptions, type TransactionResult, type TransactionOptions, TransactionCallbackStage, GetFeeDataResult } from "./types.js";
 import { OverlaySDKCacheable } from "../common/class-primitives/cacheable.js";
+import { getLastProcessedBlock } from "../subgraph.js";
 
 export default class OverlaySDKCore extends OverlaySDKCacheable {
   #web3Provider: WalletClient | undefined;
@@ -187,6 +188,14 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
       maxFeePerGas,
       gasPrice: maxFeePerGas, // fallback
     };
+  }
+
+  // get last block processed by the subgraph
+  public async getLastSubgraphProcessedBlock(): Promise<number> {
+    const chainId = this.chainId;
+    const result = await getLastProcessedBlock(chainId);
+    invariant(result, 'Error getting last processed block');
+    return result;
   }
 
   public async performTransaction<TDecodedResult = undefined>(

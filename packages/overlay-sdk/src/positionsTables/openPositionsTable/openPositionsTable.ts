@@ -74,7 +74,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     pageSize = 10, 
     marketId?: string, 
     account?: Address,
-    noCaching?: boolean
+    refreshData?: boolean
   ): Promise<{ data: OpenPositionData[]; total: number }> => {
     let walletClient = account;
     if (!walletClient) {
@@ -85,33 +85,31 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
 
     const cacheKey = `${walletClient}-${chainId}`;
 
-    const [rawOpenData, marketDetails] = await Promise.all([
-      getOpenPositions({
-        chainId: chainId,
-        account: walletClient.toLowerCase()
-      }),
-      getMarketsDetailsByChainId(chainId as CHAINS)
-    ]);
+    let openPositionsData: OpenPositionData[] = [];
 
-    let positionsData: {
-      [key: string]: PositionData | null | undefined
-    } = {};
-
-    if (!noCaching && this.openPositionsCache[cacheKey]) {
-      // console.log('using cached data');
+    if (this.openPositionsCache[cacheKey] && !refreshData) {
       const cachedData = this.openPositionsCache[cacheKey];
       const isCacheValid = Date.now() - cachedData.lastUpdated < 3 * 60 * 1000; // 3 minutes
       if (isCacheValid) {
-        // console.log('cache valid');
-        positionsData = cachedData.data;
+        openPositionsData = cachedData.data;
       } else {
-        // console.log('cache expired');
         delete this.openPositionsCache[cacheKey];
       }
     }
 
-    if (noCaching || !this.openPositionsCache[cacheKey]) {
-      // console.log('fetching data');
+    if (!this.openPositionsCache[cacheKey] || refreshData) {
+      const [rawOpenData, marketDetails] = await Promise.all([
+        getOpenPositions({
+          chainId: chainId,
+          account: walletClient.toLowerCase()
+        }),
+        getMarketsDetailsByChainId(chainId as CHAINS)
+      ]);
+
+      let positionsData: {
+        [key: string]: PositionData | null | undefined
+      } = {};
+
       for (let i = 0; i < rawOpenData.length; i += 15) {
         const positions = rawOpenData.slice(i, i + 15).map((position) => ({
           marketId: position.market.id as Address,
@@ -120,50 +118,33 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
         Object.assign(positionsData, await this.getPositionsData(chainId, walletClient, positions));
       }
 
-      if (!noCaching) {
-        // console.log('caching data');
-        this.openPositionsCache[cacheKey] = {
-          data: positionsData,
-          lastUpdated: Date.now()
-        }
-      } else {
-        // console.log('not caching data');
-      }
-    }
+      const transformedOpens: OpenPositionData[] = [];
+      invariant(marketDetails, "Failed to get market details");
 
-    const transformedOpens: OpenPositionData[] = [];
-    invariant(marketDetails, "Failed to get market details");
-    // slice the raw data using page and pageSize
-    const positionsFiltered = await this.filterOpenPositionsByMarketId(rawOpenData, marketId);
-    const openPositions = paginate(positionsFiltered, page, pageSize).data;
+      for (const open of rawOpenData) {
+        const positionId = BigInt(open.id.split("-")[1]);
+        const marketId = open.market.id as Address;
+        let positionData = positionsData[`${marketId}-${positionId}`];
 
-    for (const open of openPositions) {
-      const positionId = BigInt(open.id.split("-")[1]);
-      const marketId = open.market.id as Address;
-      let positionData = positionsData[`${marketId}-${positionId}`];
-
-      if (positionData === undefined) {
-        // console.log('position not cached, fetching', marketId, positionId);
-        const posData = await this.getPositionsData(chainId, walletClient, [{
-          marketId: marketId,
-          positionId: positionId
-        }]);
-        // console.log('fetched', posData);
-        positionsData[`${marketId}-${positionId}`] = posData[`${marketId}-${positionId}`];
-        positionData = posData[`${marketId}-${positionId}`];
-      }
-
-      if (positionData) {
-        const formattedOpen = await this.formatOpenPosition(open, marketDetails, positionData);
-        if (formattedOpen) {
-          transformedOpens.push(formattedOpen);
+        if (positionData) {
+          const formattedOpen = await this.formatOpenPosition(open, marketDetails, positionData);
+          if (formattedOpen) {
+            transformedOpens.push(formattedOpen);
+          }
         }
       }
+
+      this.openPositionsCache[cacheKey] = {
+        data: transformedOpens,
+        lastUpdated: Date.now()
+      };
+
+      openPositionsData = this.filterOpenPositionsByMarketId(transformedOpens, marketId);
     }
 
     return {
-      data: transformedOpens,
-      total: positionsFiltered.length
+      data: paginate(openPositionsData, page, pageSize).data,
+      total: openPositionsData.length
     }
   };
 
@@ -545,14 +526,13 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
   }
 
   // private method to filter open positions by marketId
-  private filterOpenPositionsByMarketId = async (
-    openPositions: any[],
+  private filterOpenPositionsByMarketId = (
+    openPositions: OpenPositionData[],
     marketId?: string
-  ) => {
+  ): OpenPositionData[] => {
     if (!marketId) return openPositions;
-    const {marketAddress} = await this.sdk.markets.getMarketDetails(marketId);
     return openPositions.filter(
-      (open) => open.id.split("-")[0] === marketAddress
+      (open) => open.marketName === marketId
     );
   }
 }

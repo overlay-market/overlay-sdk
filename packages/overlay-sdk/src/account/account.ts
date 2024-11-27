@@ -10,19 +10,35 @@ import { IntervalType, OverviewData } from "./types";
 
 export class OverlaySDKAccountDetails extends OverlaySDKModule {
   private sdk: OverlaySDK;
+  private overviewCache: Record<string, { data: any; lastUpdated: number }> = {};
 
   constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK) {
     super(props);
     this.sdk = sdk;
   }
 
-  getOverview = async (interval: IntervalType = '1D', account?: Address, noCaching?: boolean) => {
+  getOverview = async (interval: IntervalType = '1D', account?: Address, refreshData?: boolean): Promise<OverviewData> => {
     let walletClient = account;
     if (!walletClient) {
       invariant(this.sdk.core.web3Provider, "Web3 provider is not set");
       walletClient = account ?? (await this.sdk.core.web3Provider?.requestAddresses())[0] as Address;
     }
     const chainId = this.core.chainId;
+
+    const cacheKey = `${walletClient}-${chainId}`;
+
+    let overviewData: OverviewData
+
+    if (this.overviewCache[cacheKey] && !refreshData) {
+      const cachedData = this.overviewCache[cacheKey];
+      const isCacheValid = Date.now() - cachedData.lastUpdated < 3 * 60 * 1000; // 3 minutes
+      if (isCacheValid) {
+        overviewData = cachedData.data;
+        return overviewData;
+      } else {
+        delete this.overviewCache[cacheKey];
+      }
+    }
 
     const [unwindPositions, liquidatedPositions, openPositions, numberOfPositions] = await Promise.all([
       getUnwindPositions({
@@ -33,7 +49,7 @@ export class OverlaySDKAccountDetails extends OverlaySDKModule {
       chainId: chainId,
       account: walletClient.toLowerCase()
       }),
-      this.sdk.openPositions.transformOpenPositions(1, 1000, undefined, walletClient).then(result => result.data),
+      this.sdk.openPositions.transformOpenPositions(1, 1000, undefined, walletClient, refreshData).then(result => result.data),
       getNumberOfPositions(chainId, walletClient.toLowerCase())
     ]);
     
@@ -59,13 +75,18 @@ export class OverlaySDKAccountDetails extends OverlaySDKModule {
       unrealizedPnL += position.unrealizedPnL ? parseFloat(position.unrealizedPnL as string) : 0
     })
 
-    const overviewData: OverviewData = {
+    overviewData = {
       numberOfOpenPositions: Number(numberOfPositions?.account?.numberOfOpenPositions ?? 0),
       realizedPnl: numberOfPositions?.account?.realizedPnl ? formatBigNumber(numberOfPositions.account.realizedPnl, 18, 6) : '0',
       totalValueLocked: totalValueLocked.toFixed(2),
       unrealizedPnL: unrealizedPnL.toFixed(6),
       lockedPlusUnrealized: (totalValueLocked + unrealizedPnL).toFixed(2),
       dataByPeriod,
+    };
+
+    this.overviewCache[cacheKey] = {
+      data: overviewData,
+      lastUpdated: Date.now(),
     };
 
     return overviewData;

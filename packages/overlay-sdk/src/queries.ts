@@ -212,3 +212,12 @@ query TotalSupplyHistory($first: Int!) {
     close
   }
 }`;
+
+export const LastBlockQuery = gql`
+query LastBlockQuery {
+  _meta {
+    block {
+      number
+    }
+  }
+}`;
