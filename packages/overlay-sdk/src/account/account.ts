@@ -49,7 +49,7 @@ export class OverlaySDKAccountDetails extends OverlaySDKModule {
       chainId: chainId,
       account: walletClient.toLowerCase()
       }),
-      this.sdk.openPositions.transformOpenPositions(1, 1000, undefined, walletClient).then(result => result.data),
+      this.sdk.openPositions.transformOpenPositions(1, 1000, undefined, walletClient, refreshData).then(result => result.data),
       getNumberOfPositions(chainId, walletClient.toLowerCase())
     ]);
     
