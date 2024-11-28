@@ -27,6 +27,7 @@ export const OpenPositionsQuery = gql`
         market {
           feedAddress
           id
+          isShutdown
         }
       }
     }
