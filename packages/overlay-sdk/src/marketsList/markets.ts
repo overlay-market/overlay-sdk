@@ -266,7 +266,6 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
   }
 
   private async _getMarketOnchainData(markets: Address[], chainId: CHAINS): Promise<MarketOnchainData> {
-    console.log("_getMarketOnchainData")
     const OverlayV1MarketABIFunctions = OverlayV1Market2ABI.filter((abi) => abi.type === "function")
     const OverlayV1StateABIFunctions = OverlayV1StateABI.filter((abi) => abi.type === "function")
 
