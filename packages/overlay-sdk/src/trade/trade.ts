@@ -223,7 +223,9 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const rawOiShort = ois[1]
     const rawCapOi = capOi
 
-    const showUnderwaterFlow = isLong ? Number(liquidationPriceEstimate) > Number(midPrice) : Number(liquidationPriceEstimate) < Number(midPrice)
+    const midPriceParsed = formatBigNumber(midPrice, 18, 18, true) as number
+    console.log("======= showUnderwaterFlow", isLong, Number(liquidationPriceEstimate), midPriceParsed)
+    const showUnderwaterFlow = isLong ? Number(liquidationPriceEstimate) > midPriceParsed : Number(liquidationPriceEstimate) < midPriceParsed
 
     const exceedOiCap = isLong ? BigInt(rawExpectedOi) + rawOiLong > rawCapOi : BigInt(rawExpectedOi) + rawOiShort > rawCapOi
 
