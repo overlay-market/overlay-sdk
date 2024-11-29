@@ -168,6 +168,27 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       tradingFee,
       marketMid,
     } = positionData;
+
+    if (open.market.isShutdown) {
+      const formattedOpen: OpenPositionData = {
+        marketName: 'Market is shutdown',
+        marketAddress: marketId,
+        positionId: Number(positionId),
+        size: '0',
+        positionSide: open.leverage + "x " + (open.isLong ? "Long" : "Short"),
+        entryPrice: '0',
+        liquidatePrice: '0',
+        currentPrice: '0',
+        parsedCreatedTimestamp: formatUnixTimestampToDate(
+          open.createdAtTimestamp
+        ),
+        unrealizedPnL: '0',
+        parsedFunding: '0',
+        priceCurrency: '0'
+      };
+
+      return formattedOpen;
+    }
   
     const marketName =
       marketDetails?.get(open.id.split("-")[0])?.marketName ?? "";
