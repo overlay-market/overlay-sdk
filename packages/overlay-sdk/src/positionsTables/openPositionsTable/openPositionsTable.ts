@@ -126,11 +126,9 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
         const marketId = open.market.id as Address;
         let positionData = positionsData[`${marketId}-${positionId}`];
 
-        if (positionData) {
-          const formattedOpen = await this.formatOpenPosition(open, marketDetails, positionData);
-          if (formattedOpen) {
-            transformedOpens.push(formattedOpen);
-          }
+        const formattedOpen = await this.formatOpenPosition(open, marketDetails, positionData ?? undefined);
+        if (formattedOpen) {
+          transformedOpens.push(formattedOpen);
         }
       }
 
@@ -151,7 +149,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
   private async formatOpenPosition(
     open: OpenPosition,
     marketDetails: Map<string, { marketName: string; currency: string }>,
-    positionData: PositionData
+    positionData?: PositionData
   ) {
     const positionId = BigInt(open.id.split("-")[1]);
     const marketId = open.market.id as Address;
@@ -167,7 +165,15 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       cost,
       tradingFee,
       marketMid,
-    } = positionData;
+    } = positionData || {
+      positionValue: undefined,
+      currentOi: undefined,
+      liquidatePrice: undefined,
+      info: undefined,
+      cost: undefined,
+      tradingFee: undefined,
+      marketMid: undefined,
+    };
 
     if (open.market.isShutdown) {
       const formattedOpen: OpenPositionData = {
@@ -274,7 +280,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
           : "-"
       }`,
       liquidatePrice: `${priceCurrency ? priceCurrency : ""}${
-        formatBigNumber(liquidatePrice, Number(18), 4)
+        liquidatePrice && formatBigNumber(liquidatePrice, Number(18), 4)
           ? priceCurrency === "%"
             ? toPercentUnit(formatBigNumber(liquidatePrice, Number(18), 4))
             : toScientificNumber(
@@ -283,7 +289,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
           : "-"
       }`,
       currentPrice: `${priceCurrency ? priceCurrency : ""}${
-        formatBigNumber(marketMid, Number(18), 4)
+        marketMid && formatBigNumber(marketMid, Number(18), 4)
           ? priceCurrency === "%"
             ? toPercentUnit(formatBigNumber(marketMid, Number(18), 4))
             : toScientificNumber(formatBigNumber(marketMid, Number(18), 4))
