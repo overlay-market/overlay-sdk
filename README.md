@@ -47,3 +47,20 @@ const sdk = new OverlaySDK({
   web3Provider,
 });
 ```
+
+Custom RPC
+
+```ts
+import { OverlaySDK, CHAINS } from "overlay-sdk";
+
+const web3Provider = window.ethereum;
+
+const sdk = new OverlaySDK({
+  chainId: CHAINS.Bartio,
+  rpcUrls: {
+    [CHAINS.ArbitrumSepolia]: 'https://arb-sepolia.g.alchemy.com/v2/xxx',
+    [CHAINS.Bartio]: 'https://bera-testnet.nodeinfra.com',
+  },
+  web3Provider,
+});
+```

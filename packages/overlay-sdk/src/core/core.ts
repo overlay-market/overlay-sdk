@@ -21,7 +21,7 @@ import {
   OVERLAY_CONTRACT_NAMES,
   NOOP,
 } from "../common/constants.js";
-import { type OverlaySDKCoreProps, type LOG_MODE, type AccountValue, type PerformTransactionOptions, type TransactionResult, type TransactionOptions, TransactionCallbackStage, GetFeeDataResult } from "./types.js";
+import { type OverlaySDKCoreProps, type LOG_MODE, type AccountValue, type PerformTransactionOptions, type TransactionResult, type TransactionOptions, TransactionCallbackStage, GetFeeDataResult, CustomRPCs } from "./types.js";
 import { OverlaySDKCacheable } from "../common/class-primitives/cacheable.js";
 import { getLastProcessedBlock } from "../subgraph.js";
 
@@ -29,7 +29,7 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
   #web3Provider: WalletClient | undefined;
 
   readonly chainId: CHAINS;
-  readonly rpcUrls: string[] | undefined;
+  readonly rpcUrls: CustomRPCs | undefined;
   readonly chain: Chain;
   readonly rpcProvider: PublicClient;
   readonly logMode: LOG_MODE;
@@ -55,16 +55,14 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
 
   public static createRpcProvider(
     chainId: CHAINS,
-    rpcUrls: string[]
+    rpcUrl: string
   ): PublicClient {
-    const rpcs = rpcUrls.map((url) => http(url));
-
     return createPublicClient({
       batch: {
         multicall: true,
       },
       chain: VIEM_CHAINS[chainId],
-      transport: fallback(rpcs),
+      transport: http(rpcUrl),
     });
   }
 
@@ -88,23 +86,39 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
       });
     }
 
-    if (!rpcProvider && rpcUrls.length === 0) {
-      throw this.error({
-        message: `Either rpcProvider or rpcUrls are required`,
-        code: ERROR_CODE.INVALID_ARGUMENT,
-      });
+    const chain = VIEM_CHAINS[chainId];
+
+    if (rpcProvider) {
+      const currentRpcProvider = rpcProvider;
+      return {
+        chain,
+        rpcProvider: currentRpcProvider,
+        web3Provider,
+      };
     }
 
-    const chain = VIEM_CHAINS[chainId];
-    const currentRpcProvider =
-      rpcProvider ?? OverlaySDKCore.createRpcProvider(chainId, rpcUrls);
-    const currentWeb3Provider = web3Provider;
+    if (rpcUrls) {
+      const rpcUrl = rpcUrls[chainId];
 
-    return {
-      chain,
-      rpcProvider: currentRpcProvider,
-      web3Provider: currentWeb3Provider,
-    };
+      if (!rpcUrl) {
+        throw this.error({
+          message: `rpcUrl is required for chain: ${chainId}`,
+          code: ERROR_CODE.INVALID_ARGUMENT,
+        });
+      }
+      
+      const currentRpcProvider = OverlaySDKCore.createRpcProvider(chainId, rpcUrl);
+      return {
+        chain,
+        rpcProvider: currentRpcProvider,
+        web3Provider,
+      };
+    }
+
+    throw this.error({
+      message: `Either rpcProvider or rpcUrls are required`,
+      code: ERROR_CODE.INVALID_ARGUMENT,
+    });
   }
 
   public error(props: SDKErrorProps): SDKError {
