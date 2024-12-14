@@ -15,9 +15,13 @@ import { SDKError } from '../common/index.js';
 
 export type LOG_MODE = 'info' | 'debug' | 'none';
 
+export type CustomRPCs = {
+  [chainId: number]: string;
+};
+
 type OverlaySDKCorePropsRpcProps =
   | {
-      rpcUrls: string[];
+      rpcUrls: CustomRPCs;
       rpcProvider?: undefined;
     }
   | {
