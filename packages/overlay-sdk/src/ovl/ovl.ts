@@ -5,7 +5,7 @@ import { AllowanceProps, ApproveProps, ParsedTransactionProps, TransferProps } f
 import { CommonTransactionProps, EtherValue, NoCallback, TransactionOptions, TransactionResult } from "../core/types";
 import { parseValue } from "../common/utils/parse-value";
 import { CHAINS, invariant, NOOP } from "../common";
-import { OV_ADDRESS } from "../constants";
+import { OVL_ADDRESS } from "../constants";
 import { formatBigNumber } from "../common/utils";
 import { getTotalSupplyDayHistory } from "../subgraph";
 
@@ -13,7 +13,7 @@ export class OverlaySDKOverlayToken extends OverlaySDKModule {
   public async contractAddress() {
     const chainId = await this.core.rpcProvider.getChainId();
     invariant(chainId in CHAINS, 'Unsupported chainId');
-    return OV_ADDRESS[chainId as CHAINS];
+    return OVL_ADDRESS[chainId as CHAINS];
   }
 
   public async getContract(): Promise<

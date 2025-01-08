@@ -66,7 +66,7 @@ export const V1_PERIPHERY_ADDRESS: AddressMap = {
   [CHAINS.Bartio]: "0x4f69dfb24958fcf69b70bca73c3e74f2c82bb405",
 };
 
-export const OV_ADDRESS: AddressMap = {
+export const OVL_ADDRESS: AddressMap = {
   [CHAINS.ArbitrumSepolia]: "0x3E27fAe625f25291bFda517f74bf41DC40721dA2",
   [CHAINS.Imola]: "0xCde46284D32148c4D470fA33BA788710b3d21E89",
   [CHAINS.Bartio]: "0x97576e088f0d05EF68cac2EEc63d017FE90952a0",

@@ -1,7 +1,7 @@
 import { Address } from "viem";
 import { CHAINS, invariant } from "../common";
 import { OverlaySDKModule } from "../common/class-primitives/sdk-module";
-import { OV_ADDRESS, V1_PERIPHERY_ADDRESS } from "../constants";
+import { OVL_ADDRESS, V1_PERIPHERY_ADDRESS } from "../constants";
 import { OverlaySDKCommonProps } from "../core/types";
 import { OverlaySDK } from "../sdk";
 import { formatBigNumber, formatFundingRateToDaily } from "../common/utils";
@@ -9,7 +9,7 @@ import { TradeState, TradeStateOnchainData, UnwindState, UnwindStateData } from 
 import { getPositionDetails } from "../subgraph";
 import { OverlayV1StateABI } from "../markets/abis/OverlayV1State";
 import { OverlayV1Market2ABI } from "../markets/abis/OverlayV1Market2";
-import { erc20abi } from "../ov/abi/erc20abi";
+import { erc20abi } from "../ovl/abi/erc20abi";
 
 export class OverlaySDKTrade extends OverlaySDKModule {
   private sdk: OverlaySDK;
@@ -139,7 +139,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const {marketAddress} = await this._getMarketAddressAndChainId(marketId)
 
     const tradingFeeRate = await this.sdk.market.getTradingFeeRate(marketAddress)
-    const balance = await this.sdk.ov.balance(address) as bigint
+    const balance = await this.sdk.ovl.balance(address) as bigint
 
     return this._getMaxInputIncludingFees(tradingFeeRate, balance, leverage)
   }
@@ -381,11 +381,11 @@ export class OverlaySDKTrade extends OverlaySDKModule {
   ): Promise<TradeStateOnchainData> {
     const OverlayV1MarketABIFunctions = OverlayV1Market2ABI.filter((abi) => abi.type === "function")
     const OverlayV1StateABIFunctions = OverlayV1StateABI.filter((abi) => abi.type === "function")
-    const OVTokenABIFunctions = erc20abi.filter((abi) => abi.type === "function")
+    const OVLTokenABIFunctions = erc20abi.filter((abi) => abi.type === "function")
 
     const marketContract = { address: marketAddress, abi: OverlayV1MarketABIFunctions }
     const stateContract = { address: V1_PERIPHERY_ADDRESS[chainId], abi: OverlayV1StateABIFunctions }
-    const ovContract = { address: OV_ADDRESS[chainId], abi: OVTokenABIFunctions }
+    const ovlContract = { address: OVL_ADDRESS[chainId], abi: OVLTokenABIFunctions }
     
     const [
       midPrice,
@@ -448,12 +448,12 @@ export class OverlaySDKTrade extends OverlaySDKModule {
             args: [11n], // getTradingFeeRate
           },
           {
-            ...ovContract,
+            ...ovlContract,
             functionName: "balanceOf",
             args: [userAddress],
           },
           {
-            ...ovContract,
+            ...ovlContract,
             functionName: "allowance",
             args: [userAddress, marketAddress],
           },
