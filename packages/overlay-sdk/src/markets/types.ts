@@ -29,11 +29,30 @@ export type UnwindProps = CommonTransactionProps & {
   priceLimit: bigint;
 };
 
+export type UnwindMultipleProps = CommonTransactionProps & {
+ positions: {
+    marketAddress: Address;
+    positionId: number;
+  }[];
+  slippage: number;
+  unwindPercentage: number;
+};
+
 export type UnwindInnerProps = CommonTransactionProps & {
   marketAddress: Address;
   positionId: bigint;
   fraction: bigint;
   priceLimit: bigint;
+  account: JsonRpcAccount;
+};
+
+export type UnwindMultipleInnerProps = CommonTransactionProps & {
+  positions: {
+    marketAddress: Address;
+    positionId: number;
+  }[];
+  slippage: number;
+  unwindPercentage: number;
   account: JsonRpcAccount;
 };
 
