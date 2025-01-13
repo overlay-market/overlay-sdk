@@ -54,6 +54,8 @@ export type UnwindStateSuccess = {
   liquidationPrice: string | number | bigint;
   unwindState: UnwindState;
   priceLimit: bigint;
+  positionId: number;
+  marketAddress: string;
 }
 
 export type UnwindStateError = {
@@ -61,6 +63,8 @@ export type UnwindStateError = {
   isShutdown: boolean;
   cost: number | string | bigint;
   unwindState: UnwindState;
+  positionId: number;
+  marketAddress: string;
 }
 
 export type UnwindStateData = UnwindStateSuccess | UnwindStateError;
