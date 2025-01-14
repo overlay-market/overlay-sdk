@@ -67,6 +67,34 @@ const Market = () => {
     }
   }
 
+  const multipleUnwind = async () => {
+    try {
+      const result = await sdk.market.unwindMultiple({
+        positions: [
+          {
+            marketAddress: '0xd9b217fa8a9e8ef1c8558128029564e9a50f284d',
+            positionId: 4680,
+          },
+          {
+            marketAddress: '0x09e8641df1e963d0bb1267e51579fc2b4e3e60cd',
+            positionId: 6868,
+          },
+        ],
+        account,
+        slippage: 1, // 1% slippage
+        unwindPercentage: 1, // 100% unwind
+      });
+
+      console.log("Multiple unwind result: ", result);
+
+      // await Promise.all(result).then((res) => {
+      //   console.log("Multiple unwind result: ", res);
+      // });
+    } catch (error) {
+      console.error('Error in multiple unwinding market', error);
+    }
+  }
+
   // OV token methods
 
   const checkBalance = async () => {
@@ -248,7 +276,7 @@ const Market = () => {
         onChange={(e) => setFraction(e.target.value)} 
       />
       <br />
-      <button onClick={unwindMarket}>Unwind Market</button>
+      <button onClick={multipleUnwind}>Unwind Market</button>
       {unwindHash && <p>Unwind Hash: {unwindHash}</p>}
       <br />
 

@@ -287,7 +287,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const positionDetails = (await getPositionDetails(chainId, account.toLowerCase(), marketPositionId))?.account?.positions[0] ?? null
     invariant(positionDetails, `Position not found for ${marketPositionId}; ${account.toLowerCase()}; ${positionId}; marketAddress: ${marketAddress}; chainId: ${chainId}`)
 
-    if (!positionDetails) return { error: "Position not found", isShutdown: false, cost: 0, unwindState: UnwindState.PositionNotFound }
+    if (!positionDetails) return { error: "Position not found", isShutdown: false, cost: 0, unwindState: UnwindState.PositionNotFound, positionId: posId, marketAddress }
 
     if (positionDetails.market.isShutdown) {
       const cost = await this.sdk.state.getCost(V1_PERIPHERY_ADDRESS[chainId], marketAddress, account, positionId)
@@ -295,7 +295,9 @@ export class OverlaySDKTrade extends OverlaySDKModule {
         error: "Market is shutdown", 
         isShutdown: true, 
         cost: decimals ? formatBigNumber(cost, 18, decimals) : cost,
-        unwindState: UnwindState.Withdraw
+        unwindState: UnwindState.Withdraw,
+        positionId: posId,
+        marketAddress
       }
     } 
 
@@ -367,7 +369,9 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       priceImpact: priceImpactPercentage.toFixed(6),
       liquidationPrice: decimals ? formatBigNumber(liquidatePrice, 18, decimals) : liquidatePrice,
       unwindState,
-      priceLimit
+      priceLimit,
+      positionId: posId,
+      marketAddress
     } as UnwindStateData
   }
 

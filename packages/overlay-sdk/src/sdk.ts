@@ -24,7 +24,7 @@ export class OverlaySDK {
     // Core functionality
     this.core = new OverlaySDKCore(props);
     const core = this.core;
-    this.market = new OverlaySDKMarket({ ...props, core });
+    this.market = new OverlaySDKMarket({ ...props, core }, this);
     this.state = new OverlaySDKState({ ...props, core });
     this.ovl = new OverlaySDKOverlayToken({ ...props, core });
     this.trade = new OverlaySDKTrade({ ...props, core }, this);

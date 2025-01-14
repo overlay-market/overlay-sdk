@@ -15,11 +15,14 @@ import { OverlayV1MarketABI } from "./abis/OverlayV1Market.js";
 import { OverlayV1Market2ABI } from "./abis/OverlayV1Market2.js";
 import { OverlaySDKModule } from "../common/class-primitives/sdk-module.js";
 import { NoCallback, OverlaySDKCommonProps, TransactionOptions, TransactionResult } from "../core/types.js";
-import { BuildInnerProps, BuildProps, BuildResult, EmergencyWithdrawInnerProps, EmergencyWithdrawProps, UnwindInnerProps, UnwindProps } from "./types.js";
+import { BuildInnerProps, BuildProps, BuildResult, EmergencyWithdrawInnerProps, EmergencyWithdrawProps, UnwindInnerProps, UnwindMultipleInnerProps, UnwindMultipleProps, UnwindProps } from "./types.js";
 import { NOOP } from "../common/constants.js";
-import { ERROR_CODE, invariant } from "../common/index.js";
+import { ERROR_CODE, invariant, SDKError, toWei } from "../common/index.js";
+import { OverlaySDK } from "../sdk.js";
+import { UnwindState, UnwindStateData, UnwindStateSuccess } from "../trade/types.js";
 
 export class OverlaySDKMarket extends OverlaySDKModule {
+  private sdk: OverlaySDK;
   static readonly PRECISION = 10n ** 27n;
 
   private static BUILD_SIGNATURE_V1_1 = toEventHash(
@@ -30,8 +33,9 @@ export class OverlaySDKMarket extends OverlaySDKModule {
     getAbiItem({abi: OverlayV1Market2ABI, name: "Build"})
   )
 
-  constructor(props: OverlaySDKCommonProps) {
+  constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK) {
     super(props);
+    this.sdk = sdk;
   }
 
   // @Logger("Contracts:")
@@ -170,6 +174,82 @@ export class OverlaySDKMarket extends OverlaySDKModule {
     });
   }
 
+  public async unwindMultiple(
+    props: UnwindMultipleProps
+  ): Promise<TransactionResult[]> {
+    this.core.useWeb3Provider();
+    const { callback, account, slippage, unwindPercentage, ...rest } = await this.parseUnwindMultipleProps(props);
+    const decimals = 2;
+    const unwindCalls = [];
+
+    for (const { marketAddress, positionId } of props.positions) {
+      unwindCalls.push(this.sdk.trade.getUnwindState(
+        marketAddress,
+        account.address,
+        positionId,
+        unwindPercentage,
+        slippage,
+        decimals,
+      ));
+    }
+
+    let result: UnwindStateData[] = [];
+
+    try {
+      result = await Promise.all(unwindCalls);
+
+      if (result.length !== props.positions.length) {
+        throw new Error("Length of result does not match length of positions");
+      }
+    } catch (error) {
+      throw new SDKError({
+        code: ERROR_CODE.TRANSACTION_ERROR,
+        message: "Unwind multiple failed",
+        error,
+      });
+    }
+
+    for (const { unwindState, positionId } of result) {
+      const positionsIdWithError: { [key: number]: UnwindState } = {}
+
+      if (unwindState !== UnwindState.Unwind) {
+        positionsIdWithError[positionId] = unwindState;
+      }
+
+      if (Object.keys(positionsIdWithError).length > 0) {
+        throw new SDKError({
+          code: ERROR_CODE.TRANSACTION_ERROR,
+          message: "Unwind multiple failed",
+          error: positionsIdWithError,
+        });
+      }
+    }
+
+    const transactions = [];
+
+    for (let i = 0; i < result.length; i++) {
+      const { marketAddress, positionId, priceLimit } = result[i] as UnwindStateSuccess;
+      console.log('result[i]', result[i]);
+
+      const contract = await this.getContractV1Market(marketAddress as Address);
+      const txArguments = [BigInt(positionId), toWei(unwindPercentage), priceLimit] as const;
+
+      transactions.push(
+        this.core.performTransaction({
+          ...rest,
+          account,
+          callback,
+          getGasLimit: (options: TransactionOptions) =>
+            contract.estimateGas.unwind(txArguments, options),
+          sendTransaction: (options: TransactionOptions) =>
+            contract.write.unwind(txArguments, options),
+        })
+      );
+    }
+  
+    return Promise.all(transactions);
+  }
+
   // @Logger('Utils:')
   // @ErrorHandler()
   public async populateUnwind(props: NoCallback<UnwindProps>) {
@@ -289,6 +369,14 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   }
 
   private async parseUnwindProps(props: UnwindProps): Promise<UnwindInnerProps> {
+    return {
+      ...props,
+      account: await this.core.useAccount(props.account),
+      callback: props.callback ?? NOOP,
+    };
+  }
+
+  private async parseUnwindMultipleProps(props: UnwindMultipleProps): Promise<UnwindMultipleInnerProps> {
     return {
       ...props,
       account: await this.core.useAccount(props.account),
