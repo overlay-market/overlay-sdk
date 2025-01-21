@@ -7,6 +7,7 @@ import { OverlaySDKOverlayToken } from "./ovl/index.js";
 import { OverlaySDKTrade } from "./trade/index.js";
 import { OverlaySDKLiquidatedPositions } from "./positionsTables/liquidatePositionsTable/liquidatePositionsTable.js";
 import { OverlaySDKAccountDetails } from "./account/account.js";
+import { OverlaySDKShiva } from "./shiva/shiva.js";
 
 export class OverlaySDK {
   readonly core: OverlaySDKCore;
@@ -19,6 +20,7 @@ export class OverlaySDK {
   readonly unwindPositions: OverlaySDKUnwindPositions;
   readonly liquidatedPositions: OverlaySDKLiquidatedPositions;
   readonly accountDetails: OverlaySDKAccountDetails;
+  readonly shiva: OverlaySDKShiva;
 
   constructor(props: OverlaySDKCoreProps) {
     // Core functionality
@@ -42,5 +44,6 @@ export class OverlaySDK {
       { ...props, core },
       this
     );
+    this.shiva = new OverlaySDKShiva({ ...props, core }, this);
   }
 }
