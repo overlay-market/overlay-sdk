@@ -1,4 +1,4 @@
-import { Address } from "viem";
+import { Address, zeroAddress } from "viem";
 import BtcdLogo from "./assets/markets_logo/bitcoin-dominance-logo.png";
 import EthDominanceLogo from "./assets/markets_logo/eth-dominance.png";
 import csgoLogo from "./assets/markets_logo/csgo-logo.svg";
@@ -70,6 +70,12 @@ export const OVL_ADDRESS: AddressMap = {
   [CHAINS.ArbitrumSepolia]: "0x3E27fAe625f25291bFda517f74bf41DC40721dA2",
   [CHAINS.Imola]: "0xCde46284D32148c4D470fA33BA788710b3d21E89",
   [CHAINS.Bartio]: "0x97576e088f0d05EF68cac2EEc63d017FE90952a0",
+};
+
+export const SHIVA_ADDRESS: AddressMap = {
+  [CHAINS.ArbitrumSepolia]: zeroAddress,
+  [CHAINS.Imola]: zeroAddress,
+  [CHAINS.Bartio]: '0x02e6523Cf0B26811f9B152Dd8DDf0A873Bc441b9',
 };
 
 interface Network {
