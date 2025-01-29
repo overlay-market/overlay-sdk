@@ -1,5 +1,5 @@
 import { Address, JsonRpcAccount } from 'viem'
-import { CommonTransactionProps } from '../core/types'
+import { AccountValue, CommonTransactionProps } from '../core/types'
 
 // Build
 
@@ -111,4 +111,78 @@ export type ShivaBuildSingleOnBehalfOfProps = CommonTransactionProps & {
 
 export type ShivaBuildSingleOnBehalfOfInnerProps = ShivaBuildSingleOnBehalfOfProps & {
   account: JsonRpcAccount
+}
+
+export type SignBuildOnBehalfOfProps = {
+  ovlMarket: Address
+  deadline: number
+  collateral: bigint
+  leverage: bigint
+  isLong: boolean
+  priceLimit: bigint
+  account?: AccountValue;
+}
+
+export type SignUnwindOnBehalfOfProps = {
+  ovlMarket: Address
+  deadline: number
+  positionId: bigint
+  fraction: bigint
+  priceLimit: bigint
+  account?: AccountValue;
+}
+
+export type SignBuildSingleOnBehalfOfProps = {
+  ovlMarket: Address
+  deadline: number
+  collateral: bigint
+  leverage: bigint
+  previousPositionId: bigint
+  account?: AccountValue;
+}
+
+export type BuildOnBehalfOfSignature = SignBuildOnBehalfOfProps & {
+  signature: `0x${string}`
+}
+
+export type UnwindOnBehalfOfSignature = SignUnwindOnBehalfOfProps & {
+  signature: `0x${string}`
+}
+
+export type BuildSingleOnBehalfOfSignature = SignBuildSingleOnBehalfOfProps & {
+  signature: `0x${string}`
+}
+
+export const BUILD_TYPES = {
+  BuildOnBehalfOfParams: [
+    { name: 'ovlMarket', type: 'address' },
+    { name: 'deadline', type: 'uint48' },
+    { name: 'collateral', type: 'uint256' },
+    { name: 'leverage', type: 'uint256' },
+    { name: 'isLong', type: 'bool' },
+    { name: 'priceLimit', type: 'uint256' },
+    { name: 'nonce', type: 'uint256' },
+  ]
+}
+
+export const UNWIND_TYPES = {
+  UnwindOnBehalfOfParams: [
+    { name: 'ovlMarket', type: 'address' },
+    { name: 'deadline', type: 'uint48' },
+    { name: 'positionId', type: 'uint256' },
+    { name: 'fraction', type: 'uint256' },
+    { name: 'priceLimit', type: 'uint256' },
+    { name: 'nonce', type: 'uint256' },
+  ]
+}
+
+export const BUILD_SINGLE_TYPES = {
+  BuildSingleOnBehalfOfParams: [
+    { name: 'ovlMarket', type: 'address' },
+    { name: 'deadline', type: 'uint48' },
+    { name: 'collateral', type: 'uint256' },
+    { name: 'leverage', type: 'uint256' },
+    { name: 'previousPositionId', type: 'uint256' },
+    { name: 'nonce', type: 'uint256' },
+  ]
 }

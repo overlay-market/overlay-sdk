@@ -14,6 +14,10 @@ import { ShivaABI } from './abis/Shiva'
 import { CHAINS, ERROR_CODE, invariant, NOOP } from '../common'
 import { SHIVA_ADDRESS } from '../constants'
 import {
+  BUILD_SINGLE_TYPES,
+  BUILD_TYPES,
+  BuildOnBehalfOfSignature,
+  BuildSingleOnBehalfOfSignature,
   ShivaBuildInnerProps,
   ShivaBuildOnBehalfOfInnerProps,
   ShivaBuildOnBehalfOfProps,
@@ -29,6 +33,11 @@ import {
   ShivaUnwindOnBehalfOfInnerProps,
   ShivaUnwindOnBehalfOfProps,
   ShivaUnwindProps,
+  SignBuildOnBehalfOfProps,
+  SignBuildSingleOnBehalfOfProps,
+  SignUnwindOnBehalfOfProps,
+  UNWIND_TYPES,
+  UnwindOnBehalfOfSignature,
 } from './types'
 
 export class OverlaySDKShiva extends OverlaySDKModule {
@@ -302,5 +311,136 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       ERROR_CODE.TRANSACTION_ERROR
     )
     return { positionId }
+  }
+
+  // Sign methods
+  public async getDomain() {
+    const chainId = await this.core.rpcProvider.getChainId()
+    const address = await this.contractAddress()
+
+    return {
+      name: 'Shiva',
+      version: '0.1.0',
+      chainId: chainId,
+      verifyingContract: address,
+    }
+  }
+
+  public async signBuildOnBehalfOf(props: SignBuildOnBehalfOfProps): Promise<BuildOnBehalfOfSignature> {
+    const {
+      ovlMarket,
+      deadline,
+      collateral,
+      leverage,
+      isLong,
+      priceLimit,
+      account: accountProp,
+    } = props
+
+    const web3Provider = this.core.useWeb3Provider()
+    const account = await this.core.useAccount(accountProp);
+
+    const contract = await this.getShivaContract()
+    const domain = await this.getDomain()
+
+    const nonce = await contract.read.nonces([account.address])
+
+    const message = {
+      ovlMarket,
+      deadline,
+      collateral,
+      leverage,
+      isLong,
+      priceLimit,
+      nonce,
+    }
+
+    const signature = await web3Provider.signTypedData({
+      account,
+      domain,
+      types: BUILD_TYPES,
+      primaryType: 'BuildOnBehalfOfParams',
+      message,
+    })
+
+    return { ...message, signature }
+  }
+
+  public async signUnwindOnBehalfOf(props: SignUnwindOnBehalfOfProps): Promise<UnwindOnBehalfOfSignature> {
+    const {
+      ovlMarket,
+      deadline,
+      positionId,
+      fraction,
+      priceLimit,
+      account: accountProp,
+    } = props
+
+    const web3Provider = this.core.useWeb3Provider()
+    const account = await this.core.useAccount(accountProp);
+
+    const contract = await this.getShivaContract()
+    const domain = await this.getDomain()
+
+    const nonce = await contract.read.nonces([account.address])
+
+    const message = {
+      ovlMarket,
+      deadline,
+      positionId,
+      fraction,
+      priceLimit,
+      nonce,
+    }
+
+    const signature = await web3Provider.signTypedData({
+      account,
+      domain,
+      types: UNWIND_TYPES,
+      primaryType: 'UnwindOnBehalfOfParams',
+      message,
+    })
+
+    return { ...message, signature }
+  }
+
+  public async signBuildSingleOnBehalfOf(
+    props: SignBuildSingleOnBehalfOfProps
+  ): Promise<BuildSingleOnBehalfOfSignature> {
+    const {
+      ovlMarket,
+      deadline,
+      collateral,
+      leverage,
+      previousPositionId,
+      account: accountProp,
+    } = props
+
+    const web3Provider = this.core.useWeb3Provider()
+    const account = await this.core.useAccount(accountProp);
+
+    const contract = await this.getShivaContract()
+    const domain = await this.getDomain()
+
+    const nonce = await contract.read.nonces([account.address])
+
+    const message = {
+      ovlMarket,
+      deadline,
+      collateral,
+      leverage,
+      previousPositionId,
+      nonce,
+    }
+
+    const signature = await web3Provider.signTypedData({
+      account,
+      domain,
+      types: BUILD_SINGLE_TYPES,
+      primaryType: 'BuildSingleOnBehalfOfParams',
+      message,
+    })
+
+    return { ...message, signature }
   }
 }
