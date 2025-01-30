@@ -176,7 +176,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
 
   public async unwindMultiple(
     props: UnwindMultipleProps
-  ): Promise<TransactionResult[]> {
+  ) {
     this.core.useWeb3Provider();
     const { callback, account, slippage, unwindPercentage, ...rest } = await this.parseUnwindMultipleProps(props);
     const decimals = 2;
@@ -247,7 +247,9 @@ export class OverlaySDKMarket extends OverlaySDKModule {
       );
     }
   
-    return Promise.all(transactions);
+    const results = await Promise.allSettled(transactions);
+
+    return results;
   }
 
   // @Logger('Utils:')
