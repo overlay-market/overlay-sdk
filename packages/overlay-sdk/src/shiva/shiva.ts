@@ -1,4 +1,5 @@
 import {
+  Address,
   decodeEventLog,
   getAbiItem,
   getContract,
@@ -18,6 +19,7 @@ import {
   BUILD_TYPES,
   BuildOnBehalfOfSignature,
   BuildSingleOnBehalfOfSignature,
+  ShivaApproveProps,
   ShivaBuildInnerProps,
   ShivaBuildOnBehalfOfInnerProps,
   ShivaBuildOnBehalfOfProps,
@@ -67,6 +69,19 @@ export class OverlaySDKShiva extends OverlaySDKModule {
         public: this.core.rpcProvider,
         wallet: this.core.web3Provider as WalletClient,
       },
+    })
+  }
+
+  public async approveShiva(props: ShivaApproveProps): Promise<TransactionResult> {
+    this.core.useWeb3Provider()
+    const { account, ...rest } = props
+
+    const address = await this.contractAddress()
+
+    return this.sdk.ovl.approve({
+      account: account,
+      amount: rest.amount,
+      to: address,
     })
   }
 
@@ -321,7 +336,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     return {
       name: 'Shiva',
       version: '0.1.0',
-      chainId: chainId,
+      chainId: BigInt(chainId),
       verifyingContract: address,
     }
   }
@@ -363,7 +378,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       message,
     })
 
-    return { ...message, signature }
+    return { ...message, signature, owner: account.address as Address }
   }
 
   public async signUnwindOnBehalfOf(props: SignUnwindOnBehalfOfProps): Promise<UnwindOnBehalfOfSignature> {
@@ -401,7 +416,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       message,
     })
 
-    return { ...message, signature }
+    return { ...message, signature, owner: account.address }
   }
 
   public async signBuildSingleOnBehalfOf(
@@ -441,6 +456,6 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       message,
     })
 
-    return { ...message, signature }
+    return { ...message, signature, owner: account.address }
   }
 }
