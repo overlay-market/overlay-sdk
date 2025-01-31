@@ -1,6 +1,14 @@
 import { Address, JsonRpcAccount } from 'viem'
 import { AccountValue, CommonTransactionProps } from '../core/types'
 
+export type ShivaApproveProps = CommonTransactionProps & {
+  amount: bigint
+}
+
+export type ShivaApproveInnerProps = ShivaApproveProps & {
+  account: JsonRpcAccount
+}
+
 // Build
 
 export type ShivaBuildProps = CommonTransactionProps & {
@@ -143,17 +151,32 @@ export type SignBuildSingleOnBehalfOfProps = {
 
 export type BuildOnBehalfOfSignature = SignBuildOnBehalfOfProps & {
   signature: `0x${string}`
+  owner: Address
 }
 
 export type UnwindOnBehalfOfSignature = SignUnwindOnBehalfOfProps & {
   signature: `0x${string}`
+  owner: Address
 }
 
 export type BuildSingleOnBehalfOfSignature = SignBuildSingleOnBehalfOfProps & {
   signature: `0x${string}`
+  owner: Address
 }
 
 export const BUILD_TYPES = {
+  EIP712Domain: [
+    { name: 'name', type: 'string' },
+    { name: 'version', type: 'string' },
+    {
+      name: 'chainId',
+      type: 'uint256',
+    },
+    {
+      name: 'verifyingContract',
+      type: 'address',
+    },
+  ],
   BuildOnBehalfOfParams: [
     { name: 'ovlMarket', type: 'address' },
     { name: 'deadline', type: 'uint48' },
@@ -163,9 +186,21 @@ export const BUILD_TYPES = {
     { name: 'priceLimit', type: 'uint256' },
     { name: 'nonce', type: 'uint256' },
   ]
-}
+} as const
 
 export const UNWIND_TYPES = {
+  EIP712Domain: [
+    { name: 'name', type: 'string' },
+    { name: 'version', type: 'string' },
+    {
+      name: 'chainId',
+      type: 'uint256',
+    },
+    {
+      name: 'verifyingContract',
+      type: 'address',
+    },
+  ],
   UnwindOnBehalfOfParams: [
     { name: 'ovlMarket', type: 'address' },
     { name: 'deadline', type: 'uint48' },
@@ -174,9 +209,21 @@ export const UNWIND_TYPES = {
     { name: 'priceLimit', type: 'uint256' },
     { name: 'nonce', type: 'uint256' },
   ]
-}
+} as const
 
 export const BUILD_SINGLE_TYPES = {
+  EIP712Domain: [
+    { name: 'name', type: 'string' },
+    { name: 'version', type: 'string' },
+    {
+      name: 'chainId',
+      type: 'uint256',
+    },
+    {
+      name: 'verifyingContract',
+      type: 'address',
+    },
+  ],
   BuildSingleOnBehalfOfParams: [
     { name: 'ovlMarket', type: 'address' },
     { name: 'deadline', type: 'uint48' },
@@ -185,4 +232,4 @@ export const BUILD_SINGLE_TYPES = {
     { name: 'previousPositionId', type: 'uint256' },
     { name: 'nonce', type: 'uint256' },
   ]
-}
+} as const
