@@ -32,7 +32,7 @@ const Shiva = () => {
       const res = await sdk.shiva.build({
         account,
         params: {
-          ovMarket: marketAddress as Address,
+          ovlMarket: marketAddress as Address,
           brokerId: 1,
           isLong: isLong,
           collateral: toWei(collateral),
@@ -67,7 +67,7 @@ const Shiva = () => {
       const res = await sdk.shiva.unwind({
         account,
         params: {
-          ovMarket: marketAddress as Address,
+          ovlMarket: marketAddress as Address,
           brokerId: 1,
           positionId: positionId,
           fraction: toWei(fraction),
@@ -98,7 +98,7 @@ const Shiva = () => {
       const res = await sdk.shiva.buildSingle({
         account,
         params: {
-          ovMarket: marketAddress as Address,
+          ovlMarket: marketAddress as Address,
           brokerId: 1,
           unwindPriceLimit: (await sdk.trade.getUnwindPrice(
             marketName,
@@ -190,6 +190,7 @@ const Shiva = () => {
         ).minPrice as bigint,
         account: account as Address,
         isLong: isLong,
+        brokerId: 1,
       })
 
       console.log('Sign build on behalf of result', data)
@@ -216,6 +217,7 @@ const Shiva = () => {
           toWei(fraction),
           1
         )) as bigint,
+        brokerId: 1,
       })
 
       console.log('Sign unwind on behalf of result', data)
@@ -236,6 +238,23 @@ const Shiva = () => {
         collateral: toWei(collateral),
         leverage: toWei(leverage),
         previousPositionId: positionId,
+        brokerId: 1,
+        unwindPriceLimit: (await sdk.trade.getUnwindPrice(
+          marketName,
+          SHIVA_ADDRESS[CHAINS.Bartio],
+          positionId,
+          toWei(fraction),
+          1
+        )) as bigint,
+        buildPriceLimit: (
+          await sdk.trade.getPriceInfo(
+            marketName,
+            toWei(collateral),
+            toWei(leverage),
+            slippage,
+            isLong
+          )
+        ).minPrice as bigint,
       })
 
       console.log('Sign build single on behalf of result', data)
@@ -258,8 +277,8 @@ const Shiva = () => {
       const res = await sdk.shiva.buildOnBehalfOf({
         account,
         params: {
-          ovMarket: buildOnBehalfOfData.ovlMarket,
-          brokerId: 1,
+          ovlMarket: buildOnBehalfOfData.ovlMarket,
+          brokerId: buildOnBehalfOfData.brokerId,
           isLong: buildOnBehalfOfData.isLong,
           collateral: buildOnBehalfOfData.collateral,
           leverage: buildOnBehalfOfData.leverage,
@@ -293,8 +312,8 @@ const Shiva = () => {
       const res = await sdk.shiva.unwindOnBehalfOf({
         account,
         params: {
-          ovMarket: unwindOnBehalfOfData.ovlMarket,
-          brokerId: 1,
+          ovlMarket: unwindOnBehalfOfData.ovlMarket,
+          brokerId: unwindOnBehalfOfData.brokerId,
           positionId: unwindOnBehalfOfData.positionId,
           fraction: unwindOnBehalfOfData.fraction,
           priceLimit: unwindOnBehalfOfData.priceLimit,
@@ -326,27 +345,13 @@ const Shiva = () => {
       const res = await sdk.shiva.buildSingleOnBehalfOf({
         account,
         params: {
-          ovMarket: buildSingleOnBehalfOfData.ovlMarket,
-          brokerId: 1,
+          ovlMarket: buildSingleOnBehalfOfData.ovlMarket,
+          brokerId: buildSingleOnBehalfOfData.brokerId,
           collateral: buildSingleOnBehalfOfData.collateral,
           leverage: buildSingleOnBehalfOfData.leverage,
           previousPositionId: buildSingleOnBehalfOfData.previousPositionId,
-          unwindPriceLimit: (await sdk.trade.getUnwindPrice(
-            marketName,
-            SHIVA_ADDRESS[CHAINS.Bartio],
-            positionId,
-            toWei(fraction),
-            1
-          )) as bigint,
-          buildPriceLimit: (
-            await sdk.trade.getPriceInfo(
-              marketName,
-              toWei(collateral),
-              toWei(leverage),
-              slippage,
-              isLong
-            )
-          ).minPrice as bigint, 
+          unwindPriceLimit: buildSingleOnBehalfOfData.unwindPriceLimit,
+          buildPriceLimit: buildSingleOnBehalfOfData.buildPriceLimit,
         },
         onBehalfOf: {
           deadline: buildSingleOnBehalfOfData.deadline,
