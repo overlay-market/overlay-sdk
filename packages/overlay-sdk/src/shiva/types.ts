@@ -13,7 +13,7 @@ export type ShivaApproveInnerProps = ShivaApproveProps & {
 
 export type ShivaBuildProps = CommonTransactionProps & {
   params: {
-    ovMarket: Address
+    ovlMarket: Address
     brokerId: number
     isLong: boolean
     collateral: bigint
@@ -34,7 +34,7 @@ export type ShivaBuildResult = {
 
 export type ShivaUnwindProps = CommonTransactionProps & {
   params: {
-    ovMarket: Address
+    ovlMarket: Address
     brokerId: number
     positionId: bigint
     fraction: bigint
@@ -50,7 +50,7 @@ export type ShivaUnwindInnerProps = ShivaUnwindProps & {
 
 export type ShivaBuildSingleProps = CommonTransactionProps & {
   params: {
-    ovMarket: Address
+    ovlMarket: Address
     brokerId: number
     unwindPriceLimit: bigint
     buildPriceLimit: bigint
@@ -128,6 +128,7 @@ export type SignBuildOnBehalfOfProps = {
   leverage: bigint
   isLong: boolean
   priceLimit: bigint
+  brokerId: number
   account?: AccountValue;
 }
 
@@ -137,6 +138,7 @@ export type SignUnwindOnBehalfOfProps = {
   positionId: bigint
   fraction: bigint
   priceLimit: bigint
+  brokerId: number
   account?: AccountValue;
 }
 
@@ -146,6 +148,9 @@ export type SignBuildSingleOnBehalfOfProps = {
   collateral: bigint
   leverage: bigint
   previousPositionId: bigint
+  unwindPriceLimit: bigint
+  buildPriceLimit: bigint
+  brokerId: number
   account?: AccountValue;
 }
 
@@ -185,6 +190,7 @@ export const BUILD_TYPES = {
     { name: 'isLong', type: 'bool' },
     { name: 'priceLimit', type: 'uint256' },
     { name: 'nonce', type: 'uint256' },
+    { name: 'brokerId', type: 'uint32' },
   ]
 } as const
 
@@ -208,6 +214,7 @@ export const UNWIND_TYPES = {
     { name: 'fraction', type: 'uint256' },
     { name: 'priceLimit', type: 'uint256' },
     { name: 'nonce', type: 'uint256' },
+    { name: 'brokerId', type: 'uint32' },
   ]
 } as const
 
@@ -230,6 +237,9 @@ export const BUILD_SINGLE_TYPES = {
     { name: 'collateral', type: 'uint256' },
     { name: 'leverage', type: 'uint256' },
     { name: 'previousPositionId', type: 'uint256' },
+    { name: 'unwindPriceLimit', type: 'uint256' },
+    { name: 'buildPriceLimit', type: 'uint256' },
     { name: 'nonce', type: 'uint256' },
+    { name: 'brokerId', type: 'uint32' },
   ]
 } as const

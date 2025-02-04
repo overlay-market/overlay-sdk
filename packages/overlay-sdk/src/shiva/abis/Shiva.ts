@@ -53,7 +53,7 @@ export const ShivaABI = [
         "type": "tuple",
         "internalType": "struct ShivaStructs.Build",
         "components": [
-          { "name": "ovMarket", "type": "address", "internalType": "contract IOverlayV1Market" },
+          { "name": "ovlMarket", "type": "address", "internalType": "contract IOverlayV1Market" },
           { "name": "brokerId", "type": "uint32", "internalType": "uint32" },
           { "name": "isLong", "type": "bool", "internalType": "bool" },
           { "name": "collateral", "type": "uint256", "internalType": "uint256" },
@@ -84,7 +84,7 @@ export const ShivaABI = [
         "type": "tuple",
         "internalType": "struct ShivaStructs.Build",
         "components": [
-          { "name": "ovMarket", "type": "address", "internalType": "contract IOverlayV1Market" },
+          { "name": "ovlMarket", "type": "address", "internalType": "contract IOverlayV1Market" },
           { "name": "brokerId", "type": "uint32", "internalType": "uint32" },
           { "name": "isLong", "type": "bool", "internalType": "bool" },
           { "name": "collateral", "type": "uint256", "internalType": "uint256" },
@@ -105,7 +105,7 @@ export const ShivaABI = [
         "type": "tuple",
         "internalType": "struct ShivaStructs.BuildSingle",
         "components": [
-          { "name": "ovMarket", "type": "address", "internalType": "contract IOverlayV1Market" },
+          { "name": "ovlMarket", "type": "address", "internalType": "contract IOverlayV1Market" },
           { "name": "brokerId", "type": "uint32", "internalType": "uint32" },
           { "name": "unwindPriceLimit", "type": "uint256", "internalType": "uint256" },
           { "name": "buildPriceLimit", "type": "uint256", "internalType": "uint256" },
@@ -137,7 +137,7 @@ export const ShivaABI = [
         "type": "tuple",
         "internalType": "struct ShivaStructs.BuildSingle",
         "components": [
-          { "name": "ovMarket", "type": "address", "internalType": "contract IOverlayV1Market" },
+          { "name": "ovlMarket", "type": "address", "internalType": "contract IOverlayV1Market" },
           { "name": "brokerId", "type": "uint32", "internalType": "uint32" },
           { "name": "unwindPriceLimit", "type": "uint256", "internalType": "uint256" },
           { "name": "buildPriceLimit", "type": "uint256", "internalType": "uint256" },
@@ -172,8 +172,7 @@ export const ShivaABI = [
     "type": "function",
     "name": "initialize",
     "inputs": [
-      { "name": "_ovToken", "type": "address", "internalType": "address" },
-      { "name": "_ovState", "type": "address", "internalType": "address" },
+      { "name": "_ovlToken", "type": "address", "internalType": "address" },
       { "name": "_vaultFactory", "type": "address", "internalType": "address" }
     ],
     "outputs": [],
@@ -195,24 +194,24 @@ export const ShivaABI = [
   },
   {
     "type": "function",
-    "name": "ovState",
+    "name": "overlayMarketLiquidateCallback",
+    "inputs": [{ "name": "positionId", "type": "uint256", "internalType": "uint256" }],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "ovlState",
     "inputs": [],
     "outputs": [{ "name": "", "type": "address", "internalType": "contract IOverlayV1State" }],
     "stateMutability": "view"
   },
   {
     "type": "function",
-    "name": "ovToken",
+    "name": "ovlToken",
     "inputs": [],
     "outputs": [{ "name": "", "type": "address", "internalType": "contract IOverlayV1Token" }],
     "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "overlayMarketLiquidateCallback",
-    "inputs": [{ "name": "positionId", "type": "uint256", "internalType": "uint256" }],
-    "outputs": [],
-    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -286,11 +285,21 @@ export const ShivaABI = [
         "type": "tuple",
         "internalType": "struct ShivaStructs.Unwind",
         "components": [
-          { "name": "ovMarket", "type": "address", "internalType": "contract IOverlayV1Market" },
+          { "name": "ovlMarket", "type": "address", "internalType": "contract IOverlayV1Market" },
           { "name": "brokerId", "type": "uint32", "internalType": "uint32" },
           { "name": "positionId", "type": "uint256", "internalType": "uint256" },
           { "name": "fraction", "type": "uint256", "internalType": "uint256" },
           { "name": "priceLimit", "type": "uint256", "internalType": "uint256" }
+        ]
+      },
+      {
+        "name": "onBehalfOf",
+        "type": "tuple",
+        "internalType": "struct ShivaStructs.OnBehalfOf",
+        "components": [
+          { "name": "owner", "type": "address", "internalType": "address" },
+          { "name": "deadline", "type": "uint48", "internalType": "uint48" },
+          { "name": "signature", "type": "bytes", "internalType": "bytes" }
         ]
       }
     ],
@@ -306,21 +315,11 @@ export const ShivaABI = [
         "type": "tuple",
         "internalType": "struct ShivaStructs.Unwind",
         "components": [
-          { "name": "ovMarket", "type": "address", "internalType": "contract IOverlayV1Market" },
+          { "name": "ovlMarket", "type": "address", "internalType": "contract IOverlayV1Market" },
           { "name": "brokerId", "type": "uint32", "internalType": "uint32" },
           { "name": "positionId", "type": "uint256", "internalType": "uint256" },
           { "name": "fraction", "type": "uint256", "internalType": "uint256" },
           { "name": "priceLimit", "type": "uint256", "internalType": "uint256" }
-        ]
-      },
-      {
-        "name": "onBehalfOf",
-        "type": "tuple",
-        "internalType": "struct ShivaStructs.OnBehalfOf",
-        "components": [
-          { "name": "owner", "type": "address", "internalType": "address" },
-          { "name": "deadline", "type": "uint48", "internalType": "uint48" },
-          { "name": "signature", "type": "bytes", "internalType": "bytes" }
         ]
       }
     ],

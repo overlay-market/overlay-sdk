@@ -349,6 +349,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       leverage,
       isLong,
       priceLimit,
+      brokerId,
       account: accountProp,
     } = props
 
@@ -368,6 +369,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       isLong,
       priceLimit,
       nonce,
+      brokerId
     }
 
     const signature = await web3Provider.signTypedData({
@@ -388,6 +390,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       positionId,
       fraction,
       priceLimit,
+      brokerId,
       account: accountProp,
     } = props
 
@@ -406,6 +409,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       fraction,
       priceLimit,
       nonce,
+      brokerId
     }
 
     const signature = await web3Provider.signTypedData({
@@ -428,6 +432,9 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       collateral,
       leverage,
       previousPositionId,
+      unwindPriceLimit,
+      buildPriceLimit,
+      brokerId,
       account: accountProp,
     } = props
 
@@ -445,7 +452,10 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       collateral,
       leverage,
       previousPositionId,
+      unwindPriceLimit,
+      buildPriceLimit,
       nonce,
+      brokerId
     }
 
     const signature = await web3Provider.signTypedData({
