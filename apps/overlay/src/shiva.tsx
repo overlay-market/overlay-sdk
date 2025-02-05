@@ -33,7 +33,6 @@ const Shiva = () => {
         account,
         params: {
           ovlMarket: marketAddress as Address,
-          brokerId: 1,
           isLong: isLong,
           collateral: toWei(collateral),
           leverage: toWei(leverage),
@@ -68,7 +67,6 @@ const Shiva = () => {
         account,
         params: {
           ovlMarket: marketAddress as Address,
-          brokerId: 1,
           positionId: positionId,
           fraction: toWei(fraction),
           priceLimit: (await sdk.trade.getUnwindPrice(
@@ -99,7 +97,6 @@ const Shiva = () => {
         account,
         params: {
           ovlMarket: marketAddress as Address,
-          brokerId: 1,
           unwindPriceLimit: (await sdk.trade.getUnwindPrice(
             marketName,
             SHIVA_ADDRESS[CHAINS.Bartio],
@@ -190,7 +187,6 @@ const Shiva = () => {
         ).minPrice as bigint,
         account: account as Address,
         isLong: isLong,
-        brokerId: 1,
       })
 
       console.log('Sign build on behalf of result', data)
@@ -217,7 +213,6 @@ const Shiva = () => {
           toWei(fraction),
           1
         )) as bigint,
-        brokerId: 1,
       })
 
       console.log('Sign unwind on behalf of result', data)
@@ -238,7 +233,6 @@ const Shiva = () => {
         collateral: toWei(collateral),
         leverage: toWei(leverage),
         previousPositionId: positionId,
-        brokerId: 1,
         unwindPriceLimit: (await sdk.trade.getUnwindPrice(
           marketName,
           SHIVA_ADDRESS[CHAINS.Bartio],
@@ -278,7 +272,7 @@ const Shiva = () => {
         account,
         params: {
           ovlMarket: buildOnBehalfOfData.ovlMarket,
-          brokerId: buildOnBehalfOfData.brokerId,
+          // brokerId: buildOnBehalfOfData.brokerId, this is optional
           isLong: buildOnBehalfOfData.isLong,
           collateral: buildOnBehalfOfData.collateral,
           leverage: buildOnBehalfOfData.leverage,
@@ -346,7 +340,7 @@ const Shiva = () => {
         account,
         params: {
           ovlMarket: buildSingleOnBehalfOfData.ovlMarket,
-          brokerId: buildSingleOnBehalfOfData.brokerId,
+          // brokerId: buildSingleOnBehalfOfData.brokerId, this is optional
           collateral: buildSingleOnBehalfOfData.collateral,
           leverage: buildSingleOnBehalfOfData.leverage,
           previousPositionId: buildSingleOnBehalfOfData.previousPositionId,
