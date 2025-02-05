@@ -64,3 +64,18 @@ const sdk = new OverlaySDK({
   web3Provider,
 });
 ```
+
+Custom Broker ID. This will be used in Shiva events to filter out transactions from other brokers. You can set any number which is unique to your application. Default is 0.
+
+```ts
+// Pass your own viem PublicClient
+
+BROKER_ID = 777
+
+const sdk = new OverlaySDK({
+  chainId: 421614,
+  rpcProvider,
+  web3Provider,
+  brokerId: BROKER_ID,
+});
+```

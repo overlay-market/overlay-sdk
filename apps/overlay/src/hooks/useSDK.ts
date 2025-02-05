@@ -15,6 +15,7 @@ export default function useSDK() {
     chainId: chainId ? chainId as CHAINS : DEFAULT_CHAINID as number,
     rpcProvider,
     web3Provider: OverlaySDKCore.createWeb3Provider(chainId as CHAINS, window.ethereum),
+    brokerId: 99
   });
   console.log('overlay-sdk initialized with chainId:', chainId)
   return sdk
