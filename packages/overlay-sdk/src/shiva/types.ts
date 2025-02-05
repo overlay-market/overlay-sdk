@@ -14,7 +14,7 @@ export type ShivaApproveInnerProps = ShivaApproveProps & {
 export type ShivaBuildProps = CommonTransactionProps & {
   params: {
     ovlMarket: Address
-    brokerId: number
+    brokerId?: number
     isLong: boolean
     collateral: bigint
     leverage: bigint
@@ -35,7 +35,7 @@ export type ShivaBuildResult = {
 export type ShivaUnwindProps = CommonTransactionProps & {
   params: {
     ovlMarket: Address
-    brokerId: number
+    brokerId?: number
     positionId: bigint
     fraction: bigint
     priceLimit: bigint
@@ -51,7 +51,7 @@ export type ShivaUnwindInnerProps = ShivaUnwindProps & {
 export type ShivaBuildSingleProps = CommonTransactionProps & {
   params: {
     ovlMarket: Address
-    brokerId: number
+    brokerId?: number
     unwindPriceLimit: bigint
     buildPriceLimit: bigint
     collateral: bigint
@@ -128,7 +128,7 @@ export type SignBuildOnBehalfOfProps = {
   leverage: bigint
   isLong: boolean
   priceLimit: bigint
-  brokerId: number
+  brokerId?: number
   account?: AccountValue;
 }
 
@@ -138,7 +138,7 @@ export type SignUnwindOnBehalfOfProps = {
   positionId: bigint
   fraction: bigint
   priceLimit: bigint
-  brokerId: number
+  brokerId?: number
   account?: AccountValue;
 }
 
@@ -150,7 +150,7 @@ export type SignBuildSingleOnBehalfOfProps = {
   previousPositionId: bigint
   unwindPriceLimit: bigint
   buildPriceLimit: bigint
-  brokerId: number
+  brokerId?: number
   account?: AccountValue;
 }
 

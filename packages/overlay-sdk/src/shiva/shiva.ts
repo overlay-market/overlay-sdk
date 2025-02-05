@@ -93,7 +93,16 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
     const contract = await this.getShivaContract()
 
-    const txArguments = [rest.params] as const
+    const txArguments = [
+      {
+        ovlMarket: rest.params.ovlMarket,
+        brokerId: rest.params.brokerId ?? this.core.brokerId,
+        isLong: rest.params.isLong,
+        collateral: rest.params.collateral,
+        leverage: rest.params.leverage,
+        priceLimit: rest.params.priceLimit,
+      },
+    ] as const
 
     return this.core.performTransaction({
       ...rest,
@@ -114,7 +123,15 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
     const contract = await this.getShivaContract()
 
-    const txArguments = [rest.params] as const
+    const txArguments = [
+      {
+        ovlMarket: rest.params.ovlMarket,
+        brokerId: rest.params.brokerId ?? this.core.brokerId,
+        positionId: rest.params.positionId,
+        fraction: rest.params.fraction,
+        priceLimit: rest.params.priceLimit,
+      },
+    ] as const
 
     return this.core.performTransaction({
       ...rest,
@@ -135,7 +152,17 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
     const contract = await this.getShivaContract()
 
-    const txArguments = [rest.params] as const
+    const txArguments = [
+      {
+        ovlMarket: rest.params.ovlMarket,
+        brokerId: rest.params.brokerId ?? this.core.brokerId,
+        unwindPriceLimit: rest.params.unwindPriceLimit,
+        buildPriceLimit: rest.params.buildPriceLimit,
+        collateral: rest.params.collateral,
+        leverage: rest.params.leverage,
+        previousPositionId: rest.params.previousPositionId,
+      },
+    ] as const
 
     return this.core.performTransaction({
       ...rest,
@@ -179,7 +206,17 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
     const contract = await this.getShivaContract()
 
-    const txArguments = [rest.params, rest.onBehalfOf] as const
+    const txArguments = [
+      {
+        ovlMarket: rest.params.ovlMarket,
+        brokerId: rest.params.brokerId ?? this.core.brokerId,
+        isLong: rest.params.isLong,
+        collateral: rest.params.collateral,
+        leverage: rest.params.leverage,
+        priceLimit: rest.params.priceLimit,
+      },
+      rest.onBehalfOf,
+    ] as const
 
     return this.core.performTransaction({
       ...rest,
@@ -200,7 +237,16 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
     const contract = await this.getShivaContract()
 
-    const txArguments = [rest.params, rest.onBehalfOf] as const
+    const txArguments = [
+      {
+        ovlMarket: rest.params.ovlMarket,
+        brokerId: rest.params.brokerId ?? this.core.brokerId,
+        positionId: rest.params.positionId,
+        fraction: rest.params.fraction,
+        priceLimit: rest.params.priceLimit,
+      },
+      rest.onBehalfOf,
+    ] as const
 
     return this.core.performTransaction({
       ...rest,
@@ -221,7 +267,18 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
     const contract = await this.getShivaContract()
 
-    const txArguments = [rest.params, rest.onBehalfOf] as const
+    const txArguments = [
+      {
+        ovlMarket: rest.params.ovlMarket,
+        brokerId: rest.params.brokerId ?? this.core.brokerId,
+        unwindPriceLimit: rest.params.unwindPriceLimit,
+        buildPriceLimit: rest.params.buildPriceLimit,
+        collateral: rest.params.collateral,
+        leverage: rest.params.leverage,
+        previousPositionId: rest.params.previousPositionId,
+      },
+      rest.onBehalfOf,
+    ] as const
 
     return this.core.performTransaction({
       ...rest,
@@ -341,7 +398,9 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     }
   }
 
-  public async signBuildOnBehalfOf(props: SignBuildOnBehalfOfProps): Promise<BuildOnBehalfOfSignature> {
+  public async signBuildOnBehalfOf(
+    props: SignBuildOnBehalfOfProps
+  ): Promise<BuildOnBehalfOfSignature> {
     const {
       ovlMarket,
       deadline,
@@ -349,17 +408,17 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       leverage,
       isLong,
       priceLimit,
-      brokerId,
       account: accountProp,
     } = props
 
     const web3Provider = this.core.useWeb3Provider()
-    const account = await this.core.useAccount(accountProp);
+    const account = await this.core.useAccount(accountProp)
 
     const contract = await this.getShivaContract()
     const domain = await this.getDomain()
 
     const nonce = await contract.read.nonces([account.address])
+    const brokerId = props.brokerId ?? this.core.brokerId
 
     const message = {
       ovlMarket,
@@ -369,7 +428,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       isLong,
       priceLimit,
       nonce,
-      brokerId
+      brokerId,
     }
 
     const signature = await web3Provider.signTypedData({
@@ -383,24 +442,19 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     return { ...message, signature, owner: account.address as Address }
   }
 
-  public async signUnwindOnBehalfOf(props: SignUnwindOnBehalfOfProps): Promise<UnwindOnBehalfOfSignature> {
-    const {
-      ovlMarket,
-      deadline,
-      positionId,
-      fraction,
-      priceLimit,
-      brokerId,
-      account: accountProp,
-    } = props
+  public async signUnwindOnBehalfOf(
+    props: SignUnwindOnBehalfOfProps
+  ): Promise<UnwindOnBehalfOfSignature> {
+    const { ovlMarket, deadline, positionId, fraction, priceLimit, account: accountProp } = props
 
     const web3Provider = this.core.useWeb3Provider()
-    const account = await this.core.useAccount(accountProp);
+    const account = await this.core.useAccount(accountProp)
 
     const contract = await this.getShivaContract()
     const domain = await this.getDomain()
 
     const nonce = await contract.read.nonces([account.address])
+    const brokerId = props.brokerId ?? this.core.brokerId
 
     const message = {
       ovlMarket,
@@ -409,7 +463,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       fraction,
       priceLimit,
       nonce,
-      brokerId
+      brokerId,
     }
 
     const signature = await web3Provider.signTypedData({
@@ -434,17 +488,17 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       previousPositionId,
       unwindPriceLimit,
       buildPriceLimit,
-      brokerId,
       account: accountProp,
     } = props
 
     const web3Provider = this.core.useWeb3Provider()
-    const account = await this.core.useAccount(accountProp);
+    const account = await this.core.useAccount(accountProp)
 
     const contract = await this.getShivaContract()
     const domain = await this.getDomain()
 
     const nonce = await contract.read.nonces([account.address])
+    const brokerId = props.brokerId ?? this.core.brokerId
 
     const message = {
       ovlMarket,
@@ -455,7 +509,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       unwindPriceLimit,
       buildPriceLimit,
       nonce,
-      brokerId
+      brokerId,
     }
 
     const signature = await web3Provider.signTypedData({
