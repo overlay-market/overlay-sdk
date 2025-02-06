@@ -79,3 +79,14 @@ const sdk = new OverlaySDK({
   brokerId: BROKER_ID,
 });
 ```
+
+Use Shiva. You can specify if you want to operate through Shiva or not. Default is false.
+
+```ts
+const sdk = new OverlaySDK({
+  chainId: 421614,
+  rpcProvider,
+  web3Provider,
+  useShiva: true,
+});
+```
