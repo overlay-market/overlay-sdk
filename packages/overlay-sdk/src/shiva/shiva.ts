@@ -20,27 +20,21 @@ import {
   BuildOnBehalfOfSignature,
   BuildSingleOnBehalfOfSignature,
   ShivaApproveProps,
-  ShivaBuildInnerProps,
   ShivaBuildOnBehalfOfInnerProps,
   ShivaBuildOnBehalfOfProps,
-  ShivaBuildProps,
-  ShivaBuildResult,
   ShivaBuildSingleInnerProps,
   ShivaBuildSingleOnBehalfOfInnerProps,
   ShivaBuildSingleOnBehalfOfProps,
   ShivaBuildSingleProps,
-  ShivaEmergencyWithdrawInnerProps,
-  ShivaEmergencyWithdrawProps,
-  ShivaUnwindInnerProps,
   ShivaUnwindOnBehalfOfInnerProps,
   ShivaUnwindOnBehalfOfProps,
-  ShivaUnwindProps,
   SignBuildOnBehalfOfProps,
   SignBuildSingleOnBehalfOfProps,
   SignUnwindOnBehalfOfProps,
   UNWIND_TYPES,
   UnwindOnBehalfOfSignature,
 } from './types'
+import { BuildInnerProps, BuildProps, BuildResult, EmergencyWithdrawInnerProps, EmergencyWithdrawProps, UnwindInnerProps, UnwindProps } from '../markets/types'
 
 export class OverlaySDKShiva extends OverlaySDKModule {
   private sdk: OverlaySDK
@@ -87,7 +81,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
   // Build
 
-  public async build(props: ShivaBuildProps): Promise<TransactionResult<ShivaBuildResult>> {
+  public async build(props: BuildProps): Promise<TransactionResult<BuildResult>> {
     this.core.useWeb3Provider()
     const { callback, account, ...rest } = await this.parseBuildProps(props)
 
@@ -95,12 +89,12 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
     const txArguments = [
       {
-        ovlMarket: rest.params.ovlMarket,
-        brokerId: rest.params.brokerId ?? this.core.brokerId,
-        isLong: rest.params.isLong,
-        collateral: rest.params.collateral,
-        leverage: rest.params.leverage,
-        priceLimit: rest.params.priceLimit,
+        ovlMarket: rest.marketAddress,
+        brokerId: rest.brokerId ?? this.core.brokerId,
+        isLong: rest.isLong,
+        collateral: rest.collateral,
+        leverage: rest.leverage,
+        priceLimit: rest.priceLimit,
       },
     ] as const
 
@@ -117,7 +111,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
   // Unwind
 
-  public async unwind(props: ShivaUnwindProps): Promise<TransactionResult> {
+  public async unwind(props: UnwindProps): Promise<TransactionResult> {
     this.core.useWeb3Provider()
     const { account, ...rest } = await this.parseUnwindProps(props)
 
@@ -125,11 +119,11 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
     const txArguments = [
       {
-        ovlMarket: rest.params.ovlMarket,
-        brokerId: rest.params.brokerId ?? this.core.brokerId,
-        positionId: rest.params.positionId,
-        fraction: rest.params.fraction,
-        priceLimit: rest.params.priceLimit,
+        ovlMarket: rest.marketAddress,
+        brokerId: rest.brokerId ?? this.core.brokerId,
+        positionId: rest.positionId,
+        fraction: rest.fraction,
+        priceLimit: rest.priceLimit,
       },
     ] as const
 
@@ -146,7 +140,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
   public async buildSingle(
     props: ShivaBuildSingleProps
-  ): Promise<TransactionResult<ShivaBuildResult>> {
+  ): Promise<TransactionResult<BuildResult>> {
     this.core.useWeb3Provider()
     const { callback, account, ...rest } = await this.parseBuildSingleProps(props)
 
@@ -178,13 +172,13 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
   // Emergency Withdraw
 
-  public async emergencyWithdraw(props: ShivaEmergencyWithdrawProps): Promise<TransactionResult> {
+  public async emergencyWithdraw(props: EmergencyWithdrawProps): Promise<TransactionResult> {
     this.core.useWeb3Provider()
     const { account, ...rest } = await this.parseEmergencyWithdrawProps(props)
 
     const contract = await this.getShivaContract()
 
-    const txArguments = [rest.market, rest.positionId, rest.owner] as const
+    const txArguments = [rest.marketAddress, rest.positionId, rest.owner] as const
 
     return this.core.performTransaction({
       ...rest,
@@ -200,7 +194,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
   public async buildOnBehalfOf(
     props: ShivaBuildOnBehalfOfProps
-  ): Promise<TransactionResult<ShivaBuildResult>> {
+  ): Promise<TransactionResult<BuildResult>> {
     this.core.useWeb3Provider()
     const { callback, account, ...rest } = await this.parseBuildOnBehalfOfProps(props)
 
@@ -208,7 +202,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
     const txArguments = [
       {
-        ovlMarket: rest.params.ovlMarket,
+        ovlMarket: rest.params.marketAddress,
         brokerId: rest.params.brokerId ?? this.core.brokerId,
         isLong: rest.params.isLong,
         collateral: rest.params.collateral,
@@ -239,7 +233,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
     const txArguments = [
       {
-        ovlMarket: rest.params.ovlMarket,
+        ovlMarket: rest.params.marketAddress,
         brokerId: rest.params.brokerId ?? this.core.brokerId,
         positionId: rest.params.positionId,
         fraction: rest.params.fraction,
@@ -261,7 +255,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
   public async buildSingleOnBehalfOf(
     props: ShivaBuildSingleOnBehalfOfProps
-  ): Promise<TransactionResult<ShivaBuildResult>> {
+  ): Promise<TransactionResult<BuildResult>> {
     this.core.useWeb3Provider()
     const { callback, account, ...rest } = await this.parseBuildSingleOnBehalfOfProps(props)
 
@@ -292,7 +286,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     })
   }
 
-  private async parseBuildProps(props: ShivaBuildProps): Promise<ShivaBuildInnerProps> {
+  private async parseBuildProps(props: BuildProps): Promise<BuildInnerProps> {
     return {
       ...props,
       account: await this.core.useAccount(props.account),
@@ -300,7 +294,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     }
   }
 
-  private async parseUnwindProps(props: ShivaUnwindProps): Promise<ShivaUnwindInnerProps> {
+  private async parseUnwindProps(props: UnwindProps): Promise<UnwindInnerProps> {
     return {
       ...props,
       account: await this.core.useAccount(props.account),
@@ -319,8 +313,8 @@ export class OverlaySDKShiva extends OverlaySDKModule {
   }
 
   private async parseEmergencyWithdrawProps(
-    props: ShivaEmergencyWithdrawProps
-  ): Promise<ShivaEmergencyWithdrawInnerProps> {
+    props: EmergencyWithdrawProps
+  ): Promise<EmergencyWithdrawInnerProps> {
     return {
       ...props,
       account: await this.core.useAccount(props.account),
@@ -358,7 +352,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     }
   }
 
-  private submitParse(receipt: TransactionReceipt): ShivaBuildResult {
+  private submitParse(receipt: TransactionReceipt): BuildResult {
     let positionId: bigint | undefined
     for (const log of receipt.logs) {
       if (log.topics[0] !== OverlaySDKShiva.SHIVA_BUILD_SIGNATURE) {

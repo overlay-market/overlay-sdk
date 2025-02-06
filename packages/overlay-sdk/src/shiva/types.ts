@@ -1,5 +1,11 @@
 import { Address, JsonRpcAccount } from 'viem'
 import { AccountValue, CommonTransactionProps } from '../core/types'
+import {
+  BuildPropsBase,
+  BuildSinglePropsBase,
+  EmergencyWithdrawPropsBase,
+  UnwindPropsBase,
+} from '../common/types'
 
 export type ShivaApproveProps = CommonTransactionProps & {
   amount: bigint
@@ -9,77 +15,20 @@ export type ShivaApproveInnerProps = ShivaApproveProps & {
   account: JsonRpcAccount
 }
 
-// Build
-
-export type ShivaBuildProps = CommonTransactionProps & {
-  params: {
-    ovlMarket: Address
-    brokerId?: number
-    isLong: boolean
-    collateral: bigint
-    leverage: bigint
-    priceLimit: bigint
-  }
-}
-
-export type ShivaBuildInnerProps = ShivaBuildProps & {
-  account: JsonRpcAccount
-}
-
-export type ShivaBuildResult = {
-  positionId: bigint
-}
-
-// Unwind
-
-export type ShivaUnwindProps = CommonTransactionProps & {
-  params: {
-    ovlMarket: Address
-    brokerId?: number
-    positionId: bigint
-    fraction: bigint
-    priceLimit: bigint
-  }
-}
-
-export type ShivaUnwindInnerProps = ShivaUnwindProps & {
-  account: JsonRpcAccount
-}
-
 // Build Single
 
 export type ShivaBuildSingleProps = CommonTransactionProps & {
-  params: {
-    ovlMarket: Address
-    brokerId?: number
-    unwindPriceLimit: bigint
-    buildPriceLimit: bigint
-    collateral: bigint
-    leverage: bigint
-    previousPositionId: bigint
-  }
+  params: BuildSinglePropsBase
 }
 
 export type ShivaBuildSingleInnerProps = ShivaBuildSingleProps & {
   account: JsonRpcAccount
 }
 
-// Emergency Withdraw
-
-export type ShivaEmergencyWithdrawProps = CommonTransactionProps & {
-  market: Address
-  positionId: bigint
-  owner: Address
-}
-
-export type ShivaEmergencyWithdrawInnerProps = ShivaEmergencyWithdrawProps & {
-  account: JsonRpcAccount
-}
-
 // Build On Behalf Of
 
 export type ShivaBuildOnBehalfOfProps = CommonTransactionProps & {
-  params: ShivaBuildProps['params']
+  params: BuildPropsBase
   onBehalfOf: {
     owner: Address
     deadline: number
@@ -94,7 +43,7 @@ export type ShivaBuildOnBehalfOfInnerProps = ShivaBuildOnBehalfOfProps & {
 // Unwind On Behalf Of
 
 export type ShivaUnwindOnBehalfOfProps = CommonTransactionProps & {
-  params: ShivaUnwindProps['params']
+  params: UnwindPropsBase
   onBehalfOf: {
     owner: Address
     deadline: number
@@ -109,7 +58,7 @@ export type ShivaUnwindOnBehalfOfInnerProps = ShivaUnwindOnBehalfOfProps & {
 // Build Single On Behalf Of
 
 export type ShivaBuildSingleOnBehalfOfProps = CommonTransactionProps & {
-  params: ShivaBuildSingleProps['params']
+  params: BuildSinglePropsBase
   onBehalfOf: {
     owner: Address
     deadline: number
@@ -129,7 +78,7 @@ export type SignBuildOnBehalfOfProps = {
   isLong: boolean
   priceLimit: bigint
   brokerId?: number
-  account?: AccountValue;
+  account?: AccountValue
 }
 
 export type SignUnwindOnBehalfOfProps = {
@@ -139,7 +88,7 @@ export type SignUnwindOnBehalfOfProps = {
   fraction: bigint
   priceLimit: bigint
   brokerId?: number
-  account?: AccountValue;
+  account?: AccountValue
 }
 
 export type SignBuildSingleOnBehalfOfProps = {
@@ -151,7 +100,7 @@ export type SignBuildSingleOnBehalfOfProps = {
   unwindPriceLimit: bigint
   buildPriceLimit: bigint
   brokerId?: number
-  account?: AccountValue;
+  account?: AccountValue
 }
 
 export type BuildOnBehalfOfSignature = SignBuildOnBehalfOfProps & {
@@ -191,7 +140,7 @@ export const BUILD_TYPES = {
     { name: 'priceLimit', type: 'uint256' },
     { name: 'nonce', type: 'uint256' },
     { name: 'brokerId', type: 'uint32' },
-  ]
+  ],
 } as const
 
 export const UNWIND_TYPES = {
@@ -215,7 +164,7 @@ export const UNWIND_TYPES = {
     { name: 'priceLimit', type: 'uint256' },
     { name: 'nonce', type: 'uint256' },
     { name: 'brokerId', type: 'uint32' },
-  ]
+  ],
 } as const
 
 export const BUILD_SINGLE_TYPES = {
@@ -241,5 +190,5 @@ export const BUILD_SINGLE_TYPES = {
     { name: 'buildPriceLimit', type: 'uint256' },
     { name: 'nonce', type: 'uint256' },
     { name: 'brokerId', type: 'uint32' },
-  ]
+  ],
 } as const
