@@ -1,14 +1,18 @@
 import { useState } from 'react'
 import { useAccount } from './hooks/useAccount'
-import useSDK from './hooks/useSDK'
 import { Address } from 'viem'
 import { CHAINS, toWei } from 'overlay-sdk'
 import { SHIVA_ADDRESS } from 'overlay-sdk/dist/constants'
-import { BuildOnBehalfOfSignature, BuildSingleOnBehalfOfSignature, UnwindOnBehalfOfSignature } from 'overlay-sdk/dist/shiva/types'
+import {
+  BuildOnBehalfOfSignature,
+  BuildSingleOnBehalfOfSignature,
+  UnwindOnBehalfOfSignature,
+} from 'overlay-sdk/dist/shiva/types'
+import useSDKWithShiva from './hooks/useSDKWithShiva'
 
 const Shiva = () => {
   const { address: account } = useAccount()
-  const sdk = useSDK()
+  const sdk = useSDKWithShiva()
 
   const [collateral, setCollateral] = useState(0.01)
   const [leverage, setLeverage] = useState(2)
@@ -25,27 +29,26 @@ const Shiva = () => {
 
   const [buildOnBehalfOfData, setBuildOnBehalfOfData] = useState<BuildOnBehalfOfSignature>()
   const [unwindOnBehalfOfData, setUnwindOnBehalfOfData] = useState<UnwindOnBehalfOfSignature>()
-  const [buildSingleOnBehalfOfData, setBuildSingleOnBehalfOfData] = useState<BuildSingleOnBehalfOfSignature>()
+  const [buildSingleOnBehalfOfData, setBuildSingleOnBehalfOfData] =
+    useState<BuildSingleOnBehalfOfSignature>()
 
   const shivaBuild = async () => {
     try {
-      const res = await sdk.shiva.build({
+      const res = await sdk.market.build({
         account,
-        params: {
-          ovlMarket: marketAddress as Address,
-          isLong: isLong,
-          collateral: toWei(collateral),
-          leverage: toWei(leverage),
-          priceLimit: (
-            await sdk.trade.getPriceInfo(
-              marketName,
-              toWei(collateral),
-              toWei(leverage),
-              slippage,
-              isLong
-            )
-          ).minPrice as bigint,
-        },
+        marketAddress: marketAddress as Address,
+        isLong: isLong,
+        collateral: toWei(collateral),
+        leverage: toWei(leverage),
+        priceLimit: (
+          await sdk.trade.getPriceInfo(
+            marketName,
+            toWei(collateral),
+            toWei(leverage),
+            slippage,
+            isLong
+          )
+        ).minPrice as bigint,
       })
 
       console.log('Shiva build result', res)
@@ -63,12 +66,11 @@ const Shiva = () => {
 
   const shivaUnwind = async () => {
     try {
-      const res = await sdk.shiva.unwind({
+      const res = await sdk.market.unwind({
         account,
-        params: {
-          ovlMarket: marketAddress as Address,
-          positionId: positionId,
-          fraction: toWei(fraction),
+        marketAddress: marketAddress as Address,
+        positionId: positionId,
+        fraction: toWei(fraction),
           priceLimit: (await sdk.trade.getUnwindPrice(
             marketName,
             SHIVA_ADDRESS[CHAINS.Bartio],
@@ -76,7 +78,6 @@ const Shiva = () => {
             toWei(fraction),
             1
           )) as bigint,
-        },
       })
 
       console.log('Shiva unwind result', res)
@@ -133,9 +134,9 @@ const Shiva = () => {
 
   const shivaEmergencyWithdraw = async () => {
     try {
-      const res = await sdk.shiva.emergencyWithdraw({
+      const res = await sdk.market.emergencyWithdraw({
         account,
-        market: marketAddress as Address,
+        marketAddress: marketAddress as Address,
         positionId: positionId,
         owner: account as Address,
       })
@@ -267,11 +268,11 @@ const Shiva = () => {
         return
       }
       console.log('buildOnBehalfOfData', buildOnBehalfOfData)
-      
+
       const res = await sdk.shiva.buildOnBehalfOf({
         account,
         params: {
-          ovlMarket: buildOnBehalfOfData.ovlMarket,
+          marketAddress: buildOnBehalfOfData.ovlMarket,
           // brokerId: buildOnBehalfOfData.brokerId, this is optional
           isLong: buildOnBehalfOfData.isLong,
           collateral: buildOnBehalfOfData.collateral,
@@ -306,7 +307,7 @@ const Shiva = () => {
       const res = await sdk.shiva.unwindOnBehalfOf({
         account,
         params: {
-          ovlMarket: unwindOnBehalfOfData.ovlMarket,
+          marketAddress: unwindOnBehalfOfData.ovlMarket,
           brokerId: unwindOnBehalfOfData.brokerId,
           positionId: unwindOnBehalfOfData.positionId,
           fraction: unwindOnBehalfOfData.fraction,
@@ -509,9 +510,7 @@ const Shiva = () => {
       </div>
 
       <div>
-        <label style={{ fontSize: '15px' }}>
-          Signature: {signature}
-        </label>
+        <label style={{ fontSize: '15px' }}>Signature: {signature}</label>
       </div>
 
       <br />
