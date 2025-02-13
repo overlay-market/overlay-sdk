@@ -195,6 +195,15 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   public async unwindMultiple(
     props: UnwindMultipleProps
   ) {
+    if (this.core.useShiva) {
+      return this.sdk.shiva.unwindMultiple(props);
+    }
+    return this._unwindMultiple(props);
+  }
+
+  public async _unwindMultiple(
+    props: UnwindMultipleProps
+  ) {
     this.core.useWeb3Provider();
     const { callback, account, slippage, unwindPercentage, ...rest } = await this.parseUnwindMultipleProps(props);
     const decimals = 2;

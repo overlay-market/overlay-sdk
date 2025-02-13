@@ -12,7 +12,7 @@ import { OverlaySDKModule } from '../common/class-primitives/sdk-module'
 import { OverlaySDKCommonProps, TransactionOptions, TransactionResult } from '../core/types'
 import { OverlaySDK } from '../sdk'
 import { ShivaABI } from './abis/Shiva'
-import { CHAINS, ERROR_CODE, invariant, NOOP } from '../common'
+import { CHAINS, ERROR_CODE, invariant, NOOP, SDKError, toWei } from '../common'
 import { SHIVA_ADDRESS } from '../constants'
 import {
   BUILD_SINGLE_TYPES,
@@ -34,7 +34,8 @@ import {
   UNWIND_TYPES,
   UnwindOnBehalfOfSignature,
 } from './types'
-import { BuildInnerProps, BuildProps, BuildResult, EmergencyWithdrawInnerProps, EmergencyWithdrawProps, UnwindInnerProps, UnwindProps } from '../markets/types'
+import { BuildInnerProps, BuildProps, BuildResult, EmergencyWithdrawInnerProps, EmergencyWithdrawProps, UnwindInnerProps, UnwindMultipleInnerProps, UnwindMultipleProps, UnwindProps } from '../markets/types'
+import { UnwindState, UnwindStateData, UnwindStateSuccess } from '../trade'
 
 export class OverlaySDKShiva extends OverlaySDKModule {
   private sdk: OverlaySDK
@@ -134,6 +135,89 @@ export class OverlaySDKShiva extends OverlaySDKModule {
         contract.estimateGas.unwind(txArguments, options),
       sendTransaction: (options: TransactionOptions) => contract.write.unwind(txArguments, options),
     })
+  }
+
+  public async unwindMultiple(props: UnwindMultipleProps) {
+    this.core.useWeb3Provider()
+    const { callback, account, slippage, unwindPercentage, ...rest } = await this.parseUnwindMultipleProps(props);
+    const decimals = 2;
+    const unwindCalls = [];
+
+    for (const { marketAddress, positionId } of props.positions) {
+      unwindCalls.push(this.sdk.trade.getUnwindState(
+        marketAddress,
+        SHIVA_ADDRESS[this.core.chainId as CHAINS],
+        positionId,
+        unwindPercentage,
+        slippage,
+        decimals,
+      ));
+    }
+
+    let result: UnwindStateData[] = [];
+
+    try {
+      result = await Promise.all(unwindCalls);
+
+      if (result.length !== props.positions.length) {
+        throw new Error("Length of result does not match length of positions");
+      }
+    } catch (error) {
+      throw new SDKError({
+        code: ERROR_CODE.TRANSACTION_ERROR,
+        message: "Unwind multiple failed",
+        error,
+      });
+    }
+
+    for (const { unwindState, positionId } of result) {
+      const positionsIdWithError: { [key: number]: UnwindState } = {}
+
+      if (unwindState !== UnwindState.Unwind) {
+        positionsIdWithError[positionId] = unwindState;
+      }
+
+      if (Object.keys(positionsIdWithError).length > 0) {
+        throw new SDKError({
+          code: ERROR_CODE.TRANSACTION_ERROR,
+          message: "Unwind multiple failed",
+          error: positionsIdWithError,
+        });
+      }
+    }
+
+    const transactions = [];
+    const contract = await this.getShivaContract();
+
+    for (let i = 0; i < result.length; i++) {
+      const { marketAddress, positionId, priceLimit } = result[i] as UnwindStateSuccess;
+
+      const txArguments = [
+        {
+          ovlMarket: marketAddress as Address,
+          brokerId: rest.brokerId ?? this.core.brokerId,
+          positionId: BigInt(positionId),
+          fraction: toWei(unwindPercentage),
+          priceLimit: priceLimit,
+        },
+      ] as const
+
+      transactions.push(
+        this.core.performTransaction({
+          ...rest,
+          account,
+          callback,
+          getGasLimit: (options: TransactionOptions) =>
+            contract.estimateGas.unwind(txArguments, options),
+          sendTransaction: (options: TransactionOptions) =>
+            contract.write.unwind(txArguments, options),
+        })
+      );
+    }
+  
+    const results = await Promise.allSettled(transactions);
+
+    return results;
   }
 
   // Build Single
@@ -350,6 +434,14 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       account: await this.core.useAccount(props.account),
       callback: props.callback ?? NOOP,
     }
+  }
+
+  private async parseUnwindMultipleProps(props: UnwindMultipleProps): Promise<UnwindMultipleInnerProps> {
+    return {
+      ...props,
+      account: await this.core.useAccount(props.account),
+      callback: props.callback ?? NOOP,
+    };
   }
 
   private submitParse(receipt: TransactionReceipt): BuildResult {

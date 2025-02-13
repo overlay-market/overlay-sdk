@@ -24,6 +24,7 @@ export type UnwindMultiplePropsBase = {
   }[]
   slippage: number
   unwindPercentage: number
+  brokerId?: number
 }
 
 export type EmergencyWithdrawPropsBase = {
