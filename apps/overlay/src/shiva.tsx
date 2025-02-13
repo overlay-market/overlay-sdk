@@ -26,6 +26,7 @@ const Shiva = () => {
   const [unwindHash, setUnwindHash] = useState('')
   const [amountToApprove, setAmountToApprove] = useState(0)
   const [signature, setSignature] = useState('')
+  const [positionIds, setPositionIds] = useState<number[]>([])
 
   const [buildOnBehalfOfData, setBuildOnBehalfOfData] = useState<BuildOnBehalfOfSignature>()
   const [unwindOnBehalfOfData, setUnwindOnBehalfOfData] = useState<UnwindOnBehalfOfSignature>()
@@ -365,6 +366,23 @@ const Shiva = () => {
     }
   }
 
+  const shivaUnwindMultiple = async () => {
+    try {
+      const res = await sdk.market.unwindMultiple({
+        positions: positionIds.map((id) => ({
+          marketAddress: marketAddress as Address,
+          positionId: id,
+        })),
+        slippage: slippage,
+        unwindPercentage: 1,
+      })
+
+      console.log('Shiva unwind multiple result', res)
+    } catch (error) {
+      console.error('Error in shivaUnwindMultiple', error)
+    }
+  }
+
   return (
     <div>
       <h1>Shiva</h1>
@@ -511,6 +529,17 @@ const Shiva = () => {
 
       <div>
         <label style={{ fontSize: '15px' }}>Signature: {signature}</label>
+      </div>
+
+      <div>
+        <label style={{ fontSize: '15px' }}>
+          Position IDs:
+          <input type="text" value={positionIds.join(',')} onChange={(e) => setPositionIds(e.target.value.split(',').map((id) => Number(id)))} />
+        </label>
+      </div>
+
+      <div>
+        <button onClick={shivaUnwindMultiple}>Shiva Unwind Multiple</button>
       </div>
 
       <br />
