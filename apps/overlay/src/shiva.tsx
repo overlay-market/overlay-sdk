@@ -27,6 +27,7 @@ const Shiva = () => {
   const [amountToApprove, setAmountToApprove] = useState(0)
   const [signature, setSignature] = useState('')
   const [positionIds, setPositionIds] = useState<number[]>([])
+  const [nonceToCancel, setNonceToCancel] = useState(0n)
 
   const [buildOnBehalfOfData, setBuildOnBehalfOfData] = useState<BuildOnBehalfOfSignature>()
   const [unwindOnBehalfOfData, setUnwindOnBehalfOfData] = useState<UnwindOnBehalfOfSignature>()
@@ -386,6 +387,19 @@ const Shiva = () => {
     }
   }
 
+  const cancelNonce = async () => {
+    try {
+      const res = await sdk.shiva.cancelNonce({
+        account,
+        nonce: nonceToCancel,
+      })
+
+      console.log('Shiva cancel nonce result', res)
+    } catch (error) {
+      console.error('Error in cancelNonce', error)
+    }
+  }
+
   return (
     <div>
       <h1>Shiva</h1>
@@ -543,6 +557,17 @@ const Shiva = () => {
 
       <div>
         <button onClick={shivaUnwindMultiple}>Shiva Unwind Multiple</button>
+      </div>
+
+      <div>
+        <label style={{ fontSize: '15px' }}>
+          Nonce to cancel:
+          <input type="number" value={Number(nonceToCancel)} onChange={(e) => setNonceToCancel(BigInt(e.target.value))} />
+        </label>
+      </div>
+
+      <div>
+        <button onClick={cancelNonce}>Cancel Nonce</button>
       </div>
 
       <br />
