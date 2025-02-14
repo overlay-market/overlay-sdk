@@ -33,6 +33,8 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
   readonly chain: Chain;
   readonly rpcProvider: PublicClient;
   readonly logMode: LOG_MODE;
+  readonly brokerId: number;
+  readonly useShiva: boolean;
 
   public get web3Provider(): WalletClient | undefined {
     return this.#web3Provider;
@@ -43,7 +45,8 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
     this.chainId = props.chainId;
     this.rpcUrls = props.rpcUrls;
     this.logMode = props.logMode ?? "info";
-
+    this.brokerId = props.brokerId ?? 0;
+    this.useShiva = props.useShiva ?? false;
     const { chain, rpcProvider, web3Provider } = this.init(props);
 
     this.chain = chain;
