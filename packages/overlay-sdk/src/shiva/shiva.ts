@@ -484,6 +484,19 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     }
   }
 
+  // generate a random bigint nonce from 0 to 2^256
+  private randomBigInt() {
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+
+    let result = BigInt(0);
+    for (const num of array) {
+        result = (result << BigInt(8)) + BigInt(num);
+    }
+    
+    return result;
+}
+
   public async signBuildOnBehalfOf(
     props: SignBuildOnBehalfOfProps
   ): Promise<BuildOnBehalfOfSignature> {
@@ -494,16 +507,14 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       leverage,
       isLong,
       priceLimit,
+      nonce,
       account: accountProp,
     } = props
 
     const web3Provider = this.core.useWeb3Provider()
     const account = await this.core.useAccount(accountProp)
-
-    const contract = await this.getShivaContract()
+    
     const domain = await this.getDomain()
-
-    const nonce = await contract.read.nonces([account.address])
     const brokerId = props.brokerId ?? this.core.brokerId
 
     const message = {
@@ -513,7 +524,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       leverage,
       isLong,
       priceLimit,
-      nonce,
+      nonce: nonce ?? this.randomBigInt(),
       brokerId,
     }
 
@@ -531,15 +542,12 @@ export class OverlaySDKShiva extends OverlaySDKModule {
   public async signUnwindOnBehalfOf(
     props: SignUnwindOnBehalfOfProps
   ): Promise<UnwindOnBehalfOfSignature> {
-    const { ovlMarket, deadline, positionId, fraction, priceLimit, account: accountProp } = props
+    const { ovlMarket, deadline, positionId, fraction, priceLimit, nonce, account: accountProp } = props
 
     const web3Provider = this.core.useWeb3Provider()
     const account = await this.core.useAccount(accountProp)
 
-    const contract = await this.getShivaContract()
     const domain = await this.getDomain()
-
-    const nonce = await contract.read.nonces([account.address])
     const brokerId = props.brokerId ?? this.core.brokerId
 
     const message = {
@@ -548,7 +556,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       positionId,
       fraction,
       priceLimit,
-      nonce,
+      nonce: nonce ?? this.randomBigInt(),
       brokerId,
     }
 
@@ -574,16 +582,14 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       previousPositionId,
       unwindPriceLimit,
       buildPriceLimit,
+      nonce,
       account: accountProp,
     } = props
 
     const web3Provider = this.core.useWeb3Provider()
     const account = await this.core.useAccount(accountProp)
 
-    const contract = await this.getShivaContract()
     const domain = await this.getDomain()
-
-    const nonce = await contract.read.nonces([account.address])
     const brokerId = props.brokerId ?? this.core.brokerId
 
     const message = {
@@ -594,7 +600,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       previousPositionId,
       unwindPriceLimit,
       buildPriceLimit,
-      nonce,
+      nonce: nonce ?? this.randomBigInt(),
       brokerId,
     }
 

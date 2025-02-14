@@ -32,6 +32,7 @@ export type ShivaBuildOnBehalfOfProps = CommonTransactionProps & {
   onBehalfOf: {
     owner: Address
     deadline: number
+    nonce: bigint
     signature: `0x${string}`
   }
 }
@@ -47,6 +48,7 @@ export type ShivaUnwindOnBehalfOfProps = CommonTransactionProps & {
   onBehalfOf: {
     owner: Address
     deadline: number
+    nonce: bigint
     signature: `0x${string}`
   }
 }
@@ -62,6 +64,7 @@ export type ShivaBuildSingleOnBehalfOfProps = CommonTransactionProps & {
   onBehalfOf: {
     owner: Address
     deadline: number
+    nonce: bigint
     signature: `0x${string}`
   }
 }
@@ -78,6 +81,7 @@ export type SignBuildOnBehalfOfProps = {
   isLong: boolean
   priceLimit: bigint
   brokerId?: number
+  nonce?: bigint
   account?: AccountValue
 }
 
@@ -88,6 +92,7 @@ export type SignUnwindOnBehalfOfProps = {
   fraction: bigint
   priceLimit: bigint
   brokerId?: number
+  nonce?: bigint
   account?: AccountValue
 }
 
@@ -100,22 +105,26 @@ export type SignBuildSingleOnBehalfOfProps = {
   unwindPriceLimit: bigint
   buildPriceLimit: bigint
   brokerId?: number
+  nonce?: bigint
   account?: AccountValue
 }
 
 export type BuildOnBehalfOfSignature = SignBuildOnBehalfOfProps & {
   signature: `0x${string}`
   owner: Address
+  nonce: bigint
 }
 
 export type UnwindOnBehalfOfSignature = SignUnwindOnBehalfOfProps & {
   signature: `0x${string}`
   owner: Address
+  nonce: bigint
 }
 
 export type BuildSingleOnBehalfOfSignature = SignBuildSingleOnBehalfOfProps & {
   signature: `0x${string}`
   owner: Address
+  nonce: bigint
 }
 
 export const BUILD_TYPES = {
