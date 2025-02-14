@@ -75,7 +75,7 @@ export const OVL_ADDRESS: AddressMap = {
 export const SHIVA_ADDRESS: AddressMap = {
   [CHAINS.ArbitrumSepolia]: zeroAddress,
   [CHAINS.Imola]: zeroAddress,
-  [CHAINS.Bartio]: '0x7f681Ffd2842885B6eE02b3827Fa1e8F74218667',
+  [CHAINS.Bartio]: '0x464748df2135B372b7E18CB177297353Ddb0AA8F',
 };
 
 interface Network {
