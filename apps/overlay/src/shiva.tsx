@@ -283,6 +283,7 @@ const Shiva = () => {
         onBehalfOf: {
           deadline: buildOnBehalfOfData.deadline,
           owner: buildOnBehalfOfData.owner as Address,
+          nonce: buildOnBehalfOfData.nonce,
           signature: buildOnBehalfOfData.signature as `0x${string}`,
         },
       })
@@ -317,6 +318,7 @@ const Shiva = () => {
         onBehalfOf: {
           deadline: unwindOnBehalfOfData.deadline,
           owner: unwindOnBehalfOfData.owner as Address,
+          nonce: unwindOnBehalfOfData.nonce,
           signature: unwindOnBehalfOfData.signature as `0x${string}`,
         },
       })
@@ -352,6 +354,7 @@ const Shiva = () => {
         onBehalfOf: {
           deadline: buildSingleOnBehalfOfData.deadline,
           owner: buildSingleOnBehalfOfData.owner as Address,
+          nonce: buildSingleOnBehalfOfData.nonce,
           signature: buildSingleOnBehalfOfData.signature as `0x${string}`,
         },
       })
