@@ -68,6 +68,7 @@ export const ShivaABI = [
         "components": [
           { "name": "owner", "type": "address", "internalType": "address" },
           { "name": "deadline", "type": "uint48", "internalType": "uint48" },
+          { "name": "nonce", "type": "uint256", "internalType": "uint256" },
           { "name": "signature", "type": "bytes", "internalType": "bytes" }
         ]
       }
@@ -121,6 +122,7 @@ export const ShivaABI = [
         "components": [
           { "name": "owner", "type": "address", "internalType": "address" },
           { "name": "deadline", "type": "uint48", "internalType": "uint48" },
+          { "name": "nonce", "type": "uint256", "internalType": "uint256" },
           { "name": "signature", "type": "bytes", "internalType": "bytes" }
         ]
       }
@@ -148,6 +150,13 @@ export const ShivaABI = [
       }
     ],
     "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "cancelNonce",
+    "inputs": [{ "name": "nonce", "type": "uint256", "internalType": "uint256" }],
+    "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
@@ -187,24 +196,10 @@ export const ShivaABI = [
   },
   {
     "type": "function",
-    "name": "nonces",
-    "inputs": [{ "name": "", "type": "address", "internalType": "address" }],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "overlayMarketLiquidateCallback",
     "inputs": [{ "name": "positionId", "type": "uint256", "internalType": "uint256" }],
     "outputs": [],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "ovlState",
-    "inputs": [],
-    "outputs": [{ "name": "", "type": "address", "internalType": "contract IOverlayV1State" }],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -291,16 +286,6 @@ export const ShivaABI = [
           { "name": "fraction", "type": "uint256", "internalType": "uint256" },
           { "name": "priceLimit", "type": "uint256", "internalType": "uint256" }
         ]
-      },
-      {
-        "name": "onBehalfOf",
-        "type": "tuple",
-        "internalType": "struct ShivaStructs.OnBehalfOf",
-        "components": [
-          { "name": "owner", "type": "address", "internalType": "address" },
-          { "name": "deadline", "type": "uint48", "internalType": "uint48" },
-          { "name": "signature", "type": "bytes", "internalType": "bytes" }
-        ]
       }
     ],
     "outputs": [],
@@ -320,6 +305,17 @@ export const ShivaABI = [
           { "name": "positionId", "type": "uint256", "internalType": "uint256" },
           { "name": "fraction", "type": "uint256", "internalType": "uint256" },
           { "name": "priceLimit", "type": "uint256", "internalType": "uint256" }
+        ]
+      },
+      {
+        "name": "onBehalfOf",
+        "type": "tuple",
+        "internalType": "struct ShivaStructs.OnBehalfOf",
+        "components": [
+          { "name": "owner", "type": "address", "internalType": "address" },
+          { "name": "deadline", "type": "uint48", "internalType": "uint48" },
+          { "name": "nonce", "type": "uint256", "internalType": "uint256" },
+          { "name": "signature", "type": "bytes", "internalType": "bytes" }
         ]
       }
     ],
@@ -345,8 +341,11 @@ export const ShivaABI = [
   },
   {
     "type": "function",
-    "name": "validMarkets",
-    "inputs": [{ "name": "", "type": "address", "internalType": "address" }],
+    "name": "usedNonces",
+    "inputs": [
+      { "name": "", "type": "address", "internalType": "address" },
+      { "name": "", "type": "uint256", "internalType": "uint256" }
+    ],
     "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
     "stateMutability": "view"
   },
@@ -394,6 +393,15 @@ export const ShivaABI = [
     "name": "MarketValidated",
     "inputs": [
       { "name": "market", "type": "address", "indexed": true, "internalType": "address" }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "NonceCancelled",
+    "inputs": [
+      { "name": "owner", "type": "address", "indexed": true, "internalType": "address" },
+      { "name": "nonce", "type": "uint256", "indexed": false, "internalType": "uint256" }
     ],
     "anonymous": false
   },
@@ -479,6 +487,7 @@ export const ShivaABI = [
     "anonymous": false
   },
   { "type": "error", "name": "ExpiredDeadline", "inputs": [] },
+  { "type": "error", "name": "InvalidNonce", "inputs": [] },
   { "type": "error", "name": "InvalidSignature", "inputs": [] },
   { "type": "error", "name": "MarketNotValid", "inputs": [] },
   { "type": "error", "name": "NotPositionOwner", "inputs": [] }
