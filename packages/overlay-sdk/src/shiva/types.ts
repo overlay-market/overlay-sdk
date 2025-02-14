@@ -11,6 +11,10 @@ export type ShivaApproveProps = CommonTransactionProps & {
   amount: bigint
 }
 
+export type ShivaCancelNonceProps = CommonTransactionProps & {
+  nonce: bigint
+}
+
 export type ShivaApproveInnerProps = ShivaApproveProps & {
   account: JsonRpcAccount
 }

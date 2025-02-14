@@ -26,6 +26,7 @@ import {
   ShivaBuildSingleOnBehalfOfInnerProps,
   ShivaBuildSingleOnBehalfOfProps,
   ShivaBuildSingleProps,
+  ShivaCancelNonceProps,
   ShivaUnwindOnBehalfOfInnerProps,
   ShivaUnwindOnBehalfOfProps,
   SignBuildOnBehalfOfProps,
@@ -77,6 +78,23 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       account: account,
       amount: rest.amount,
       to: address,
+    })
+  }
+
+  public async cancelNonce(props: ShivaCancelNonceProps): Promise<TransactionResult> {
+    this.core.useWeb3Provider()
+    const { account, ...rest } = props
+
+    const contract = await this.getShivaContract()
+
+    const txArguments = [rest.nonce] as const
+
+    return this.core.performTransaction({
+      ...rest,
+      account,
+      getGasLimit: (options: TransactionOptions) =>
+        contract.estimateGas.cancelNonce(txArguments, options),
+      sendTransaction: (options: TransactionOptions) => contract.write.cancelNonce(txArguments, options),
     })
   }
 
