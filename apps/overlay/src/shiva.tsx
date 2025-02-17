@@ -570,6 +570,14 @@ const Shiva = () => {
         <button onClick={cancelNonce}>Cancel Nonce</button>
       </div>
 
+      <div>
+        <label style={{ fontSize: '15px' }}>
+          Emergency Withdraw:
+          <button onClick={shivaEmergencyWithdraw}>Shiva Emergency Withdraw</button>
+        </label>
+      </div>
+      
+
       <br />
       <br />
       <br />
