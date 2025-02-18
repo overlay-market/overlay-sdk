@@ -1,20 +1,10 @@
-import { Address, JsonRpcAccount } from "viem";
+import { JsonRpcAccount } from "viem";
 import { CommonTransactionProps } from "../core/types";
+import { BuildPropsBase, EmergencyWithdrawPropsBase, UnwindMultiplePropsBase, UnwindPropsBase } from "../common/types";
 
-export type BuildProps = CommonTransactionProps & {
-  marketAddress: Address;
-  collateral: bigint;
-  leverage: bigint;
-  isLong: boolean;
-  priceLimit: bigint;
-};
+export type BuildProps = CommonTransactionProps & BuildPropsBase
 
-export type BuildInnerProps = CommonTransactionProps & {
-  marketAddress: Address;
-  collateral: bigint;
-  leverage: bigint;
-  isLong: boolean;
-  priceLimit: bigint;
+export type BuildInnerProps = BuildProps & {
   account: JsonRpcAccount;
 };
 
@@ -22,47 +12,20 @@ export type BuildResult = {
   positionId: bigint;
 };
 
-export type UnwindProps = CommonTransactionProps & {
-  marketAddress: Address;
-  positionId: bigint;
-  fraction: bigint;
-  priceLimit: bigint;
-};
+export type UnwindProps = CommonTransactionProps & UnwindPropsBase
 
-export type UnwindMultipleProps = CommonTransactionProps & {
- positions: {
-    marketAddress: Address;
-    positionId: number;
-  }[];
-  slippage: number;
-  unwindPercentage: number;
-};
-
-export type UnwindInnerProps = CommonTransactionProps & {
-  marketAddress: Address;
-  positionId: bigint;
-  fraction: bigint;
-  priceLimit: bigint;
+export type UnwindInnerProps = UnwindProps & {
   account: JsonRpcAccount;
 };
 
-export type UnwindMultipleInnerProps = CommonTransactionProps & {
-  positions: {
-    marketAddress: Address;
-    positionId: number;
-  }[];
-  slippage: number;
-  unwindPercentage: number;
+export type UnwindMultipleProps = CommonTransactionProps & UnwindMultiplePropsBase
+
+export type UnwindMultipleInnerProps = UnwindMultipleProps & {
   account: JsonRpcAccount;
 };
 
-export type EmergencyWithdrawProps = CommonTransactionProps & {
-  marketAddress: Address;
-  positionId: bigint;
-};
+export type EmergencyWithdrawProps = CommonTransactionProps & EmergencyWithdrawPropsBase
 
-export type EmergencyWithdrawInnerProps = CommonTransactionProps & {
-  marketAddress: Address;
-  positionId: bigint;
+export type EmergencyWithdrawInnerProps = EmergencyWithdrawProps & {
   account: JsonRpcAccount;
 };

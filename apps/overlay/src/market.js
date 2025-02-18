@@ -95,11 +95,11 @@ const Market = () => {
     }
   }
 
-  // OV token methods
+  // OVL token methods
 
   const checkBalance = async () => {
     try {
-      const balance = await sdk.ov.balance(account)
+      const balance = await sdk.ovl.balance(account)
       console.log("Balance: ", balance)
     } catch (error) {
       console.error('Error in checking balance', error)
@@ -108,7 +108,7 @@ const Market = () => {
 
   const transfer = async () => {
     try {
-      const result = await sdk.ov.transfer({
+      const result = await sdk.ovl.transfer({
         account,
         amount: '0.00000000001',
         to: '0x33337473995D1E5Ad4D3290DbCe2C596e9558894',
@@ -121,7 +121,7 @@ const Market = () => {
 
   const populateTransfer = async () => {
     try {
-      const result = await sdk.ov.populateTransfer({
+      const result = await sdk.ovl.populateTransfer({
         account,
         amount: '0.00000000001',
         to: '0x33337473995D1E5Ad4D3290DbCe2C596e9558894',
@@ -135,7 +135,7 @@ const Market = () => {
 
   const simulateTransfer = async () => {
     try {
-      const result = await sdk.ov.simulateTransfer({
+      const result = await sdk.ovl.simulateTransfer({
         account,
         amount: '0.00000000001',
         to: '0x33337473995D1E5Ad4D3290DbCe2C596e9558894',
@@ -149,7 +149,7 @@ const Market = () => {
 
   const approveMarket = async () => {
     try {
-      const result = await sdk.ov.approve({
+      const result = await sdk.ovl.approve({
         account,
         amount: '0.001',
         to: marketAddress,
@@ -162,7 +162,7 @@ const Market = () => {
 
   const populateApproveMarket = async () => {
     try {
-      const result = await sdk.ov.populateApprove({
+      const result = await sdk.ovl.populateApprove({
         account,
         amount: '0.001',
         to: marketAddress,
@@ -175,7 +175,7 @@ const Market = () => {
 
   const simulateApproveMarket = async () => {
     try {
-      const result = await sdk.ov.simulateApprove({
+      const result = await sdk.ovl.simulateApprove({
         account,
         amount: '0.001',
         to: marketAddress,
@@ -188,7 +188,7 @@ const Market = () => {
 
   const totalSupply = async () => {
     try {
-      const result = await sdk.ov.totalSupply()
+      const result = await sdk.ovl.totalSupply()
       console.log("Total supply: ", result)
     } catch (error) {
       console.error('Error in getting total supply', error)
@@ -197,7 +197,7 @@ const Market = () => {
 
   return (
     <div>
-      <h3>OV token methods</h3>
+      <h3>ovl token methods</h3>
       <button onClick={checkBalance}>Check balance</button>
       <br />
       <button onClick={transfer}>Transfer</button>

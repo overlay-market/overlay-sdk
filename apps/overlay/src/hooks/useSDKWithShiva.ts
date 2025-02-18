@@ -3,7 +3,7 @@ import { useMultichainContext } from '../state/multichain/useMultichainContext';
 import { OverlaySDK, OverlaySDKCore } from 'overlay-sdk';
 import { CHAINS, DEFAULT_CHAINID,  VIEM_CHAINS } from '../constants/chains';
 
-export default function useSDK() {
+export default function useSDKWithShiva() {
   const { chainId } = useMultichainContext();
 
   const rpcProvider = createPublicClient({
@@ -15,7 +15,8 @@ export default function useSDK() {
     chainId: chainId ? chainId as CHAINS : DEFAULT_CHAINID as number,
     rpcProvider,
     web3Provider: OverlaySDKCore.createWeb3Provider(chainId as CHAINS, window.ethereum),
-    brokerId: 99
+    brokerId: 7777,
+    useShiva: true,
   });
   console.log('overlay-sdk initialized with chainId:', chainId)
   return sdk

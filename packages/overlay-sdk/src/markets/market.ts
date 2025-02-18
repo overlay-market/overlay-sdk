@@ -102,6 +102,15 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   public async build(
     props: BuildProps
   ): Promise<TransactionResult<BuildResult>> {
+    if (this.core.useShiva) {
+      return this.sdk.shiva.build(props);
+    }
+    return this._build(props);
+  }
+
+  private async _build(
+    props: BuildProps
+  ): Promise<TransactionResult<BuildResult>> {
     this.core.useWeb3Provider();
     const { callback, account, marketAddress, ...rest } = await this.parseBuildProps(props);
 
@@ -156,6 +165,15 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   public async unwind(
     props: UnwindProps
   ): Promise<TransactionResult> {
+    if (this.core.useShiva) {
+      return this.sdk.shiva.unwind(props);
+    }
+    return this._unwind(props);
+  }
+
+  private async _unwind(
+    props: UnwindProps
+  ): Promise<TransactionResult> {
     this.core.useWeb3Provider();
     const { callback, account, marketAddress, ...rest } = await this.parseUnwindProps(props);
 
@@ -175,6 +193,15 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   }
 
   public async unwindMultiple(
+    props: UnwindMultipleProps
+  ) {
+    if (this.core.useShiva) {
+      return this.sdk.shiva.unwindMultiple(props);
+    }
+    return this._unwindMultiple(props);
+  }
+
+  public async _unwindMultiple(
     props: UnwindMultipleProps
   ) {
     this.core.useWeb3Provider();
@@ -285,6 +312,15 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   // @Logger('Call:')
   // @ErrorHandler()
   public async emergencyWithdraw(
+    props: EmergencyWithdrawProps
+  ): Promise<TransactionResult> {
+    if (this.core.useShiva) {
+      return this.sdk.shiva.emergencyWithdraw(props);
+    }
+    return this._emergencyWithdraw(props);
+  }
+
+  private async _emergencyWithdraw(
     props: EmergencyWithdrawProps
   ): Promise<TransactionResult> {
     this.core.useWeb3Provider();
