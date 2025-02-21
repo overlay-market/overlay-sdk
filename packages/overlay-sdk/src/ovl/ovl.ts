@@ -11,7 +11,7 @@ import { getTotalSupplyDayHistory } from "../subgraph";
 
 export class OverlaySDKOverlayToken extends OverlaySDKModule {
   public async contractAddress() {
-    const chainId = await this.core.rpcProvider.getChainId();
+    const chainId = this.core.chainId;
     invariant(chainId in CHAINS, 'Unsupported chainId');
     return OVL_ADDRESS[chainId as CHAINS];
   }
