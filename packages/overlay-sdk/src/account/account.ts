@@ -27,17 +27,12 @@ export class OverlaySDKAccountDetails extends OverlaySDKModule {
 
     const cacheKey = `${walletClient}-${chainId}`;
 
-    let overviewData: OverviewData
-
-    if (this.overviewCache[cacheKey] && !refreshData) {
+    if (!refreshData && this.overviewCache[cacheKey]) 
       const cachedData = this.overviewCache[cacheKey];
-      const isCacheValid = Date.now() - cachedData.lastUpdated < 3 * 60 * 1000; // 3 minutes
-      if (isCacheValid) {
-        overviewData = cachedData.data;
-        return overviewData;
-      } else {
-        delete this.overviewCache[cacheKey];
+      if (Date.now() - cachedData.lastUpdated < 3 * 60 * 1000) { // 3 minutos
+        return cachedData.data;
       }
+      delete this.overviewCache[cacheKey];
     }
 
     const [unwindPositions, liquidatedPositions, openPositions, numberOfPositions] = await Promise.all([
@@ -75,7 +70,7 @@ export class OverlaySDKAccountDetails extends OverlaySDKModule {
       unrealizedPnL += position.unrealizedPnL ? parseFloat(position.unrealizedPnL as string) : 0
     })
 
-    overviewData = {
+    const overviewData: OverviewData = {
       numberOfOpenPositions: Number(numberOfPositions?.account?.numberOfOpenPositions ?? 0),
       realizedPnl: numberOfPositions?.account?.realizedPnl ? formatBigNumber(numberOfPositions.account.realizedPnl, 18, 6) : '0',
       totalValueLocked: totalValueLocked.toFixed(2),
