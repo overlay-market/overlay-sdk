@@ -92,19 +92,17 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
   }
 
   public async getMarketDetails(marketId: string, noCaching: boolean = false) {
-    const chainId = this.core.chainId
+    const chainId = this.core.chainId;
     invariant(chainId in CHAINS, "Unsupported chainId");
 
-    // check if we have the data in cache and if it's not too old
     if (!noCaching && this.marketDetailsCache[marketId]) {
       const cachedData = this.marketDetailsCache[marketId];
-      const isCacheValid = Date.now() - cachedData.lastUpdated < 3600 * 1000; // 1 hour
-      if (isCacheValid) {
+      if (Date.now() - cachedData.lastUpdated < 60 * 60 * 1000) { // 1 hour
         return cachedData.data;
       }
+      delete this.marketDetailsCache[marketId];
     }
 
-    // if not in cache or cache is too old or noCaching is true, fetch the data
     const marketDetails = await getMarketDetailsById(marketId, chainId)
     invariant(marketDetails, "Market not found");
 
@@ -126,18 +124,16 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
   }
 
   public async getActiveMarkets(noCaching: boolean = false) {
-    const chainId = this.core.chainId
+    const chainId = this.core.chainId;
     invariant(chainId in CHAINS, "Unsupported chainId");
 
-    // check if we have the data in cache and if it's not too old
     if (!noCaching && this.activeMarketsCache) {
-      const isCacheValid = Date.now() - this.activeMarketsCache.lastUpdated < 3600 * 1000; // 1 hour
-      if (isCacheValid) {
+      if (Date.now() - this.activeMarketsCache.lastUpdated < 60 * 60 * 1000) { // 1 hour
         return this.activeMarketsCache.data;
       }
+      this.activeMarketsCache = undefined;
     }
 
-    // if not in cache or cache is too old or noCaching is true, fetch the data
     const marketDetails = await getMarketsDetailsByChainId(chainId)
     const marketDetailsValues = marketDetails && Array.from(marketDetails?.values())
 
@@ -238,10 +234,11 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
     const chainId = this.core.chainId
     invariant(chainId in CHAINS, "Unsupported chainId");
 
-    const transformedMarketsDataPromises = activeMarkets.map(async (market: ExpandedMarketData) => {
+    const transformedMarketsData = activeMarkets.map((market: ExpandedMarketData) => {
       const marketAddress = market.id as Address
 
-      const {oiLong, oiShort} = await this.sdk.state.getMarketState(V1_PERIPHERY_ADDRESS[chainId], marketAddress)
+      const oiLong = BigInt(market.oiLong || 0)
+      const oiShort = BigInt(market.oiShort || 0)
 
       const shortPercentageOfTotalOi = (Number(oiShort) / (Number(oiLong) + Number(oiShort)) * 100).toFixed(2)
       const longPercentageOfTotalOi = (Number(oiLong) / (Number(oiLong) + Number(oiShort)) * 100).toFixed(2)
@@ -259,8 +256,6 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
         priceCurrency: market.priceCurrency,
       };
     });
-
-    const transformedMarketsData = await Promise.all(transformedMarketsDataPromises);
 
     return transformedMarketsData || [];
   }
