@@ -52,14 +52,16 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
 
     let liquidatedPositionsData: LiquidatedPositionData[] = [];
 
-    if (this.liquidatedPositionsCache[cacheKey] && !refreshData) {
+    if (!refreshData && this.liquidatedPositionsCache[cacheKey]) {
       const cachedData = this.liquidatedPositionsCache[cacheKey];
-      const isCacheValid = Date.now() - cachedData.lastUpdated < 3 * 60 * 1000; // 3 minutes
-      if (isCacheValid) {
+      if (Date.now() - cachedData.lastUpdated < 3 * 60 * 1000) { // 3 minutes
         liquidatedPositionsData = cachedData.data;
-      } else {
-        delete this.liquidatedPositionsCache[cacheKey];
+        return {
+          data: paginate(liquidatedPositionsData, page, pageSize).data,
+          total: liquidatedPositionsData.length
+        };
       }
+      delete this.liquidatedPositionsCache[cacheKey];
     }
 
     if (!this.liquidatedPositionsCache[cacheKey] || refreshData) {

@@ -84,17 +84,18 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     const chainId = this.core.chainId;
 
     const cacheKey = `${walletClient}-${chainId}`;
-
     let openPositionsData: OpenPositionData[] = [];
 
-    if (this.openPositionsCache[cacheKey] && !refreshData) {
+    if (!refreshData && this.openPositionsCache[cacheKey]) {
       const cachedData = this.openPositionsCache[cacheKey];
-      const isCacheValid = Date.now() - cachedData.lastUpdated < 3 * 60 * 1000; // 3 minutes
-      if (isCacheValid) {
+      if (Date.now() - cachedData.lastUpdated < 3 * 60 * 1000) { // 3 minutes
         openPositionsData = cachedData.data;
-      } else {
-        delete this.openPositionsCache[cacheKey];
+        return {
+          data: paginate(openPositionsData, page, pageSize).data,
+          total: openPositionsData.length
+        };
       }
+      delete this.openPositionsCache[cacheKey];
     }
 
     if (!this.openPositionsCache[cacheKey] || refreshData) {
