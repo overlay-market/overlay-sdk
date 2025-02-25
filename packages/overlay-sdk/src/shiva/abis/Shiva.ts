@@ -286,6 +286,17 @@ export const ShivaABI = [
           { "name": "fraction", "type": "uint256", "internalType": "uint256" },
           { "name": "priceLimit", "type": "uint256", "internalType": "uint256" }
         ]
+      },
+      {
+        "name": "onBehalfOf",
+        "type": "tuple",
+        "internalType": "struct ShivaStructs.OnBehalfOf",
+        "components": [
+          { "name": "owner", "type": "address", "internalType": "address" },
+          { "name": "deadline", "type": "uint48", "internalType": "uint48" },
+          { "name": "nonce", "type": "uint256", "internalType": "uint256" },
+          { "name": "signature", "type": "bytes", "internalType": "bytes" }
+        ]
       }
     ],
     "outputs": [],
@@ -305,17 +316,6 @@ export const ShivaABI = [
           { "name": "positionId", "type": "uint256", "internalType": "uint256" },
           { "name": "fraction", "type": "uint256", "internalType": "uint256" },
           { "name": "priceLimit", "type": "uint256", "internalType": "uint256" }
-        ]
-      },
-      {
-        "name": "onBehalfOf",
-        "type": "tuple",
-        "internalType": "struct ShivaStructs.OnBehalfOf",
-        "components": [
-          { "name": "owner", "type": "address", "internalType": "address" },
-          { "name": "deadline", "type": "uint48", "internalType": "uint48" },
-          { "name": "nonce", "type": "uint256", "internalType": "uint256" },
-          { "name": "signature", "type": "bytes", "internalType": "bytes" }
         ]
       }
     ],
