@@ -5,15 +5,12 @@ import { CHAINS, DEFAULT_CHAINID,  VIEM_CHAINS } from '../constants/chains';
 
 export default function useSDK() {
   const { chainId } = useMultichainContext();
-
-  const rpcProvider = createPublicClient({
-    chain: VIEM_CHAINS[chainId as keyof typeof VIEM_CHAINS ?? DEFAULT_CHAINID as keyof typeof VIEM_CHAINS] as Chain,
-    transport: http(),
-  });
   
   const sdk = new OverlaySDK({
     chainId: chainId ? chainId as CHAINS : DEFAULT_CHAINID as number,
-    rpcProvider,
+    rpcUrls: {
+      [CHAINS.Bartio]: 'https://bartio.rpc.berachain.com',
+    },
     web3Provider: OverlaySDKCore.createWeb3Provider(chainId as CHAINS, window.ethereum),
     brokerId: 99
   });

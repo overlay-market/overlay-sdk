@@ -10,6 +10,12 @@ import {
 } from 'overlay-sdk/dist/shiva/types'
 import useSDKWithShiva from './hooks/useSDKWithShiva'
 
+enum TransactionType {
+  Normal = 'Normal',
+  Populate = 'Populate',
+  Simulate = 'Simulate',
+}
+
 const Shiva = () => {
   const { address: account } = useAccount()
   const sdk = useSDKWithShiva()
@@ -34,9 +40,10 @@ const Shiva = () => {
   const [buildSingleOnBehalfOfData, setBuildSingleOnBehalfOfData] =
     useState<BuildSingleOnBehalfOfSignature>()
 
-  const shivaBuild = async () => {
+  const shivaBuild = async (type: TransactionType = TransactionType.Normal) => {
     try {
-      const res = await sdk.market.build({
+      let res: any
+      const buildParams = {
         account,
         marketAddress: marketAddress as Address,
         isLong: isLong,
@@ -51,7 +58,15 @@ const Shiva = () => {
             isLong
           )
         ).minPrice as bigint,
-      })
+      }
+      
+      if (type === TransactionType.Normal) {
+        res = await sdk.market.build(buildParams)
+      } else if (type === TransactionType.Populate) {
+        res = await sdk.market.populateBuild(buildParams)
+      } else if (type === TransactionType.Simulate) {
+        res = await sdk.market.simulateBuild(buildParams)
+      }
 
       console.log('Shiva build result', res)
 
@@ -66,21 +81,30 @@ const Shiva = () => {
     }
   }
 
-  const shivaUnwind = async () => {
+  const shivaUnwind = async (type: TransactionType = TransactionType.Normal) => {
     try {
-      const res = await sdk.market.unwind({
+      let res: any
+      const unwindParams = {
         account,
         marketAddress: marketAddress as Address,
         positionId: positionId,
         fraction: toWei(fraction),
-          priceLimit: (await sdk.trade.getUnwindPrice(
-            marketName,
-            SHIVA_ADDRESS[CHAINS.Bartio],
-            positionId,
-            toWei(fraction),
-            1
-          )) as bigint,
-      })
+        priceLimit: (await sdk.trade.getUnwindPrice(
+          marketName,
+          SHIVA_ADDRESS[CHAINS.Bartio],
+          positionId,
+          toWei(fraction),
+          1
+        )) as bigint,
+      }
+      
+      if (type === TransactionType.Normal) {
+        res = await sdk.market.unwind(unwindParams)
+      } else if (type === TransactionType.Populate) {
+        res = await sdk.market.populateUnwind(unwindParams)
+      } else if (type === TransactionType.Simulate) {
+        res = await sdk.market.simulateUnwind(unwindParams)
+      }
 
       console.log('Shiva unwind result', res)
 
@@ -94,9 +118,10 @@ const Shiva = () => {
     }
   }
 
-  const shivaBuildSingle = async () => {
+  const shivaBuildSingle = async (type: TransactionType = TransactionType.Normal) => {
     try {
-      const res = await sdk.shiva.buildSingle({
+      let res: any
+      const buildSingleParams = {
         account,
         params: {
           ovlMarket: marketAddress as Address,
@@ -120,10 +145,17 @@ const Shiva = () => {
           leverage: toWei(leverage),
           previousPositionId: positionId,
         },
-      })
+      }
+
+      if (type === TransactionType.Normal) {
+        res = await sdk.shiva.buildSingle(buildSingleParams)
+      } else if (type === TransactionType.Populate) {
+        res = await sdk.shiva.populateBuildSingle(buildSingleParams)
+      } else if (type === TransactionType.Simulate) {
+        res = await sdk.shiva.simulateBuildSingle(buildSingleParams)
+      }
 
       console.log('Shiva build single result', res)
-
       if (!res.result) {
         console.error('Shiva build single not result')
         return
@@ -134,14 +166,23 @@ const Shiva = () => {
     }
   }
 
-  const shivaEmergencyWithdraw = async () => {
+  const shivaEmergencyWithdraw = async (type: TransactionType = TransactionType.Normal) => {
     try {
-      const res = await sdk.market.emergencyWithdraw({
+      let res: any
+      const emergencyWithdrawParams = {
         account,
         marketAddress: marketAddress as Address,
         positionId: positionId,
         owner: account as Address,
-      })
+      }
+
+      if (type === TransactionType.Normal) {
+        res = await sdk.market.emergencyWithdraw(emergencyWithdrawParams)
+      } else if (type === TransactionType.Populate) {
+        res = await sdk.market.populateEmergencyWithdraw(emergencyWithdrawParams)
+      } else if (type === TransactionType.Simulate) {
+        res = await sdk.market.simulateEmergencyWithdraw(emergencyWithdrawParams)
+      }
 
       console.log('Shiva emergency withdraw result', res)
 
@@ -154,12 +195,21 @@ const Shiva = () => {
     }
   }
 
-  const approveShiva = async () => {
+  const approveShiva = async (type: TransactionType = TransactionType.Normal) => {
     try {
-      const res = await sdk.shiva.approveShiva({
+      let res: any
+      const approveShivaParams = {
         account,
         amount: toWei(amountToApprove),
-      })
+        }
+
+      if (type === TransactionType.Normal) {
+        res = await sdk.shiva.approveShiva(approveShivaParams)
+      } else if (type === TransactionType.Populate) {
+        res = await sdk.shiva.populateApproveShiva(approveShivaParams)
+      } else if (type === TransactionType.Simulate) {
+        res = await sdk.shiva.simulateApproveShiva(approveShivaParams)
+      }
 
       console.log('Approve Shiva result', res)
 
@@ -263,7 +313,7 @@ const Shiva = () => {
     }
   }
 
-  const shivaBuildOnBehalfOf = async () => {
+  const shivaBuildOnBehalfOf = async (type: TransactionType = TransactionType.Normal) => {
     try {
       if (!buildOnBehalfOfData) {
         console.error('No build on behalf of data')
@@ -271,14 +321,15 @@ const Shiva = () => {
       }
       console.log('buildOnBehalfOfData', buildOnBehalfOfData)
 
-      const res = await sdk.shiva.buildOnBehalfOf({
+      let res: any
+      const buildOnBehalfOfParams = {
         account,
         params: {
           marketAddress: buildOnBehalfOfData.ovlMarket,
           // brokerId: buildOnBehalfOfData.brokerId, this is optional
           isLong: buildOnBehalfOfData.isLong,
-          collateral: buildOnBehalfOfData.collateral,
-          leverage: buildOnBehalfOfData.leverage,
+          collateral: toWei(collateral),
+          leverage: toWei(leverage),
           priceLimit: buildOnBehalfOfData.priceLimit,
         },
         onBehalfOf: {
@@ -287,7 +338,16 @@ const Shiva = () => {
           nonce: buildOnBehalfOfData.nonce,
           signature: buildOnBehalfOfData.signature as `0x${string}`,
         },
-      })
+      }
+
+      if (type === TransactionType.Normal) {
+        res = await sdk.shiva.buildOnBehalfOf(buildOnBehalfOfParams)
+      } else if (type === TransactionType.Populate) {
+        res = await sdk.shiva.populateBuildOnBehalfOf(buildOnBehalfOfParams)
+      } else if (type === TransactionType.Simulate) {
+        res = await sdk.shiva.simulateBuildOnBehalfOf(buildOnBehalfOfParams)
+      }
+
       console.log('Shiva build on behalf of result', res)
       if (!res.result) {
         console.error('Shiva build on behalf of not result')
@@ -300,14 +360,15 @@ const Shiva = () => {
     }
   }
 
-  const shivaUnwindOnBehalfOf = async () => {
+  const shivaUnwindOnBehalfOf = async (type: TransactionType = TransactionType.Normal) => {
     try {
       if (!unwindOnBehalfOfData) {
         console.error('No unwind on behalf of data')
         return
       }
 
-      const res = await sdk.shiva.unwindOnBehalfOf({
+      let res: any
+      const unwindOnBehalfOfParams = {
         account,
         params: {
           marketAddress: unwindOnBehalfOfData.ovlMarket,
@@ -322,7 +383,15 @@ const Shiva = () => {
           nonce: unwindOnBehalfOfData.nonce,
           signature: unwindOnBehalfOfData.signature as `0x${string}`,
         },
-      })
+      }
+
+      if (type === TransactionType.Normal) {
+        res = await sdk.shiva.unwindOnBehalfOf(unwindOnBehalfOfParams)
+      } else if (type === TransactionType.Populate) {
+        res = await sdk.shiva.populateUnwindOnBehalfOf(unwindOnBehalfOfParams)
+      } else if (type === TransactionType.Simulate) {
+        res = await sdk.shiva.simulateUnwindOnBehalfOf(unwindOnBehalfOfParams)
+      }
       console.log('Shiva unwind on behalf of result', res)
       if (!res.result) {
         console.error('Shiva unwind on behalf of not result')
@@ -334,14 +403,15 @@ const Shiva = () => {
     }
   }
 
-  const shivaBuildSingleOnBehalfOf = async () => {
+  const shivaBuildSingleOnBehalfOf = async (type: TransactionType = TransactionType.Normal) => {
     try {
       if (!buildSingleOnBehalfOfData) {
         console.error('No build single on behalf of data')
         return
       }
 
-      const res = await sdk.shiva.buildSingleOnBehalfOf({
+      let res: any
+      const buildSingleOnBehalfOfParams = {
         account,
         params: {
           ovlMarket: buildSingleOnBehalfOfData.ovlMarket,
@@ -358,7 +428,15 @@ const Shiva = () => {
           nonce: buildSingleOnBehalfOfData.nonce,
           signature: buildSingleOnBehalfOfData.signature as `0x${string}`,
         },
-      })
+      }
+
+      if (type === TransactionType.Normal) {
+        res = await sdk.shiva.buildSingleOnBehalfOf(buildSingleOnBehalfOfParams)
+      } else if (type === TransactionType.Populate) {
+        res = await sdk.shiva.populateBuildSingleOnBehalfOf(buildSingleOnBehalfOfParams)
+      } else if (type === TransactionType.Simulate) {
+        res = await sdk.shiva.simulateBuildSingleOnBehalfOf(buildSingleOnBehalfOfParams)
+      }
       console.log('Shiva build single on behalf of result', res)
       if (!res.result) {
         console.error('Shiva build single on behalf of not result')
@@ -387,12 +465,21 @@ const Shiva = () => {
     }
   }
 
-  const cancelNonce = async () => {
+  const cancelNonce = async (type: TransactionType = TransactionType.Normal) => {
     try {
-      const res = await sdk.shiva.cancelNonce({
+      let res: any
+      const cancelNonceParams = {
         account,
         nonce: nonceToCancel,
-      })
+      }
+
+      if (type === TransactionType.Normal) {
+        res = await sdk.shiva.cancelNonce(cancelNonceParams)
+      } else if (type === TransactionType.Populate) {
+        res = await sdk.shiva.populateCancelNonce(cancelNonceParams)
+      } else if (type === TransactionType.Simulate) {
+        res = await sdk.shiva.simulateCancelNonce(cancelNonceParams)
+      }
 
       console.log('Shiva cancel nonce result', res)
     } catch (error) {
@@ -413,7 +500,11 @@ const Shiva = () => {
             onChange={(e) => setAmountToApprove(parseFloat(e.target.value))}
           />
         </label>
-        <button onClick={approveShiva}>Approve Shiva</button>
+        <button onClick={() => approveShiva(TransactionType.Normal)}>Approve Shiva</button>
+        <br />
+        <button onClick={() => approveShiva(TransactionType.Simulate)}>Simulate Approve Shiva</button>
+        <br />
+        <button onClick={() => approveShiva(TransactionType.Populate)}>Populate Approve Shiva</button>
       </div>
       <div>
         <label style={{ fontSize: '15px' }}>
@@ -480,7 +571,11 @@ const Shiva = () => {
         </label>
       </div>
       <div>
-        <button onClick={shivaBuild}>Shiva Build</button>
+        <button onClick={() => shivaBuild(TransactionType.Normal)}>Shiva Build</button>
+        <br />
+        <button onClick={() => shivaBuild(TransactionType.Simulate)}>Simulate Shiva Build</button>
+        <br />
+        <button onClick={() => shivaBuild(TransactionType.Populate)}>Populate Shiva Build</button>
       </div>
       <div>
         <label style={{ fontSize: '15px' }}>
@@ -505,10 +600,18 @@ const Shiva = () => {
         </label>
       </div>
       <div>
-        <button onClick={shivaUnwind}>Shiva Unwind</button>
+        <button onClick={() => shivaUnwind(TransactionType.Normal)}>Shiva Unwind</button>
+        <br />
+        <button onClick={() => shivaUnwind(TransactionType.Simulate)}>Simulate Shiva Unwind</button>
+        <br />
+        <button onClick={() => shivaUnwind(TransactionType.Populate)}>Populate Shiva Unwind</button>
       </div>
       <div>
-        <button onClick={shivaBuildSingle}>Shiva Build Single</button>
+        <button onClick={() => shivaBuildSingle(TransactionType.Normal)}>Shiva Build Single</button>
+        <br />
+        <button onClick={() => shivaBuildSingle(TransactionType.Simulate)}>Simulate Shiva Build Single</button>
+        <br />
+        <button onClick={() => shivaBuildSingle(TransactionType.Populate)}>Populate Shiva Build Single</button>
       </div>
 
       <div>
@@ -519,7 +622,11 @@ const Shiva = () => {
       </div>
 
       <div>
-        <button onClick={shivaBuildOnBehalfOf}>Shiva Build On Behalf Of</button>
+        <button onClick={() => shivaBuildOnBehalfOf(TransactionType.Normal)}>Shiva Build On Behalf Of</button>
+        <br />
+        <button onClick={() => shivaBuildOnBehalfOf(TransactionType.Simulate)}>Simulate Shiva Build On Behalf Of</button>
+        <br />
+        <button onClick={() => shivaBuildOnBehalfOf(TransactionType.Populate)}>Populate Shiva Build On Behalf Of</button>
       </div>
 
       <div>
@@ -530,7 +637,11 @@ const Shiva = () => {
       </div>
 
       <div>
-        <button onClick={shivaUnwindOnBehalfOf}>Shiva Unwind On Behalf Of</button>
+        <button onClick={() => shivaUnwindOnBehalfOf(TransactionType.Normal)}>Shiva Unwind On Behalf Of</button>
+        <br />
+        <button onClick={() => shivaUnwindOnBehalfOf(TransactionType.Simulate)}>Simulate Shiva Unwind On Behalf Of</button>
+        <br />
+        <button onClick={() => shivaUnwindOnBehalfOf(TransactionType.Populate)}>Populate Shiva Unwind On Behalf Of</button>
       </div>
 
       <div>
@@ -541,7 +652,11 @@ const Shiva = () => {
       </div>
 
       <div>
-        <button onClick={shivaBuildSingleOnBehalfOf}>Shiva Build Single On Behalf Of</button>
+        <button onClick={() => shivaBuildSingleOnBehalfOf(TransactionType.Normal)}>Shiva Build Single On Behalf Of</button>
+        <br />
+        <button onClick={() => shivaBuildSingleOnBehalfOf(TransactionType.Simulate)}>Simulate Shiva Build Single On Behalf Of</button>
+        <br />
+        <button onClick={() => shivaBuildSingleOnBehalfOf(TransactionType.Populate)}>Populate Shiva Build Single On Behalf Of</button>
       </div>
 
       <div>
@@ -551,7 +666,11 @@ const Shiva = () => {
       <div>
         <label style={{ fontSize: '15px' }}>
           Position IDs:
-          <input type="text" value={positionIds.join(',')} onChange={(e) => setPositionIds(e.target.value.split(',').map((id) => Number(id)))} />
+          <input
+            type="text"
+            value={positionIds.join(',')}
+            onChange={(e) => setPositionIds(e.target.value.split(',').map((id) => Number(id)))}
+          />
         </label>
       </div>
 
@@ -562,21 +681,32 @@ const Shiva = () => {
       <div>
         <label style={{ fontSize: '15px' }}>
           Nonce to cancel:
-          <input type="number" value={Number(nonceToCancel)} onChange={(e) => setNonceToCancel(BigInt(e.target.value))} />
+          <input
+            type="number"
+            value={Number(nonceToCancel)}
+            onChange={(e) => setNonceToCancel(BigInt(e.target.value))}
+          />
         </label>
       </div>
 
       <div>
-        <button onClick={cancelNonce}>Cancel Nonce</button>
+        <button onClick={() => cancelNonce(TransactionType.Normal)}>Cancel Nonce</button>
+        <br />
+        <button onClick={() => cancelNonce(TransactionType.Simulate)}>Simulate Cancel Nonce</button>
+        <br />
+        <button onClick={() => cancelNonce(TransactionType.Populate)}>Populate Cancel Nonce</button>
       </div>
 
       <div>
         <label style={{ fontSize: '15px' }}>
           Emergency Withdraw:
-          <button onClick={shivaEmergencyWithdraw}>Shiva Emergency Withdraw</button>
+          <button onClick={() => shivaEmergencyWithdraw(TransactionType.Normal)}>Shiva Emergency Withdraw</button>
+          <br />
+          <button onClick={() => shivaEmergencyWithdraw(TransactionType.Simulate)}>Simulate Shiva Emergency Withdraw</button>
+          <br />
+          <button onClick={() => shivaEmergencyWithdraw(TransactionType.Populate)}>Populate Shiva Emergency Withdraw</button>
         </label>
       </div>
-      
 
       <br />
       <br />
