@@ -27,7 +27,7 @@ export class OverlaySDKAccountDetails extends OverlaySDKModule {
 
     const cacheKey = `${walletClient}-${chainId}`;
 
-    if (!refreshData && this.overviewCache[cacheKey]) 
+    if (!refreshData && this.overviewCache[cacheKey]) {
       const cachedData = this.overviewCache[cacheKey];
       if (Date.now() - cachedData.lastUpdated < 3 * 60 * 1000) { // 3 minutos
         return cachedData.data;
