@@ -1,5 +1,6 @@
 import { type Chain } from "viem";
-import { mainnet, arbitrum, arbitrumSepolia, berachainTestnetbArtio } from "viem/chains";import { defineChain } from 'viem'
+import { mainnet, arbitrum, arbitrumSepolia, berachainTestnetbArtio, berachain } from "viem/chains";
+import { defineChain } from 'viem'
  
 export const imola = defineChain({
   id: 30732,
@@ -29,7 +30,8 @@ export enum CHAINS {
   Arbitrum = 42161,
   ArbitrumSepolia = 421614,
   Bartio = 80084,
-  Imola = 30732
+  Imola = 30732,
+  BerachainMainnet = 80094
 }
 
 export const SUPPORTED_CHAINS: CHAINS[] = [
@@ -37,7 +39,8 @@ export const SUPPORTED_CHAINS: CHAINS[] = [
   CHAINS.Arbitrum,
   CHAINS.ArbitrumSepolia,
   CHAINS.Bartio,
-  CHAINS.Imola
+  CHAINS.Imola,
+  CHAINS.BerachainMainnet
 ];
 
 export const VIEM_CHAINS: { [key in CHAINS]: Chain } = {
@@ -45,7 +48,8 @@ export const VIEM_CHAINS: { [key in CHAINS]: Chain } = {
   [CHAINS.Arbitrum]: arbitrum,
   [CHAINS.ArbitrumSepolia]: arbitrumSepolia,
   [CHAINS.Bartio]: berachainTestnetbArtio,
-  [CHAINS.Imola]: imola
+  [CHAINS.Imola]: imola,
+  [CHAINS.BerachainMainnet]: berachain
 };
 
 export const enum OVERLAY_CONTRACT_NAMES {

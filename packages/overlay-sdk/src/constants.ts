@@ -64,12 +64,22 @@ export const V1_PERIPHERY_ADDRESS: AddressMap = {
   [CHAINS.ArbitrumSepolia]: "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
   [CHAINS.Imola]: "0x0CA6128B528f503C7c649ba9cc02560a8B9fD55e",
   [CHAINS.Bartio]: "0x4f69dfb24958fcf69b70bca73c3e74f2c82bb405",
+  [CHAINS.BerachainMainnet]: "0x2a154ebA61A182e726a540ae2856fc012106e763",
+  
 };
 
 export const OVL_ADDRESS: AddressMap = {
   [CHAINS.ArbitrumSepolia]: "0x3E27fAe625f25291bFda517f74bf41DC40721dA2",
   [CHAINS.Imola]: "0xCde46284D32148c4D470fA33BA788710b3d21E89",
   [CHAINS.Bartio]: "0x97576e088f0d05EF68cac2EEc63d017FE90952a0",
+  [CHAINS.BerachainMainnet]: "0xaeD2f0c7AaCfE2B59Cc70964833EA4C28C2CdbDB",
+};
+
+export const SHIVA_ADDRESS: AddressMap = {
+  [CHAINS.ArbitrumSepolia]: zeroAddress,
+  [CHAINS.Imola]: zeroAddress,
+  [CHAINS.Bartio]: '0x3Cd0bC7E680006A322536311F3a9B0235bb6d865',
+  [CHAINS.BerachainMainnet]: "0x7a555c83F7d2D26362C2b4954Cf01EBf9fA07DA0",
 };
 
 export const SHIVA_ADDRESS: AddressMap = {
@@ -101,6 +111,12 @@ export const NETWORKS: { [chainId: number]: Network } = {
     MARKET_PRICES_API: "https://api.overlay.market/bartio-charts/v1/charts",
     SUBGRAPH_URL:
       "https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-bartio/prod/gn",
+    MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
+  },
+  [CHAINS.BerachainMainnet]: {
+    MARKET_PRICES_API: "https://api.overlay.market/berachain-charts/v1/charts",
+    SUBGRAPH_URL:
+      "https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-berachain/prod/gn",
     MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
   },
 };
