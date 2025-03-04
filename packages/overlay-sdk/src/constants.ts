@@ -82,12 +82,6 @@ export const SHIVA_ADDRESS: AddressMap = {
   [CHAINS.BerachainMainnet]: "0x7a555c83F7d2D26362C2b4954Cf01EBf9fA07DA0",
 };
 
-export const SHIVA_ADDRESS: AddressMap = {
-  [CHAINS.ArbitrumSepolia]: zeroAddress,
-  [CHAINS.Imola]: zeroAddress,
-  [CHAINS.Bartio]: '0x3Cd0bC7E680006A322536311F3a9B0235bb6d865',
-};
-
 interface Network {
   MARKET_PRICES_API: string;
   SUBGRAPH_URL: string;
