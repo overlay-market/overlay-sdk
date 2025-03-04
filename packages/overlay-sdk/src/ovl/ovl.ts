@@ -176,7 +176,7 @@ export class OverlaySDKOverlayToken extends OverlaySDKModule {
     const currentTotalSupply = totalSupplyHistory[0].close
     const dayAgoTotalSupply = totalSupplyHistory[totalSupplyHistory.length -1].close
 
-    return 100 * (currentTotalSupply - dayAgoTotalSupply) / dayAgoTotalSupply
+    return (currentTotalSupply - dayAgoTotalSupply) / dayAgoTotalSupply
   }
 
   private async parseProps<
