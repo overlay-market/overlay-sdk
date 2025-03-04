@@ -29,7 +29,7 @@ export class OverlaySDKAccountDetails extends OverlaySDKModule {
 
     if (!refreshData && this.overviewCache[cacheKey]) {
       const cachedData = this.overviewCache[cacheKey];
-      if (Date.now() - cachedData.lastUpdated < 3 * 60 * 1000) {
+      if (Date.now() - cachedData.lastUpdated < 3 * 60 * 1000) { // 3 minutos
         return cachedData.data;
       }
       delete this.overviewCache[cacheKey];
