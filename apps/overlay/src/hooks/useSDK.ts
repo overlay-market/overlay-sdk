@@ -10,6 +10,7 @@ export default function useSDK() {
     chainId: chainId ? chainId as CHAINS : DEFAULT_CHAINID as number,
     rpcUrls: {
       [CHAINS.Bartio]: 'https://bartio.rpc.berachain.com',
+      [CHAINS.BerachainMainnet]: 'https://rpc.berachain.com',
     },
     web3Provider: OverlaySDKCore.createWeb3Provider(chainId as CHAINS, window.ethereum),
     brokerId: 99
