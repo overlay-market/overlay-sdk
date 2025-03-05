@@ -32,6 +32,8 @@ type OverlaySDKCorePropsRpcProps =
 export type OverlaySDKCoreProps = {
   chainId: (typeof SUPPORTED_CHAINS)[number];
   web3Provider?: WalletClient;
+  brokerId?: number;
+  useShiva?: boolean;
   logMode?: LOG_MODE;
 } & OverlaySDKCorePropsRpcProps;
 

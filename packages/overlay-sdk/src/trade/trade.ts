@@ -1,7 +1,7 @@
 import { Address } from "viem";
 import { CHAINS, invariant } from "../common";
 import { OverlaySDKModule } from "../common/class-primitives/sdk-module";
-import { OVL_ADDRESS, V1_PERIPHERY_ADDRESS } from "../constants";
+import { OVL_ADDRESS, SHIVA_ADDRESS, V1_PERIPHERY_ADDRESS } from "../constants";
 import { OverlaySDKCommonProps } from "../core/types";
 import { OverlaySDK } from "../sdk";
 import { formatBigNumber, formatFundingRateToDaily } from "../common/utils";
@@ -459,7 +459,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
           {
             ...ovlContract,
             functionName: "allowance",
-            args: [userAddress, marketAddress],
+            args: [userAddress, this.core.useShiva ? SHIVA_ADDRESS[chainId] : marketAddress],
           },
         ] as const
     });

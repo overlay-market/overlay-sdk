@@ -5,6 +5,7 @@ import { useMultichainContext } from "../../state/multichain/useMultichainContex
 import PositionsTable from "../../positionTable";
 import MarketsTable from "../Markets/marketsTable";
 import Market from "../../market";
+import Shiva from "../../shiva";
 import LiquidatedPositionsTable from "../../liquidatedTable";
 
 function Main() {
@@ -31,6 +32,8 @@ function Main() {
           <p>current account - {account}</p>
           <p>useAccount chainId - {chainId}</p>
           <p>Context chainId - {contextChainID as number}</p>
+
+          <Shiva />
         </header>
       </div>
     </MultichainContextProvider>

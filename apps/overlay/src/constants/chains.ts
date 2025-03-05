@@ -2,6 +2,7 @@ import { type Chain } from 'viem';
 import { mainnet, arbitrum, arbitrumSepolia, berachainTestnetbArtio } from 'viem/chains';
 
 import { defineChain } from 'viem'
+import { berachain } from 'wagmi/chains';
  
 export const imola = defineChain({
   id: 30732,
@@ -30,6 +31,7 @@ export enum SupportedChainId {
   ARBITRUM_SEPOLIA = 421614,
   IMOLA = 30732,
   BARTIO = 80084,
+  BERACHAIN_MAINNET = 80094,
 }
 
 export const DEFAULT_NET = SupportedChainId[421614]
@@ -41,6 +43,7 @@ export const WORKING_CHAINS = [
   SupportedChainId[SupportedChainId.ARBITRUM], 
   SupportedChainId[SupportedChainId.MAINNET],
   SupportedChainId[SupportedChainId.BARTIO],
+  SupportedChainId[SupportedChainId.BERACHAIN_MAINNET],
 ]
 
 export enum CHAINS {
@@ -49,6 +52,7 @@ export enum CHAINS {
   ArbitrumSepolia = 421614,
   Bartio = 80084,
   Imola = 30732,
+  BerachainMainnet = 80094,
 }
 
 export const VIEM_CHAINS: { [key in CHAINS]: Chain | number} = {
@@ -57,5 +61,6 @@ export const VIEM_CHAINS: { [key in CHAINS]: Chain | number} = {
   [CHAINS.ArbitrumSepolia]: arbitrumSepolia,
   [CHAINS.Bartio]: berachainTestnetbArtio,
   [CHAINS.Imola]: imola,
+  [CHAINS.BerachainMainnet]: berachain,
 };
 
