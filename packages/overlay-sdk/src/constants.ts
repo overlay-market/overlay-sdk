@@ -119,6 +119,6 @@ export const NETWORKS: { [chainId: number]: Network } = {
     MARKET_PRICES_API: "https://api.overlay.market/bepolia-charts/v1/charts",
     SUBGRAPH_URL:
       "https://api.goldsky.com/api/public/project_cm3n5avsu08tw01vthbry8fl7/subgraphs/overlay-bepolia/latest/gn",
-    MARKETS_DETAILS_API: "http://localhost:3000/api/markets",
+    MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
   },
 };
