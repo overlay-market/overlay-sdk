@@ -216,7 +216,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const priceInfo = await this._getPriceInfo(slippage, isLong, price, marketState.ask, marketState.bid, 18)
     const tradingFeeRate = this._getFee(rawTradingFeeRate)
 
-    invariant(ois[0] && ois[1], "OIs not found");
+    // invariant(ois[0] && ois[1], "OIs not found");
     invariant(capOi, "Cap OI not found");
 
     const rawOiLong = ois[0]
