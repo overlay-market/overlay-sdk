@@ -12,6 +12,7 @@ import { TickMath } from "@uniswap/v3-sdk";
 import {
   ONE_BN,
   PRICE_CURRENCY_FROM_QUOTE,
+  SHIVA_ADDRESS,
   V1_PERIPHERY_ADDRESS,
 } from "../../constants";
 import { getMarketsDetailsByChainId } from "../../services/marketsDetails";
@@ -111,12 +112,13 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
         [key: string]: PositionData | null | undefined
       } = {};
 
+      const positionsAccount = (this.core.useShiva ? SHIVA_ADDRESS[chainId].toLowerCase() : walletClient.toLowerCase()) as Address
       for (let i = 0; i < rawOpenData.length; i += 15) {
         const positions = rawOpenData.slice(i, i + 15).map((position) => ({
           marketId: position.market.id as Address,
           positionId: BigInt(position.id.split("-")[1])
         }));
-        Object.assign(positionsData, await this.getPositionsData(chainId, walletClient, positions));
+        Object.assign(positionsData, await this.getPositionsData(chainId, positionsAccount, positions));
       }
 
       const transformedOpens: OpenPositionData[] = [];

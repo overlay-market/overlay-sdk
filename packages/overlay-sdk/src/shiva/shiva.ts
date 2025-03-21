@@ -289,7 +289,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     for (const { marketAddress, positionId } of props.positions) {
       unwindCalls.push(this.sdk.trade.getUnwindState(
         marketAddress,
-        SHIVA_ADDRESS[this.core.chainId as CHAINS],
+        account.address,
         positionId,
         unwindPercentage,
         slippage,
