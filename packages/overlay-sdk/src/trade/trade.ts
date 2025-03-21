@@ -216,7 +216,6 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const priceInfo = await this._getPriceInfo(slippage, isLong, price, marketState.ask, marketState.bid, 18)
     const tradingFeeRate = this._getFee(rawTradingFeeRate)
 
-    // invariant(ois[0] && ois[1], "OIs not found");
     invariant(capOi, "Cap OI not found");
 
     const rawOiLong = ois[0]
@@ -284,13 +283,15 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const positionId = BigInt(posId)
     const marketPositionId = `${marketAddress.toLowerCase()}-0x${Number(positionId).toString(16)}`
 
+    const positionAccount = (this.core.useShiva ? SHIVA_ADDRESS[chainId].toLowerCase() : account.toLowerCase()) as Address
+
     const positionDetails = (await getPositionDetails(chainId, account.toLowerCase(), marketPositionId))?.account?.positions[0] ?? null
     invariant(positionDetails, `Position not found for ${marketPositionId}; ${account.toLowerCase()}; ${positionId}; marketAddress: ${marketAddress}; chainId: ${chainId}`)
 
     if (!positionDetails) return { error: "Position not found", isShutdown: false, cost: 0, unwindState: UnwindState.PositionNotFound, positionId: posId, marketAddress }
 
     if (positionDetails.market.isShutdown) {
-      const cost = await this.sdk.state.getCost(V1_PERIPHERY_ADDRESS[chainId], marketAddress, account, positionId)
+      const cost = await this.sdk.state.getCost(V1_PERIPHERY_ADDRESS[chainId], marketAddress, positionAccount, positionId)
       return { 
         error: "Market is shutdown", 
         isShutdown: true, 
@@ -313,7 +314,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       notional,
       maintenanceMargin,
       prices
-    } = await this.sdk.openPositions.getOpenPositionData(chainId, account, marketAddress, positionId)
+    } = await this.sdk.openPositions.getOpenPositionData(chainId, positionAccount, marketAddress, positionId)
 
     const fractionOfCapOi = await this.sdk.state.getFractionOfCapOi(V1_PERIPHERY_ADDRESS[chainId], marketAddress, currentOi)
 
