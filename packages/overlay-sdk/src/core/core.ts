@@ -24,6 +24,7 @@ import {
 import { type OverlaySDKCoreProps, type LOG_MODE, type AccountValue, type PerformTransactionOptions, type TransactionResult, type TransactionOptions, TransactionCallbackStage, GetFeeDataResult, CustomRPCs } from "./types.js";
 import { OverlaySDKCacheable } from "../common/class-primitives/cacheable.js";
 import { getLastProcessedBlock } from "../subgraph.js";
+import { NETWORKS } from "../constants.js";
 
 export default class OverlaySDKCore extends OverlaySDKCacheable {
   #web3Provider: WalletClient | undefined;
@@ -46,12 +47,17 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
     this.rpcUrls = props.rpcUrls;
     this.logMode = props.logMode ?? "info";
     this.brokerId = props.brokerId ?? 0;
-    this.useShiva = props.useShiva ?? false;
+    // if the chain has shiva, use the useShiva prop, otherwise set it to false
+    this.useShiva = NETWORKS[this.chainId].hasShiva ? props.useShiva ?? false : false;
     const { chain, rpcProvider, web3Provider } = this.init(props);
 
     this.chain = chain;
     this.rpcProvider = rpcProvider;
     this.#web3Provider = web3Provider;
+  }
+
+  public usingShiva() {
+    return this.useShiva && NETWORKS[this.chainId].hasShiva;
   }
 
   // Static Provider Creation
