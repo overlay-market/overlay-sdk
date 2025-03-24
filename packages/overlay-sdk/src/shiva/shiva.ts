@@ -8,6 +8,7 @@ import {
   toEventHash,
   TransactionReceipt,
   WalletClient,
+  zeroAddress,
 } from 'viem'
 import { OverlaySDKModule } from '../common/class-primitives/sdk-module'
 import { NoCallback, OverlaySDKCommonProps, TransactionOptions, TransactionResult } from '../core/types'
@@ -39,6 +40,7 @@ import {
 } from './types'
 import { BuildInnerProps, BuildProps, BuildResult, EmergencyWithdrawInnerProps, EmergencyWithdrawProps, UnwindInnerProps, UnwindMultipleInnerProps, UnwindMultipleProps, UnwindProps } from '../markets/types'
 import { UnwindState, UnwindStateData, UnwindStateSuccess } from '../trade'
+import { getPositionDetails } from '../subgraph'
 
 export class OverlaySDKShiva extends OverlaySDKModule {
   private sdk: OverlaySDK
@@ -216,8 +218,17 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
   // Unwind
 
-  public async unwind(props: UnwindProps): Promise<TransactionResult> {
+  public async unwind(props: UnwindProps, verified: boolean = false): Promise<TransactionResult> {
     this.core.useWeb3Provider()
+
+    if (!verified) {
+      const { account, marketAddress, positionId } = await this.parseUnwindProps(props);
+      const marketPositionId = `${marketAddress.toLowerCase()}-0x${Number(positionId).toString(16)}`
+      const positionDetails = await getPositionDetails(this.core.chainId, account.address.toLowerCase(), marketPositionId) ?? null
+      invariant(positionDetails, `Position not found for ${marketPositionId}; ${account.address.toLowerCase()}; ${positionId}; marketAddress: ${marketAddress}; chainId: ${this.core.chainId}`)
+      invariant(positionDetails.router.id !== zeroAddress, 'This position is not on Shiva')
+    }
+
     const { account, ...rest } = await this.parseUnwindProps(props)
 
     const contract = this.getShivaContract()
@@ -281,8 +292,17 @@ export class OverlaySDKShiva extends OverlaySDKModule {
   }
 
   public async unwindMultiple(props: UnwindMultipleProps) {
+    const { account } = await this.parseUnwindMultipleProps(props);
+
+    for (const { marketAddress, positionId } of props.positions) {
+      const marketPositionId = `${marketAddress.toLowerCase()}-0x${Number(positionId).toString(16)}`
+      const positionDetails = await getPositionDetails(this.core.chainId, account.address.toLowerCase(), marketPositionId) ?? null
+      invariant(positionDetails, `Position not found for ${marketPositionId}; ${account.address.toLowerCase()}; ${positionId}; marketAddress: ${marketAddress}; chainId: ${this.core.chainId}`)
+      invariant(positionDetails.router.id !== zeroAddress, 'All positions must be on Shiva')
+    }
+
     this.core.useWeb3Provider()
-    const { callback, account, slippage, unwindPercentage, ...rest } = await this.parseUnwindMultipleProps(props);
+    const { callback, slippage, unwindPercentage, ...rest } = await this.parseUnwindMultipleProps(props);
     const decimals = 2;
     const unwindCalls = [];
 

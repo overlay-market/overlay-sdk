@@ -10,6 +10,7 @@ import {
   decodeEventLog,
   keccak256,
   encodePacked,
+  zeroAddress,
 } from "viem";
 import { OverlayV1MarketABI } from "./abis/OverlayV1Market.js";
 import { OverlayV1Market2ABI } from "./abis/OverlayV1Market2.js";
@@ -20,6 +21,7 @@ import { NOOP } from "../common/constants.js";
 import { ERROR_CODE, invariant, SDKError, toWei } from "../common/index.js";
 import { OverlaySDK } from "../sdk.js";
 import { UnwindState, UnwindStateData, UnwindStateSuccess } from "../trade/types.js";
+import { getPositionDetails } from "../subgraph.js";
 
 export class OverlaySDKMarket extends OverlaySDKModule {
   private sdk: OverlaySDK;
@@ -173,8 +175,13 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   public async unwind(
     props: UnwindProps
   ): Promise<TransactionResult> {
-    if (this.core.useShiva) {
-      return this.sdk.shiva.unwind(props);
+    const { account, marketAddress, positionId } = await this.parseUnwindProps(props);
+    const marketPositionId = `${marketAddress.toLowerCase()}-0x${Number(positionId).toString(16)}`
+    const positionDetails = await getPositionDetails(this.core.chainId, account.address.toLowerCase(), marketPositionId) ?? null
+    invariant(positionDetails, `Position not found for ${marketPositionId}; ${account.address.toLowerCase()}; ${positionId}; marketAddress: ${marketAddress}; chainId: ${this.core.chainId}`)
+
+    if (positionDetails.router.id !== zeroAddress) {
+      return this.sdk.shiva.unwind(props, true);
     }
     return this._unwind(props);
   }
@@ -212,8 +219,16 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   public async _unwindMultiple(
     props: UnwindMultipleProps
   ) {
+    const { account } = await this.parseUnwindMultipleProps(props);
+    for (const { marketAddress, positionId } of props.positions) {
+      const marketPositionId = `${marketAddress.toLowerCase()}-0x${Number(positionId).toString(16)}`
+      const positionDetails = await getPositionDetails(this.core.chainId, account.address.toLowerCase(), marketPositionId) ?? null
+      invariant(positionDetails, `Position not found for ${marketPositionId}; ${account.address.toLowerCase()}; ${positionId}; marketAddress: ${marketAddress}; chainId: ${this.core.chainId}`)
+      invariant(positionDetails.router.id === zeroAddress, 'All positions must be on a OverlayV1Market')
+    }
+
     this.core.useWeb3Provider();
-    const { callback, account, slippage, unwindPercentage, ...rest } = await this.parseUnwindMultipleProps(props);
+    const { callback, slippage, unwindPercentage, ...rest } = await this.parseUnwindMultipleProps(props);
     const decimals = 2;
     const unwindCalls = [];
 
