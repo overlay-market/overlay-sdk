@@ -6,7 +6,7 @@ import {
   toPercentUnit,
   toScientificNumber,
 } from "../../common/utils";
-import { Abi, Address } from "viem";
+import { Abi, Address, zeroAddress } from "viem";
 import JSBI from "jsbi";
 import { TickMath } from "@uniswap/v3-sdk";
 import {
@@ -112,13 +112,13 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
         [key: string]: PositionData | null | undefined
       } = {};
 
-      const positionsAccount = (this.core.useShiva ? SHIVA_ADDRESS[chainId].toLowerCase() : walletClient.toLowerCase()) as Address
       for (let i = 0; i < rawOpenData.length; i += 15) {
         const positions = rawOpenData.slice(i, i + 15).map((position) => ({
           marketId: position.market.id as Address,
-          positionId: BigInt(position.id.split("-")[1])
+          positionId: BigInt(position.id.split("-")[1]),
+          walletClient: (position.router.id === zeroAddress ? walletClient.toLowerCase() : SHIVA_ADDRESS[chainId].toLowerCase()) as Address
         }));
-        Object.assign(positionsData, await this.getPositionsData(chainId, positionsAccount, positions));
+        Object.assign(positionsData, await this.getPositionsData(chainId, positions));
       }
 
       const transformedOpens: OpenPositionData[] = [];
@@ -309,8 +309,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
 
   async getPositionsData(
     chainId: CHAINS,
-    walletClient: Address,
-    positions: { marketId: Address; positionId: bigint }[]
+    positions: { marketId: Address; positionId: bigint, walletClient: Address }[]
   ): Promise<{
     [key: string]: PositionData | null
   }> {
@@ -332,7 +331,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       args: readonly unknown[];
     }[] = [];
 
-    for (const { marketId, positionId } of positions) {
+    for (const { marketId, positionId, walletClient } of positions) {
       const positionCalls = [
         {
           address: V1_PERIPHERY_ADDRESS[chainId],
