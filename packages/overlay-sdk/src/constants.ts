@@ -88,6 +88,7 @@ interface Network {
   MARKET_PRICES_API: string;
   SUBGRAPH_URL: string;
   MARKETS_DETAILS_API: string;
+  hasShiva: boolean;
 }
 
 export const NETWORKS: { [chainId: number]: Network } = {
@@ -96,29 +97,34 @@ export const NETWORKS: { [chainId: number]: Network } = {
     SUBGRAPH_URL:
       "https://api.studio.thegraph.com/query/77621/overlay-sepolia-test-less-call/version/latest",
     MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
+    hasShiva: false,
   },
   [CHAINS.Imola]: {
     MARKET_PRICES_API: "https://api.overlay.market/imola-charts/v1/charts",
     SUBGRAPH_URL:
       "https://subgraph.overlay.market/query/subgraphs/NETWORKS/overlay/v1-subgraph",
     MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
+    hasShiva: false,
   },
   [CHAINS.Bartio]: {
     MARKET_PRICES_API: "https://api.overlay.market/bartio-charts/v1/charts",
     SUBGRAPH_URL:
       "https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-bartio/prod/gn",
     MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
+    hasShiva: true,
   },
   [CHAINS.BerachainMainnet]: {
     MARKET_PRICES_API: "https://api.overlay.market/berachain-charts/v1/charts",
     SUBGRAPH_URL:
       "https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-berachain/prod/gn",
     MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
+    hasShiva: true,
   },
   [CHAINS.Bepolia]: {
     MARKET_PRICES_API: "https://api.overlay.market/bepolia-charts/v1/charts",
     SUBGRAPH_URL:
       "https://api.goldsky.com/api/public/project_cm3n5avsu08tw01vthbry8fl7/subgraphs/overlay-bepolia/latest/gn",
     MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
+    hasShiva: true,
   },
 };
