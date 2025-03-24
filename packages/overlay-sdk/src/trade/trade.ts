@@ -1,4 +1,4 @@
-import { Address } from "viem";
+import { Address, zeroAddress } from "viem";
 import { CHAINS, invariant } from "../common";
 import { OverlaySDKModule } from "../common/class-primitives/sdk-module";
 import { OVL_ADDRESS, SHIVA_ADDRESS, V1_PERIPHERY_ADDRESS } from "../constants";
@@ -283,12 +283,12 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const positionId = BigInt(posId)
     const marketPositionId = `${marketAddress.toLowerCase()}-0x${Number(positionId).toString(16)}`
 
-    const positionAccount = (this.core.useShiva ? SHIVA_ADDRESS[chainId].toLowerCase() : account.toLowerCase()) as Address
-
-    const positionDetails = (await getPositionDetails(chainId, account.toLowerCase(), marketPositionId))?.account?.positions[0] ?? null
+    const positionDetails = await getPositionDetails(chainId, account.toLowerCase(), marketPositionId) ?? null
     invariant(positionDetails, `Position not found for ${marketPositionId}; ${account.toLowerCase()}; ${positionId}; marketAddress: ${marketAddress}; chainId: ${chainId}`)
 
     if (!positionDetails) return { error: "Position not found", isShutdown: false, cost: 0, unwindState: UnwindState.PositionNotFound, positionId: posId, marketAddress }
+
+    const positionAccount = (positionDetails.router.id === zeroAddress ? account.toLowerCase() : SHIVA_ADDRESS[chainId].toLowerCase()) as Address
 
     if (positionDetails.market.isShutdown) {
       const cost = await this.sdk.state.getCost(V1_PERIPHERY_ADDRESS[chainId], marketAddress, positionAccount, positionId)
