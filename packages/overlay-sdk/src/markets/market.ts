@@ -104,7 +104,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   public async build(
     props: BuildProps
   ): Promise<TransactionResult<BuildResult>> {
-    if (this.core.useShiva) {
+    if (this.core.usingShiva()) {
       return this.sdk.shiva.build(props);
     }
     return this._build(props);
@@ -135,7 +135,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   // @Logger('Utils:')
   // @ErrorHandler()
   public async populateBuild(props: NoCallback<BuildProps>) {
-    if (this.core.useShiva) {
+    if (this.core.usingShiva()) {
       return this.sdk.shiva.populateBuild(props);
     }
 
@@ -155,7 +155,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   // @Logger('Utils:')
   // @ErrorHandler()
   public async simulateBuild(props: NoCallback<BuildProps>) {
-    if (this.core.useShiva) {
+    if (this.core.usingShiva()) {
       return this.sdk.shiva.simulateBuild(props);
     }
 
@@ -210,7 +210,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   public async unwindMultiple(
     props: UnwindMultipleProps
   ) {
-    if (this.core.useShiva) {
+    if (this.core.usingShiva()) {
       return this.sdk.shiva.unwindMultiple(props);
     }
     return this._unwindMultiple(props);
@@ -305,7 +305,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   // @Logger('Utils:')
   // @ErrorHandler()
   public async populateUnwind(props: NoCallback<UnwindProps>) {
-    if (this.core.useShiva) {
+    if (this.core.usingShiva()) {
       return this.sdk.shiva.populateUnwind(props);
     }
 
@@ -325,7 +325,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   // @Logger('Utils:')
   // @ErrorHandler()
   public async simulateUnwind(props: NoCallback<UnwindProps>) {
-    if (this.core.useShiva) {
+    if (this.core.usingShiva()) {
       return this.sdk.shiva.simulateUnwind(props);
     }
 
@@ -345,7 +345,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   public async emergencyWithdraw(
     props: EmergencyWithdrawProps
   ): Promise<TransactionResult> {
-    if (this.core.useShiva) {
+    if (this.core.usingShiva()) {
       return this.sdk.shiva.emergencyWithdraw(props);
     }
     return this._emergencyWithdraw(props);
@@ -375,7 +375,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   // @Logger('Utils:')
   // @ErrorHandler()
   public async populateEmergencyWithdraw(props: NoCallback<EmergencyWithdrawProps>) {
-    if (this.core.useShiva) {
+    if (this.core.usingShiva()) {
       return this.sdk.shiva.populateEmergencyWithdraw(props);
     }
 
@@ -395,7 +395,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   // @Logger('Utils:')
   // @ErrorHandler()
   public async simulateEmergencyWithdraw(props: NoCallback<EmergencyWithdrawProps>) {
-    if (this.core.useShiva) {
+    if (this.core.usingShiva()) {
       return this.sdk.shiva.simulateEmergencyWithdraw(props);
     }
 

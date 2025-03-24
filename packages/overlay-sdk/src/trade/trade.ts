@@ -460,7 +460,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
           {
             ...ovlContract,
             functionName: "allowance",
-            args: [userAddress, this.core.useShiva ? SHIVA_ADDRESS[chainId] : marketAddress],
+            args: [userAddress, this.core.usingShiva() ? SHIVA_ADDRESS[chainId] : marketAddress],
           },
         ] as const
     });
