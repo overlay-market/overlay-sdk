@@ -90,6 +90,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       const cachedData = this.openPositionsCache[cacheKey];
       if (Date.now() - cachedData.lastUpdated < 3 * 60 * 1000) { // 3 minutes
         openPositionsData = cachedData.data;
+        openPositionsData = this.filterOpenPositionsByMarketId(openPositionsData, marketId);
         return {
           data: paginate(openPositionsData, page, pageSize).data,
           total: openPositionsData.length
