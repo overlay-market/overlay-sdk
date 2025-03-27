@@ -33,6 +33,7 @@ export const PRICE_CURRENCY_FROM_QUOTE = {
   AETH: "Ξ",
   BTC: "₿",
   PERCENTAGE: "%",
+  BERA: "BERA",
 };
 
 export const MARKET_LOGO = {
