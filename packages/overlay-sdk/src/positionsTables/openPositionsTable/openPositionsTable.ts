@@ -21,6 +21,7 @@ import { getOpenPositions } from "../../subgraph";
 import { CHAINS, invariant } from "../../common";
 import { paginate } from "../../common/utils/paginate";
 import { OverlayV1StateABI } from "../../markets/abis/OverlayV1State";
+import { formatPriceWithCurrency } from "../../common/utils/formatPriceWithCurrency";
 
 type OpenPosition = NonNullable<
   NonNullable<OpenPositionsQuery["account"]>["positions"]
@@ -274,29 +275,9 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       positionId: Number(positionId),
       size: parsedValue,
       positionSide: leverage + "x " + (isLong ? "Long" : "Short"),
-      entryPrice: `${priceCurrency ? priceCurrency : ""}${
-        parsedEntryPrice
-          ? priceCurrency === "%"
-            ? toPercentUnit(parsedEntryPrice)
-            : toScientificNumber(parsedEntryPrice)
-          : "-"
-      }`,
-      liquidatePrice: `${priceCurrency ? priceCurrency : ""}${
-        liquidatePrice && formatBigNumber(liquidatePrice, Number(18), 4)
-          ? priceCurrency === "%"
-            ? toPercentUnit(formatBigNumber(liquidatePrice, Number(18), 4))
-            : toScientificNumber(
-                formatBigNumber(liquidatePrice, Number(18), 4)
-              )
-          : "-"
-      }`,
-      currentPrice: `${priceCurrency ? priceCurrency : ""}${
-        marketMid && formatBigNumber(marketMid, Number(18), 4)
-          ? priceCurrency === "%"
-            ? toPercentUnit(formatBigNumber(marketMid, Number(18), 4))
-            : toScientificNumber(formatBigNumber(marketMid, Number(18), 4))
-          : "-"
-      }`,
+      entryPrice: parsedEntryPrice ? formatPriceWithCurrency(parsedEntryPrice, priceCurrency) : "-",
+      liquidatePrice: liquidatePrice && formatBigNumber(liquidatePrice, Number(18), 4) ? formatPriceWithCurrency(formatBigNumber(liquidatePrice, Number(18), 4), priceCurrency) : "-",
+      currentPrice: marketMid && formatBigNumber(marketMid, Number(18), 4) ? formatPriceWithCurrency(formatBigNumber(marketMid, Number(18), 4), priceCurrency) : "-",
       parsedCreatedTimestamp: formatUnixTimestampToDate(
         open.createdAtTimestamp
       ),
