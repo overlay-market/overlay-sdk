@@ -135,23 +135,23 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     }
   }
 
-  public async getMaxInputIncludingFees(marketId: string, address: Address, leverage: bigint) {
+  public async getMaxInputIncludingFees(marketId: string, address: Address, leverage: bigint,  decimals: number = 18) {
     const {marketAddress} = await this._getMarketAddressAndChainId(marketId)
 
     const tradingFeeRate = await this.sdk.market.getTradingFeeRate(marketAddress)
     const balance = await this.sdk.ovl.balance(address) as bigint
 
-    return this._getMaxInputIncludingFees(tradingFeeRate, balance, leverage)
+    return this._getMaxInputIncludingFees(tradingFeeRate, balance, leverage, decimals)
   }
 
-  private _getMaxInputIncludingFees(tradingFeeRate: bigint, balance: bigint, leverage: bigint) {
+  private _getMaxInputIncludingFees(tradingFeeRate: bigint, balance: bigint, leverage: bigint, decimals: number = 18) {
     const tradingFeeRateParsed = formatBigNumber(tradingFeeRate, 18, 6, true) as number
     const balanceParsed = formatBigNumber(balance, 18, 18, true) as number
 
     const buildFeeValueFromMaxInput = balanceParsed * tradingFeeRateParsed * (formatBigNumber(leverage, 18, 18, true) as number)
     const returnValue = balanceParsed - buildFeeValueFromMaxInput
   
-    return Math.trunc(returnValue * Math.pow(10, 18)) / Math.pow(10, 18)
+    return Math.trunc(returnValue * Math.pow(10, decimals)) / Math.pow(10, decimals)
   }
 
   public async getFee(marketId: string) {

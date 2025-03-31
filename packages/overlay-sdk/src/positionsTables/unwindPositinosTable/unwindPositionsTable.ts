@@ -13,6 +13,7 @@ import { PRICE_CURRENCY_FROM_QUOTE } from "../../constants";
 import { getUnwindPositions } from "../../subgraph";
 import { CHAINS, invariant } from "../../common";
 import { paginate } from "../../common/utils/paginate";
+import { formatPriceWithCurrency } from "../../common/utils/formatPriceWithCurrency";
 
 export type UnwindPositionData = {
   marketName: string | undefined;
@@ -98,20 +99,8 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
             unwind.position.leverage +
             "x " +
             (unwind.position.isLong ? "Long" : "Short"),
-          entryPrice: `${priceCurrency ? priceCurrency : ""}${
-            parsedEntryPrice
-              ? priceCurrency === "%"
-                ? toPercentUnit(parsedEntryPrice)
-                : toScientificNumber(parsedEntryPrice)
-              : "-"
-          }`,
-          exitPrice: `${priceCurrency ? priceCurrency : ""}${
-            parsedExitPrice
-              ? priceCurrency === "%"
-                ? toPercentUnit(parsedExitPrice)
-                : toScientificNumber(parsedExitPrice)
-              : "-"
-          }`,
+          entryPrice: parsedEntryPrice ? formatPriceWithCurrency(parsedEntryPrice, priceCurrency) : "-",
+          exitPrice: parsedExitPrice ? formatPriceWithCurrency(parsedExitPrice, priceCurrency) : "-",
           parsedCreatedTimestamp: formatUnixTimestampToDate(
             unwind.position.createdAtTimestamp
           ),

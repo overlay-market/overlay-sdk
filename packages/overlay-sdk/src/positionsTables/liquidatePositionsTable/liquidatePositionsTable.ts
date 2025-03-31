@@ -14,6 +14,7 @@ import formatUnixTimestampToDate from "../../common/utils/formatUnixTimestampToD
 import { CHAINS } from "../../common/constants.js";
 import { invariant } from "../../common/index.js";
 import { paginate } from "../../common/utils/paginate.js";
+import { formatPriceWithCurrency } from "../../common/utils/formatPriceWithCurrency.js";
 
 export type LiquidatedPositionData = {
   marketName: string | undefined;
@@ -101,20 +102,8 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
           marketName: marketName,
           size: parsedSize,
           position: liquidated.position.leverage + "x " + positionSide,
-          entryPrice: `${priceCurrency ? priceCurrency : ""}${
-            parsedEntryPrice
-              ? priceCurrency === "%"
-                ? toPercentUnit(parsedEntryPrice)
-                : toScientificNumber(parsedEntryPrice)
-              : "-"
-          }`,
-          exitPrice: `${priceCurrency ? priceCurrency : ""}${
-            parsedExitPrice
-              ? priceCurrency === "%"
-                ? toPercentUnit(parsedExitPrice)
-                : toScientificNumber(parsedExitPrice)
-              : "-"
-          }`,
+          entryPrice: parsedEntryPrice ? formatPriceWithCurrency(parsedEntryPrice, priceCurrency) : "-",
+          exitPrice: parsedExitPrice ? formatPriceWithCurrency(parsedExitPrice, priceCurrency) : "-", 
           created: parsedCreatedTimestamp,
           liquidated: parsedClosedTimestamp,
         });
