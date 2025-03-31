@@ -372,7 +372,8 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       unwindState,
       priceLimit,
       positionId: posId,
-      marketAddress
+      marketAddress,
+      useShiva: positionDetails.router.id !== zeroAddress
     } as UnwindStateData
   }
 

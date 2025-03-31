@@ -11,11 +11,12 @@ import {
   keccak256,
   encodePacked,
   zeroAddress,
+  Account,
 } from "viem";
 import { OverlayV1MarketABI } from "./abis/OverlayV1Market.js";
 import { OverlayV1Market2ABI } from "./abis/OverlayV1Market2.js";
 import { OverlaySDKModule } from "../common/class-primitives/sdk-module.js";
-import { NoCallback, OverlaySDKCommonProps, TransactionOptions, TransactionResult } from "../core/types.js";
+import { NoCallback, OverlaySDKCommonProps, TransactionCallback, TransactionOptions, TransactionResult } from "../core/types.js";
 import { BuildInnerProps, BuildProps, BuildResult, EmergencyWithdrawInnerProps, EmergencyWithdrawProps, UnwindInnerProps, UnwindMultipleInnerProps, UnwindMultipleProps, UnwindProps } from "./types.js";
 import { NOOP } from "../common/constants.js";
 import { ERROR_CODE, invariant, SDKError, toWei } from "../common/index.js";
@@ -219,16 +220,8 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   public async _unwindMultiple(
     props: UnwindMultipleProps
   ) {
-    const { account } = await this.parseUnwindMultipleProps(props);
-    for (const { marketAddress, positionId } of props.positions) {
-      const marketPositionId = `${marketAddress.toLowerCase()}-0x${Number(positionId).toString(16)}`
-      const positionDetails = await getPositionDetails(this.core.chainId, account.address.toLowerCase(), marketPositionId) ?? null
-      invariant(positionDetails, `Position not found for ${marketPositionId}; ${account.address.toLowerCase()}; ${positionId}; marketAddress: ${marketAddress}; chainId: ${this.core.chainId}`)
-      invariant(positionDetails.router.id === zeroAddress, 'All positions must be on a OverlayV1Market')
-    }
-
     this.core.useWeb3Provider();
-    const { callback, slippage, unwindPercentage, ...rest } = await this.parseUnwindMultipleProps(props);
+    const { account, slippage, unwindPercentage } = await this.parseUnwindMultipleProps(props);
     const decimals = 2;
     const unwindCalls = [];
 
@@ -278,28 +271,35 @@ export class OverlaySDKMarket extends OverlaySDKModule {
     const transactions = [];
 
     for (let i = 0; i < result.length; i++) {
-      const { marketAddress, positionId, priceLimit } = result[i] as UnwindStateSuccess;
-      console.log('result[i]', result[i]);
-
-      const contract = await this.getContractV1Market(marketAddress as Address);
-      const txArguments = [BigInt(positionId), toWei(unwindPercentage), priceLimit] as const;
-
-      transactions.push(
-        this.core.performTransaction({
-          ...rest,
-          account,
-          callback,
-          getGasLimit: (options: TransactionOptions) =>
-            contract.estimateGas.unwind(txArguments, options),
-          sendTransaction: (options: TransactionOptions) =>
-            contract.write.unwind(txArguments, options),
-        })
-      );
+      const unwindState = result[i] as UnwindStateSuccess;
+      const unwindCall = unwindState.useShiva ? this.sdk.shiva.buildUnwindCall(props, unwindState) : this.buildUnwindCall(props, unwindState);
+      transactions.push(unwindCall);
     }
   
     const results = await Promise.allSettled(transactions);
 
     return results;
+  }
+
+  public async buildUnwindCall(
+    props: UnwindMultipleProps,
+    unwindState: UnwindStateSuccess,
+  ) {
+    const { callback, account, slippage, unwindPercentage, ...rest } = await this.parseUnwindMultipleProps(props);
+    const { marketAddress, positionId, priceLimit } = unwindState;
+
+    const contract = await this.getContractV1Market(marketAddress as Address);
+    const txArguments = [BigInt(positionId), toWei(unwindPercentage), priceLimit] as const;
+
+    return this.core.performTransaction({
+      ...rest,
+      account,
+      callback,
+      getGasLimit: (options: TransactionOptions) =>
+          contract.estimateGas.unwind(txArguments, options),
+        sendTransaction: (options: TransactionOptions) =>
+          contract.write.unwind(txArguments, options),
+      })
   }
 
   // @Logger('Utils:')
