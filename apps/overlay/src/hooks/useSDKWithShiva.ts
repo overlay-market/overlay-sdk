@@ -12,6 +12,7 @@ export default function useSDKWithShiva() {
       [CHAINS.Bartio]: 'https://bartio.rpc.berachain.com',
       [CHAINS.BerachainMainnet]: 'https://rpc.berachain.com',
       [CHAINS.Bepolia]: 'https://bepolia.rpc.berachain.com',
+      [CHAINS.ArbitrumSepolia]: 'https://sepolia-rollup.arbitrum.io/rpc',
     },
     web3Provider: OverlaySDKCore.createWeb3Provider(chainId as CHAINS, window.ethereum),
     brokerId: 7777,

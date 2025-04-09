@@ -3,8 +3,7 @@ import { OpenPositionsQuery } from "../../types";
 import {
   formatBigNumber,
   formatUnixTimestampToDate,
-  toPercentUnit,
-  toScientificNumber,
+  toLowercaseKeys,
 } from "../../common/utils";
 import { Abi, Address, zeroAddress } from "viem";
 import JSBI from "jsbi";
@@ -109,6 +108,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
         }),
         getMarketsDetailsByChainId(chainId as CHAINS)
       ]);
+      const lowercasedMarketDetails = marketDetails && toLowercaseKeys(marketDetails);
 
       let positionsData: {
         [key: string]: PositionData | null | undefined
@@ -124,14 +124,14 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       }
 
       const transformedOpens: OpenPositionData[] = [];
-      invariant(marketDetails, "Failed to get market details");
+      invariant(lowercasedMarketDetails, "Failed to get market details");
 
       for (const open of rawOpenData) {
         const positionId = BigInt(open.id.split("-")[1]);
         const marketId = open.market.id as Address;
         let positionData = positionsData[`${marketId}-${positionId}`];
 
-        const formattedOpen = await this.formatOpenPosition(open, marketDetails, positionData ?? undefined);
+        const formattedOpen = await this.formatOpenPosition(open, lowercasedMarketDetails, positionData ?? undefined);
         if (formattedOpen) {
           transformedOpens.push(formattedOpen);
         }
@@ -202,9 +202,9 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     }
   
     const marketName =
-      marketDetails?.get(open.id.split("-")[0])?.marketName ?? "";
+      marketDetails?.get(open.id.split("-")[0].toLowerCase())?.marketName ?? "";
     const marketDetailsCurrency = marketDetails
-      ?.get(open.id.split("-")[0])
+      ?.get(open.id.split("-")[0].toLowerCase())
       ?.currency.trim();
     const priceCurrency = marketDetailsCurrency
       ? PRICE_CURRENCY_FROM_QUOTE[
