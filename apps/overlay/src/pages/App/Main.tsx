@@ -29,9 +29,6 @@ function Main() {
           <h1>Market</h1>
           <Market />
           <br />
-          <p>current account - {account}</p>
-          <p>useAccount chainId - {chainId}</p>
-          <p>Context chainId - {contextChainID as number}</p>
 
           <Shiva />
         </header>

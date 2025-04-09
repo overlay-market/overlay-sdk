@@ -47,6 +47,7 @@ const PositionsTable = () => {
 
   return (
     <>
+    <div>Unwind positions</div>
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -78,6 +79,7 @@ const PositionsTable = () => {
         </Table>
       </TableContainer>
             <br></br>
+            <div>Open positions</div>
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -110,6 +112,7 @@ const PositionsTable = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      <br></br>
     </>
   );
 };

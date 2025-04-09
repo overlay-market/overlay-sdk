@@ -33,6 +33,7 @@ const LiquidatedPositionsTable = () => {
 
   return (
     <>
+     <div>Liquidated positions</div>
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
