@@ -6,8 +6,7 @@ import { Address } from "viem";
 import {
   formatBigNumber,
   formatUnixTimestampToDate,
-  toPercentUnit,
-  toScientificNumber,
+  toLowercaseKeys,
 } from "../../common/utils";
 import { PRICE_CURRENCY_FROM_QUOTE } from "../../constants";
 import { getUnwindPositions } from "../../subgraph";
@@ -72,12 +71,14 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
       });
       const transformedUnwinds: UnwindPositionData[] = [];
       const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
-  
+      const lowercasedMarketDetails = marketDetails && toLowercaseKeys(marketDetails);
+
       for (const unwind of rawUnwindData) {
         const marketName =
-          marketDetails?.get(unwind.id.split("-")[0])?.marketName ?? "";
-        const marketDetailsCurrency = marketDetails
-          ?.get(unwind.id.split("-")[0])
+        lowercasedMarketDetails?.get(unwind.id.split("-")[0].toLowerCase())?.marketName ?? "";
+
+        const marketDetailsCurrency = lowercasedMarketDetails
+          ?.get(unwind.id.split("-")[0].toLowerCase())
           ?.currency.trim();
         const priceCurrency = marketDetailsCurrency
           ? PRICE_CURRENCY_FROM_QUOTE[
