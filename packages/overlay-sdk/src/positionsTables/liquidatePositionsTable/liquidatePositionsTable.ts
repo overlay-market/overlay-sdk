@@ -6,15 +6,12 @@ import { OverlaySDK } from "../../sdk.js";
 import { formatBigNumber } from "../../common/utils/formatBigNumber.js";
 import { getMarketsDetailsByChainId } from "../../services/marketsDetails.js";
 import { getLiquidatedPositions } from "../../subgraph";
-import {
-  toPercentUnit,
-  toScientificNumber,
-} from "../../common/utils/toScientificNumber.js";
 import formatUnixTimestampToDate from "../../common/utils/formatUnixTimestampToDate.js";
 import { CHAINS } from "../../common/constants.js";
 import { invariant } from "../../common/index.js";
 import { paginate } from "../../common/utils/paginate.js";
 import { formatPriceWithCurrency } from "../../common/utils/formatPriceWithCurrency.js";
+import { toLowercaseKeys } from "../../common/utils/toLowercaseKeys.js";
 
 export type LiquidatedPositionData = {
   marketName: string | undefined;
@@ -72,18 +69,19 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
       });
       const transformedLiquidated: LiquidatedPositionData[] = [];
       const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
+      const lowercasedMarketDetails = marketDetails && toLowercaseKeys(marketDetails);
 
       for (const liquidated of rawliquidatedPositions) {
         const marketName =
-          marketDetails?.get(liquidated.id.split("-")[0])?.marketName ?? "";
+        lowercasedMarketDetails?.get(liquidated.id.split("-")[0].toLowerCase())?.marketName ?? "";
         const parsedSize = formatBigNumber(liquidated.size, Number(18));
         const positionSide = liquidated.position.isLong ? "Long" : "Short";
         const parsedEntryPrice = formatBigNumber(
           liquidated.position.entryPrice,
           Number(18)
         );
-        const marketDetailsCurrency = marketDetails
-          ?.get(liquidated.id.split("-")[0])
+        const marketDetailsCurrency = lowercasedMarketDetails
+          ?.get(liquidated.id.split("-")[0].toLowerCase())
           ?.currency.trim();
         const priceCurrency = marketDetailsCurrency
           ? PRICE_CURRENCY_FROM_QUOTE[
