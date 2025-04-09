@@ -3,3 +3,4 @@ export { default as formatUnixTimestampToDate } from "./formatUnixTimestampToDat
 export { toScientificNumber, toPercentUnit } from "./toScientificNumber.js";
 export { formatBigNumber } from './formatBigNumber.js';
 export { formatFundingRateToDaily, formatFundingRateToAnnual } from './formatWei.js';
+export {toLowercaseKeys} from './toLowercaseKeys.js'
