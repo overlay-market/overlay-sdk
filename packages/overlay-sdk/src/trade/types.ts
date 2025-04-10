@@ -56,6 +56,7 @@ export type UnwindStateSuccess = {
   priceLimit: bigint;
   positionId: number;
   marketAddress: string;
+  useShiva: boolean;
 }
 
 export type UnwindStateError = {
