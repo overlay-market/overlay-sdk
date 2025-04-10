@@ -418,7 +418,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
         break;
       }
     }
-    invariant(positionId, "Position ID not found in the transaction receipt", ERROR_CODE.TRANSACTION_ERROR);
+    invariant(typeof positionId === 'bigint', "Position ID not found in the transaction receipt", ERROR_CODE.TRANSACTION_ERROR);
     return { positionId };
   }
 
