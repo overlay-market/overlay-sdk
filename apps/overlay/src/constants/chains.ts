@@ -32,7 +32,7 @@ export enum SupportedChainId {
   IMOLA = 30732,
   BARTIO = 80084,
   BERACHAIN_MAINNET = 80094,
-  BEPOLA = 80069,
+  BEPOLIA = 80069,
 }
 
 export const DEFAULT_NET = SupportedChainId[421614]
@@ -45,7 +45,7 @@ export const WORKING_CHAINS = [
   SupportedChainId[SupportedChainId.MAINNET],
   SupportedChainId[SupportedChainId.BARTIO],
   SupportedChainId[SupportedChainId.BERACHAIN_MAINNET],
-  SupportedChainId[SupportedChainId.BEPOLA],
+  SupportedChainId[SupportedChainId.BEPOLIA],
 ]
 
 export enum CHAINS {
