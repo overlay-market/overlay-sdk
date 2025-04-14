@@ -8,6 +8,7 @@ import {
   toEventHash,
   TransactionReceipt,
   WalletClient,
+  zeroAddress,
 } from 'viem'
 import { OverlaySDKModule } from '../common/class-primitives/sdk-module'
 import { NoCallback, OverlaySDKCommonProps, TransactionOptions, TransactionResult } from '../core/types'
@@ -39,6 +40,7 @@ import {
 } from './types'
 import { BuildInnerProps, BuildProps, BuildResult, EmergencyWithdrawInnerProps, EmergencyWithdrawProps, UnwindInnerProps, UnwindMultipleInnerProps, UnwindMultipleProps, UnwindProps } from '../markets/types'
 import { UnwindState, UnwindStateData, UnwindStateSuccess } from '../trade'
+import { getPositionDetails } from '../subgraph'
 
 export class OverlaySDKShiva extends OverlaySDKModule {
   private sdk: OverlaySDK
@@ -216,8 +218,17 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
   // Unwind
 
-  public async unwind(props: UnwindProps): Promise<TransactionResult> {
+  public async unwind(props: UnwindProps, verified: boolean = false): Promise<TransactionResult> {
     this.core.useWeb3Provider()
+
+    if (!verified) {
+      const { account, marketAddress, positionId } = await this.parseUnwindProps(props);
+      const marketPositionId = `${marketAddress.toLowerCase()}-0x${Number(positionId).toString(16)}`
+      const positionDetails = await getPositionDetails(this.core.chainId, account.address.toLowerCase(), marketPositionId) ?? null
+      invariant(positionDetails, `Position not found for ${marketPositionId}; ${account.address.toLowerCase()}; ${positionId}; marketAddress: ${marketAddress}; chainId: ${this.core.chainId}`)
+      invariant(positionDetails.router.id !== zeroAddress, 'This position is not on Shiva')
+    }
+
     const { account, ...rest } = await this.parseUnwindProps(props)
 
     const contract = this.getShivaContract()
@@ -282,14 +293,14 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
   public async unwindMultiple(props: UnwindMultipleProps) {
     this.core.useWeb3Provider()
-    const { callback, account, slippage, unwindPercentage, ...rest } = await this.parseUnwindMultipleProps(props);
+    const { account, slippage, unwindPercentage } = await this.parseUnwindMultipleProps(props);
     const decimals = 2;
     const unwindCalls = [];
 
     for (const { marketAddress, positionId } of props.positions) {
       unwindCalls.push(this.sdk.trade.getUnwindState(
         marketAddress,
-        SHIVA_ADDRESS[this.core.chainId as CHAINS],
+        account.address,
         positionId,
         unwindPercentage,
         slippage,
@@ -330,37 +341,46 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     }
 
     const transactions = [];
-    const contract = this.getShivaContract();
 
     for (let i = 0; i < result.length; i++) {
-      const { marketAddress, positionId, priceLimit } = result[i] as UnwindStateSuccess;
-
-      const txArguments = [
-        {
-          ovlMarket: marketAddress as Address,
-          brokerId: rest.brokerId ?? this.core.brokerId,
-          positionId: BigInt(positionId),
-          fraction: toWei(unwindPercentage),
-          priceLimit: priceLimit,
-        },
-      ] as const
-
-      transactions.push(
-        this.core.performTransaction({
-          ...rest,
-          account,
-          callback,
-          getGasLimit: (options: TransactionOptions) =>
-            contract.estimateGas.unwind(txArguments, options),
-          sendTransaction: (options: TransactionOptions) =>
-            contract.write.unwind(txArguments, options),
-        })
-      );
+      const unwindState = result[i] as UnwindStateSuccess;
+      const unwindCall = unwindState.useShiva ? this.buildUnwindCall(props, unwindState) : this.sdk.market.buildUnwindCall(props, unwindState);
+      transactions.push(unwindCall);
     }
   
     const results = await Promise.allSettled(transactions);
 
     return results;
+  }
+
+  public async buildUnwindCall(
+    props: UnwindMultipleProps,
+    unwindState: UnwindStateSuccess,
+  ) {
+    const { callback, account, slippage, unwindPercentage, ...rest } = await this.parseUnwindMultipleProps(props);
+    const { marketAddress, positionId, priceLimit } = unwindState;
+
+    const contract = this.getShivaContract();
+
+    const txArguments = [
+      {
+        ovlMarket: marketAddress as Address,
+        brokerId: rest.brokerId ?? this.core.brokerId,
+        positionId: BigInt(positionId),
+        fraction: toWei(unwindPercentage),
+        priceLimit: priceLimit,
+      },
+    ] as const
+
+    return this.core.performTransaction({
+      ...rest,
+      account,
+      callback,
+      getGasLimit: (options: TransactionOptions) =>
+          contract.estimateGas.unwind(txArguments, options),
+        sendTransaction: (options: TransactionOptions) =>
+          contract.write.unwind(txArguments, options),
+      })
   }
 
   // Build Single
