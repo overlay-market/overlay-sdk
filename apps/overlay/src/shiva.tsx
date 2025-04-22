@@ -91,10 +91,10 @@ const Shiva = () => {
         fraction: toWei(fraction),
         priceLimit: (await sdk.trade.getUnwindPrice(
           marketName,
-          SHIVA_ADDRESS[CHAINS.Bepolia],
+          SHIVA_ADDRESS[sdk.core.chainId],
           positionId,
           toWei(fraction),
-          1
+          slippage
         )) as bigint,
       }
       
@@ -127,7 +127,7 @@ const Shiva = () => {
           ovlMarket: marketAddress as Address,
           unwindPriceLimit: (await sdk.trade.getUnwindPrice(
             marketName,
-            SHIVA_ADDRESS[CHAINS.Bepolia],
+            SHIVA_ADDRESS[sdk.core.chainId],
             positionId,
             toWei(fraction),
             1
@@ -261,7 +261,7 @@ const Shiva = () => {
         positionId: positionId,
         priceLimit: (await sdk.trade.getUnwindPrice(
           marketName,
-          SHIVA_ADDRESS[CHAINS.Bepolia],
+          SHIVA_ADDRESS[sdk.core.chainId],
           positionId,
           toWei(fraction),
           1
@@ -288,7 +288,7 @@ const Shiva = () => {
         previousPositionId: positionId,
         unwindPriceLimit: (await sdk.trade.getUnwindPrice(
           marketName,
-          SHIVA_ADDRESS[CHAINS.Bepolia],
+          SHIVA_ADDRESS[sdk.core.chainId],
           positionId,
           toWei(fraction),
           1
