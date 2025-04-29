@@ -19,6 +19,10 @@ export type MarketData = {
   descriptionText?: string;
   fullLogo?: string;
   oracleLogo?: string;
+  buttons?: {
+    long: string;
+    short: string;
+  };
   bid: bigint;
   ask: bigint;
   mid: bigint;

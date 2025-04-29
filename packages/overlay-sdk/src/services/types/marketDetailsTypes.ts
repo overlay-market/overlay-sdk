@@ -32,6 +32,10 @@ export interface IMarketDetails {
     name?: string;
     url?: string;
   };
+  buttons?: {
+    long: string;
+    short: string;
+  };
   chains: IChainInfo[];
 }
 
@@ -44,4 +48,8 @@ export interface MarketDetails {
   descriptionText?: string;
   fullLogo?: string;
   oracleLogo?: string;
+  buttons?: {
+    long: string;
+    short: string;
+  };
 }
