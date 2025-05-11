@@ -23,6 +23,7 @@ export const getMarketsDetailsByChainId = async (chainId: CHAINS) => {
             descriptionText: market.descriptionText,
             fullLogo: market.fullLogo,
             oracleLogo: market.oracleLogo,
+            buttons: market.buttons,
           };
       
           return [marketDetail.id, marketDetail];
