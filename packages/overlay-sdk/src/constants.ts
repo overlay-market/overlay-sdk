@@ -67,6 +67,7 @@ export const V1_PERIPHERY_ADDRESS: AddressMap = {
   [CHAINS.Bartio]: "0x4f69dfb24958fcf69b70bca73c3e74f2c82bb405",
   [CHAINS.BerachainMainnet]: "0x2a154ebA61A182e726a540ae2856fc012106e763",
   [CHAINS.Bepolia]: "0xC50C7a502e6aE874A6299f385F938aF5C30CB91d",
+  [CHAINS.BscTestnet]: "0x81BdBf6C69882Fe7c958018D3fF7FcAcb59EF8b7",
 };
 
 export const OVL_ADDRESS: AddressMap = {
@@ -75,6 +76,7 @@ export const OVL_ADDRESS: AddressMap = {
   [CHAINS.Bartio]: "0x97576e088f0d05EF68cac2EEc63d017FE90952a0",
   [CHAINS.BerachainMainnet]: "0xaeD2f0c7AaCfE2B59Cc70964833EA4C28C2CdbDB",
   [CHAINS.Bepolia]: "0xd37f15e6f2E5F4A624bbb9864f56bbd2e9b201b5",
+  [CHAINS.BscTestnet]: "0xb880E767739A82Eb716780BDfdbC1eD7b23BDB38",
 };
 
 export const SHIVA_ADDRESS: AddressMap = {
@@ -83,6 +85,7 @@ export const SHIVA_ADDRESS: AddressMap = {
   [CHAINS.Bartio]: '0x3Cd0bC7E680006A322536311F3a9B0235bb6d865',
   [CHAINS.BerachainMainnet]: "0x7a555c83F7d2D26362C2b4954Cf01EBf9fA07DA0",
   [CHAINS.Bepolia]: "0xFf84cb66F0c302Cd860244868E10D110D8dc505D",
+  [CHAINS.BscTestnet]: zeroAddress,
 };
 
 interface Network {
@@ -127,5 +130,12 @@ export const NETWORKS: { [chainId: number]: Network } = {
       "https://api.goldsky.com/api/public/project_cm3n5avsu08tw01vthbry8fl7/subgraphs/overlay-bepolia/latest/gn",
     MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
     hasShiva: true,
+  },
+  [CHAINS.BscTestnet]: {
+    MARKET_PRICES_API: "https://api.overlay.market/bsc-testnet-charts/v1/charts",
+    SUBGRAPH_URL:
+      "https://api.goldsky.com/api/public/project_cm3n5avsu08tw01vthbry8fl7/subgraphs/overlay-bnb-testnet/1/gn",
+    MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
+    hasShiva: false,
   },
 };

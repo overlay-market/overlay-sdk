@@ -71,6 +71,7 @@ export const NETWORK_ICONS: { [chainId in SupportedChainId | number]: string } =
     [SupportedChainId.IMOLA]: ImolaLogo,
     [SupportedChainId.BARTIO]: BartioLogo,
     [SupportedChainId.BEPOLIA]: BartioLogo,
+    [SupportedChainId.BSC_TESTNET]: BartioLogo,
   };
 
 export const NETWORK_LABELS: {
@@ -102,6 +103,12 @@ export const NETWORK_LABELS: {
       <div style={{ color: "#FF648A" }}>Testnet</div>
     </FlexRow>
   ),
+  [SupportedChainId.BSC_TESTNET]: (
+    <FlexRow>
+      <div>BSC Testnet -</div>
+      <div style={{ color: "#FF648A" }}>Testnet</div>
+    </FlexRow>
+  ),
 };
 
 const CHAIN_LIST: { [chainId in SupportedChainId | number]: string } = {
@@ -111,6 +118,7 @@ const CHAIN_LIST: { [chainId in SupportedChainId | number]: string } = {
   [SupportedChainId.MAINNET]: "Mainnet",
   [SupportedChainId.BARTIO]: "Berachain",
   [SupportedChainId.BEPOLIA]: "Berachain",
+  [SupportedChainId.BSC_TESTNET]: "BSC Testnet",
 };
 
 const CHAIN_LIST_ORDER: { [x: number]: number } = {
@@ -120,6 +128,7 @@ const CHAIN_LIST_ORDER: { [x: number]: number } = {
   [4]: SupportedChainId.IMOLA,
   [5]: SupportedChainId.BARTIO,
   [6]: SupportedChainId.BEPOLIA,
+  [7]: SupportedChainId.BSC_TESTNET,
 };
 
 export default function ChainSwitch() {
