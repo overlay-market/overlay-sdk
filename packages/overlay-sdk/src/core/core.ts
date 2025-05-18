@@ -255,9 +255,10 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
       };
     } else {
       callback({ stage: TransactionCallbackStage.GAS_LIMIT });
-      const feeData = await this.getFeeData();
-      overrides.maxFeePerGas = feeData.maxFeePerGas;
-      overrides.maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
+      // const feeData = await this.getFeeData();
+      // Temporarily disable fee calculation
+      // overrides.maxFeePerGas = feeData.maxFeePerGas;
+      // overrides.maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
       try {
         overrides.gas = await getGasLimit({ ...overrides });
       } catch {
