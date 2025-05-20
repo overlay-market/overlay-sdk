@@ -227,12 +227,15 @@ export const getPositionDetails = async (chainId: CHAINS, account: string, marke
 export const getTotalSupplyDayHistory = async (chainId: CHAINS) => {
   invariant(chainId in CHAINS, "Unsupported chainId");
   const url = NETWORKS[chainId].SUBGRAPH_URL;
+  const now = Math.floor(Date.now() / 1000);
+  const dayAgoTarget = now - 24 * 60 * 60;
+  console.log({dayAgoTarget})
   try {
     const result = await request<TotalSupplyHistoryQuery, TotalSupplyHistoryQueryVariables>({
       document: TotalSupplyHistoryDocument,
       url,
       variables: {
-        first: 24 // first 24 hours
+        since: dayAgoTarget
       },
     });
 
