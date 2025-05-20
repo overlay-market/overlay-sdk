@@ -449,6 +449,7 @@ export type Build = {
   owner: Account;
   position: Position;
   price: Scalars['BigInt']['output'];
+  routerParams?: Maybe<RouterParams>;
   timestamp: Scalars['BigInt']['output'];
   transaction: Transaction;
 };
@@ -524,6 +525,27 @@ export type Build_Filter = {
   price_lte?: InputMaybe<Scalars['BigInt']['input']>;
   price_not?: InputMaybe<Scalars['BigInt']['input']>;
   price_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  routerParams?: InputMaybe<Scalars['String']['input']>;
+  routerParams_?: InputMaybe<RouterParams_Filter>;
+  routerParams_contains?: InputMaybe<Scalars['String']['input']>;
+  routerParams_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  routerParams_ends_with?: InputMaybe<Scalars['String']['input']>;
+  routerParams_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  routerParams_gt?: InputMaybe<Scalars['String']['input']>;
+  routerParams_gte?: InputMaybe<Scalars['String']['input']>;
+  routerParams_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  routerParams_lt?: InputMaybe<Scalars['String']['input']>;
+  routerParams_lte?: InputMaybe<Scalars['String']['input']>;
+  routerParams_not?: InputMaybe<Scalars['String']['input']>;
+  routerParams_not_contains?: InputMaybe<Scalars['String']['input']>;
+  routerParams_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  routerParams_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  routerParams_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  routerParams_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  routerParams_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  routerParams_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  routerParams_starts_with?: InputMaybe<Scalars['String']['input']>;
+  routerParams_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
   timestamp?: InputMaybe<Scalars['BigInt']['input']>;
   timestamp_gt?: InputMaybe<Scalars['BigInt']['input']>;
   timestamp_gte?: InputMaybe<Scalars['BigInt']['input']>;
@@ -585,6 +607,10 @@ export enum Build_OrderBy {
   PositionNumberOfUniwnds = 'position__numberOfUniwnds',
   PositionPositionId = 'position__positionId',
   Price = 'price',
+  RouterParams = 'routerParams',
+  RouterParamsBrokerId = 'routerParams__brokerId',
+  RouterParamsId = 'routerParams__id',
+  RouterParamsPerformer = 'routerParams__performer',
   Timestamp = 'timestamp',
   Transaction = 'transaction',
   TransactionBlockNumber = 'transaction__blockNumber',
@@ -2557,6 +2583,7 @@ export type Position = {
   numberOfUniwnds: Scalars['BigInt']['output'];
   owner: Account;
   positionId: Scalars['String']['output'];
+  router?: Maybe<Router>;
   unwinds: Array<Unwind>;
 };
 
@@ -2776,6 +2803,27 @@ export type Position_Filter = {
   positionId_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
   positionId_starts_with?: InputMaybe<Scalars['String']['input']>;
   positionId_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  router?: InputMaybe<Scalars['String']['input']>;
+  router_?: InputMaybe<Router_Filter>;
+  router_contains?: InputMaybe<Scalars['String']['input']>;
+  router_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  router_ends_with?: InputMaybe<Scalars['String']['input']>;
+  router_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  router_gt?: InputMaybe<Scalars['String']['input']>;
+  router_gte?: InputMaybe<Scalars['String']['input']>;
+  router_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  router_lt?: InputMaybe<Scalars['String']['input']>;
+  router_lte?: InputMaybe<Scalars['String']['input']>;
+  router_not?: InputMaybe<Scalars['String']['input']>;
+  router_not_contains?: InputMaybe<Scalars['String']['input']>;
+  router_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  router_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  router_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  router_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  router_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  router_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  router_starts_with?: InputMaybe<Scalars['String']['input']>;
+  router_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
   unwinds_?: InputMaybe<Unwind_Filter>;
 };
 
@@ -2842,6 +2890,8 @@ export enum Position_OrderBy {
   OwnerPlanckCatBalance = 'owner__planckCatBalance',
   OwnerRealizedPnl = 'owner__realizedPnl',
   PositionId = 'positionId',
+  Router = 'router',
+  RouterId = 'router__id',
   Unwinds = 'unwinds'
 }
 
@@ -2889,6 +2939,10 @@ export type Query = {
   referralPrograms: Array<ReferralProgram>;
   rewardsClaimed?: Maybe<RewardsClaimed>;
   rewardsClaimeds: Array<RewardsClaimed>;
+  router?: Maybe<Router>;
+  routerParams?: Maybe<RouterParams>;
+  routerParams_collection: Array<RouterParams>;
+  routers: Array<Router>;
   staking?: Maybe<Staking>;
   stakingPosition?: Maybe<StakingPosition>;
   stakingPositions: Array<StakingPosition>;
@@ -3278,6 +3332,42 @@ export type QueryRewardsClaimedsArgs = {
   skip?: InputMaybe<Scalars['Int']['input']>;
   subgraphError?: _SubgraphErrorPolicy_;
   where?: InputMaybe<RewardsClaimed_Filter>;
+};
+
+
+export type QueryRouterArgs = {
+  block?: InputMaybe<Block_Height>;
+  id: Scalars['ID']['input'];
+  subgraphError?: _SubgraphErrorPolicy_;
+};
+
+
+export type QueryRouterParamsArgs = {
+  block?: InputMaybe<Block_Height>;
+  id: Scalars['ID']['input'];
+  subgraphError?: _SubgraphErrorPolicy_;
+};
+
+
+export type QueryRouterParams_CollectionArgs = {
+  block?: InputMaybe<Block_Height>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<RouterParams_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  subgraphError?: _SubgraphErrorPolicy_;
+  where?: InputMaybe<RouterParams_Filter>;
+};
+
+
+export type QueryRoutersArgs = {
+  block?: InputMaybe<Block_Height>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Router_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  subgraphError?: _SubgraphErrorPolicy_;
+  where?: InputMaybe<Router_Filter>;
 };
 
 
@@ -3911,6 +4001,132 @@ export enum RewardsClaimed_OrderBy {
   TransactionHash = 'transactionHash'
 }
 
+export type Router = {
+  __typename?: 'Router';
+  id: Scalars['Bytes']['output'];
+};
+
+export type RouterParams = {
+  __typename?: 'RouterParams';
+  brokerId: Scalars['BigInt']['output'];
+  id: Scalars['Bytes']['output'];
+  performer: Scalars['Bytes']['output'];
+  router: Router;
+  transaction: Transaction;
+};
+
+export type RouterParams_Filter = {
+  /** Filter for the block changed event. */
+  _change_block?: InputMaybe<BlockChangedFilter>;
+  and?: InputMaybe<Array<InputMaybe<RouterParams_Filter>>>;
+  brokerId?: InputMaybe<Scalars['BigInt']['input']>;
+  brokerId_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  brokerId_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  brokerId_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  brokerId_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  brokerId_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  brokerId_not?: InputMaybe<Scalars['BigInt']['input']>;
+  brokerId_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  id?: InputMaybe<Scalars['Bytes']['input']>;
+  id_contains?: InputMaybe<Scalars['Bytes']['input']>;
+  id_gt?: InputMaybe<Scalars['Bytes']['input']>;
+  id_gte?: InputMaybe<Scalars['Bytes']['input']>;
+  id_in?: InputMaybe<Array<Scalars['Bytes']['input']>>;
+  id_lt?: InputMaybe<Scalars['Bytes']['input']>;
+  id_lte?: InputMaybe<Scalars['Bytes']['input']>;
+  id_not?: InputMaybe<Scalars['Bytes']['input']>;
+  id_not_contains?: InputMaybe<Scalars['Bytes']['input']>;
+  id_not_in?: InputMaybe<Array<Scalars['Bytes']['input']>>;
+  or?: InputMaybe<Array<InputMaybe<RouterParams_Filter>>>;
+  performer?: InputMaybe<Scalars['Bytes']['input']>;
+  performer_contains?: InputMaybe<Scalars['Bytes']['input']>;
+  performer_gt?: InputMaybe<Scalars['Bytes']['input']>;
+  performer_gte?: InputMaybe<Scalars['Bytes']['input']>;
+  performer_in?: InputMaybe<Array<Scalars['Bytes']['input']>>;
+  performer_lt?: InputMaybe<Scalars['Bytes']['input']>;
+  performer_lte?: InputMaybe<Scalars['Bytes']['input']>;
+  performer_not?: InputMaybe<Scalars['Bytes']['input']>;
+  performer_not_contains?: InputMaybe<Scalars['Bytes']['input']>;
+  performer_not_in?: InputMaybe<Array<Scalars['Bytes']['input']>>;
+  router?: InputMaybe<Scalars['String']['input']>;
+  router_?: InputMaybe<Router_Filter>;
+  router_contains?: InputMaybe<Scalars['String']['input']>;
+  router_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  router_ends_with?: InputMaybe<Scalars['String']['input']>;
+  router_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  router_gt?: InputMaybe<Scalars['String']['input']>;
+  router_gte?: InputMaybe<Scalars['String']['input']>;
+  router_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  router_lt?: InputMaybe<Scalars['String']['input']>;
+  router_lte?: InputMaybe<Scalars['String']['input']>;
+  router_not?: InputMaybe<Scalars['String']['input']>;
+  router_not_contains?: InputMaybe<Scalars['String']['input']>;
+  router_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  router_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  router_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  router_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  router_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  router_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  router_starts_with?: InputMaybe<Scalars['String']['input']>;
+  router_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  transaction?: InputMaybe<Scalars['String']['input']>;
+  transaction_?: InputMaybe<Transaction_Filter>;
+  transaction_contains?: InputMaybe<Scalars['String']['input']>;
+  transaction_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  transaction_ends_with?: InputMaybe<Scalars['String']['input']>;
+  transaction_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  transaction_gt?: InputMaybe<Scalars['String']['input']>;
+  transaction_gte?: InputMaybe<Scalars['String']['input']>;
+  transaction_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  transaction_lt?: InputMaybe<Scalars['String']['input']>;
+  transaction_lte?: InputMaybe<Scalars['String']['input']>;
+  transaction_not?: InputMaybe<Scalars['String']['input']>;
+  transaction_not_contains?: InputMaybe<Scalars['String']['input']>;
+  transaction_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  transaction_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  transaction_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  transaction_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  transaction_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  transaction_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  transaction_starts_with?: InputMaybe<Scalars['String']['input']>;
+  transaction_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+};
+
+export enum RouterParams_OrderBy {
+  BrokerId = 'brokerId',
+  Id = 'id',
+  Performer = 'performer',
+  Router = 'router',
+  RouterId = 'router__id',
+  Transaction = 'transaction',
+  TransactionBlockNumber = 'transaction__blockNumber',
+  TransactionGasLimit = 'transaction__gasLimit',
+  TransactionGasPrice = 'transaction__gasPrice',
+  TransactionId = 'transaction__id',
+  TransactionTimestamp = 'transaction__timestamp'
+}
+
+export type Router_Filter = {
+  /** Filter for the block changed event. */
+  _change_block?: InputMaybe<BlockChangedFilter>;
+  and?: InputMaybe<Array<InputMaybe<Router_Filter>>>;
+  id?: InputMaybe<Scalars['Bytes']['input']>;
+  id_contains?: InputMaybe<Scalars['Bytes']['input']>;
+  id_gt?: InputMaybe<Scalars['Bytes']['input']>;
+  id_gte?: InputMaybe<Scalars['Bytes']['input']>;
+  id_in?: InputMaybe<Array<Scalars['Bytes']['input']>>;
+  id_lt?: InputMaybe<Scalars['Bytes']['input']>;
+  id_lte?: InputMaybe<Scalars['Bytes']['input']>;
+  id_not?: InputMaybe<Scalars['Bytes']['input']>;
+  id_not_contains?: InputMaybe<Scalars['Bytes']['input']>;
+  id_not_in?: InputMaybe<Array<Scalars['Bytes']['input']>>;
+  or?: InputMaybe<Array<InputMaybe<Router_Filter>>>;
+};
+
+export enum Router_OrderBy {
+  Id = 'id'
+}
+
 export type Staking = {
   __typename?: 'Staking';
   id: Scalars['Bytes']['output'];
@@ -4232,6 +4448,10 @@ export type Subscription = {
   referralPrograms: Array<ReferralProgram>;
   rewardsClaimed?: Maybe<RewardsClaimed>;
   rewardsClaimeds: Array<RewardsClaimed>;
+  router?: Maybe<Router>;
+  routerParams?: Maybe<RouterParams>;
+  routerParams_collection: Array<RouterParams>;
+  routers: Array<Router>;
   staking?: Maybe<Staking>;
   stakingPosition?: Maybe<StakingPosition>;
   stakingPositions: Array<StakingPosition>;
@@ -4621,6 +4841,42 @@ export type SubscriptionRewardsClaimedsArgs = {
   skip?: InputMaybe<Scalars['Int']['input']>;
   subgraphError?: _SubgraphErrorPolicy_;
   where?: InputMaybe<RewardsClaimed_Filter>;
+};
+
+
+export type SubscriptionRouterArgs = {
+  block?: InputMaybe<Block_Height>;
+  id: Scalars['ID']['input'];
+  subgraphError?: _SubgraphErrorPolicy_;
+};
+
+
+export type SubscriptionRouterParamsArgs = {
+  block?: InputMaybe<Block_Height>;
+  id: Scalars['ID']['input'];
+  subgraphError?: _SubgraphErrorPolicy_;
+};
+
+
+export type SubscriptionRouterParams_CollectionArgs = {
+  block?: InputMaybe<Block_Height>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<RouterParams_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  subgraphError?: _SubgraphErrorPolicy_;
+  where?: InputMaybe<RouterParams_Filter>;
+};
+
+
+export type SubscriptionRoutersArgs = {
+  block?: InputMaybe<Block_Height>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Router_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  subgraphError?: _SubgraphErrorPolicy_;
+  where?: InputMaybe<Router_Filter>;
 };
 
 
@@ -5761,6 +6017,7 @@ export type Unwind = {
   pnl: Scalars['BigInt']['output'];
   position: Position;
   price: Scalars['BigInt']['output'];
+  routerParams?: Maybe<RouterParams>;
   size: Scalars['BigInt']['output'];
   timestamp: Scalars['BigInt']['output'];
   transaction: Transaction;
@@ -5888,6 +6145,27 @@ export type Unwind_Filter = {
   price_lte?: InputMaybe<Scalars['BigInt']['input']>;
   price_not?: InputMaybe<Scalars['BigInt']['input']>;
   price_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  routerParams?: InputMaybe<Scalars['String']['input']>;
+  routerParams_?: InputMaybe<RouterParams_Filter>;
+  routerParams_contains?: InputMaybe<Scalars['String']['input']>;
+  routerParams_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  routerParams_ends_with?: InputMaybe<Scalars['String']['input']>;
+  routerParams_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  routerParams_gt?: InputMaybe<Scalars['String']['input']>;
+  routerParams_gte?: InputMaybe<Scalars['String']['input']>;
+  routerParams_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  routerParams_lt?: InputMaybe<Scalars['String']['input']>;
+  routerParams_lte?: InputMaybe<Scalars['String']['input']>;
+  routerParams_not?: InputMaybe<Scalars['String']['input']>;
+  routerParams_not_contains?: InputMaybe<Scalars['String']['input']>;
+  routerParams_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  routerParams_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  routerParams_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  routerParams_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  routerParams_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  routerParams_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  routerParams_starts_with?: InputMaybe<Scalars['String']['input']>;
+  routerParams_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
   size?: InputMaybe<Scalars['BigInt']['input']>;
   size_gt?: InputMaybe<Scalars['BigInt']['input']>;
   size_gte?: InputMaybe<Scalars['BigInt']['input']>;
@@ -5987,6 +6265,10 @@ export enum Unwind_OrderBy {
   PositionNumberOfUniwnds = 'position__numberOfUniwnds',
   PositionPositionId = 'position__positionId',
   Price = 'price',
+  RouterParams = 'routerParams',
+  RouterParamsBrokerId = 'routerParams__brokerId',
+  RouterParamsId = 'routerParams__id',
+  RouterParamsPerformer = 'routerParams__performer',
   Size = 'size',
   Timestamp = 'timestamp',
   Transaction = 'transaction',
@@ -6041,7 +6323,6 @@ export type OpenPositionsQueryVariables = Exact<{
   first?: InputMaybe<Scalars['Int']['input']>;
   skip?: InputMaybe<Scalars['Int']['input']>;
 }>;
-
 
 export type OpenPositionsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', fractionUnwound: any, id: string, createdAtTimestamp: any, currentOi: any, entryPrice: any, initialCollateral: any, isLiquidated: boolean, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: string, isShutdown: boolean }, router: { __typename?: 'Router', id: string } }> } | null };
 
@@ -6114,12 +6395,11 @@ export type QueryPositionNoRouterQueryVariables = Exact<{
 export type QueryPositionNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', id: string, positionId: string, initialOi: any, initialDebt: any, initialCollateral: any, initialNotional: any, leverage: any, isLong: boolean, entryPrice: any, isLiquidated: boolean, currentOi: any, currentDebt: any, mint: any, createdAtTimestamp: any, createdAtBlockNumber: any, numberOfUniwnds: any, fractionUnwound: any, market: { __typename?: 'Market', id: any, feedAddress: string, isShutdown: boolean }, builds: Array<{ __typename?: 'Build', id: string, price: any, timestamp: any }>, liquidates: Array<{ __typename?: 'Liquidate', id: string, mint: any, price: any, timestamp: any }>, unwinds: Array<{ __typename?: 'Unwind', fraction: any, id: string, mint: any, timestamp: any, price: any, unwindNumber: any, transferAmount: any, pnl: any, size: any }> }> } | null };
 
 export type TotalSupplyHistoryQueryVariables = Exact<{
-  first: Scalars['Int']['input'];
+  since: Scalars['Int']['input'];
 }>;
 
 
-export type TotalSupplyHistoryQuery = { __typename?: 'Query', totalSupplyHourDatas: Array<{ __typename?: 'TotalSupplyHourData', periodStartUnix: number, close: any }> };
-
+export type TotalSupplyHistoryQuery = { __typename?: 'Query', totalSupplyHourDatas: Array<{ __typename?: 'TotalSupplyHourData', periodStartUnix: number, close: any, open: any }> };
 
 export type LastBlockQueryQueryVariables = Exact<{ [key: string]: never; }>;
 

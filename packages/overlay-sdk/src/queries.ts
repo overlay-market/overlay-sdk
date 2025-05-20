@@ -378,14 +378,15 @@ query queryPositionNoRouter($account: ID!, $marketPositionId: ID!) {
 }`
 
 export const TotalSupplyHistory = gql`
-query TotalSupplyHistory($first: Int!) {
+query TotalSupplyHistory($since: Int!) {
   totalSupplyHourDatas(
     orderBy: periodStartUnix
     orderDirection: desc
-    first: $first
+    where: { periodStartUnix_gte: $since }
   ) {
     periodStartUnix
     close
+    open
   }
 }`;
 

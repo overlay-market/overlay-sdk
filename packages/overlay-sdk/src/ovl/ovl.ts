@@ -170,11 +170,14 @@ export class OverlaySDKOverlayToken extends OverlaySDKModule {
   public async totalSupplyDayChange(): Promise<number> {
     const chainId = this.core.chainId;
     const totalSupplyHistory = await getTotalSupplyDayHistory(chainId);
+    console.log("totalSupplyHistory", totalSupplyHistory)
 
     if (!totalSupplyHistory) return 0
 
     const currentTotalSupply = totalSupplyHistory[0].close
-    const dayAgoTotalSupply = totalSupplyHistory[totalSupplyHistory.length -1].close
+    const dayAgoTotalSupply = totalSupplyHistory[totalSupplyHistory.length -1].open
+
+    console.log({currentTotalSupply, dayAgoTotalSupply})
 
     return (currentTotalSupply - dayAgoTotalSupply) / dayAgoTotalSupply
   }
