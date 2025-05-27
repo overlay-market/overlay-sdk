@@ -253,9 +253,9 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     if (exceedOiCap) tradeState = TradeState.ExceedsOICap
     if (exceedCircuitBreakerOiCap) tradeState = TradeState.ExceedsCircuitBreakerOICap
     if (showBalanceNotEnoughWarning) tradeState = TradeState.OVLBalanceBelowMinimum
-    if (showApprovalFlow) tradeState = TradeState.NeedsApproval
     if (isPriceImpactHigh) tradeState = TradeState.TradeHighPriceImpact
     if (amountExceedsMaxInput) tradeState = TradeState.AmountExceedsMaxInput
+    if (showApprovalFlow) tradeState = TradeState.NeedsApproval
 
     return {
       liquidationPriceEstimate,
