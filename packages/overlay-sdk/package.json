@@ -1,6 +1,6 @@
 {
   "name": "overlay-sdk",
-  "version": "0.1.16-beta",
+  "version": "0.1.22-alpha",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -28,6 +28,6 @@
     "graphql-request": "^6.1.0",
     "jsbi": "^4.3.0",
     "moment": "^2.30.1",
-    "viem": "^2.23.0"
+    "viem": "^2.23.6"
   }
 }

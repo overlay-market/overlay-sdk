@@ -10,16 +10,19 @@ import {
   decodeEventLog,
   keccak256,
   encodePacked,
+  zeroAddress,
+  Account,
 } from "viem";
 import { OverlayV1MarketABI } from "./abis/OverlayV1Market.js";
 import { OverlayV1Market2ABI } from "./abis/OverlayV1Market2.js";
 import { OverlaySDKModule } from "../common/class-primitives/sdk-module.js";
-import { NoCallback, OverlaySDKCommonProps, TransactionOptions, TransactionResult } from "../core/types.js";
+import { NoCallback, OverlaySDKCommonProps, TransactionCallback, TransactionOptions, TransactionResult } from "../core/types.js";
 import { BuildInnerProps, BuildProps, BuildResult, EmergencyWithdrawInnerProps, EmergencyWithdrawProps, UnwindInnerProps, UnwindMultipleInnerProps, UnwindMultipleProps, UnwindProps } from "./types.js";
 import { NOOP } from "../common/constants.js";
 import { ERROR_CODE, invariant, SDKError, toWei } from "../common/index.js";
 import { OverlaySDK } from "../sdk.js";
 import { UnwindState, UnwindStateData, UnwindStateSuccess } from "../trade/types.js";
+import { getPositionDetails } from "../subgraph.js";
 
 export class OverlaySDKMarket extends OverlaySDKModule {
   private sdk: OverlaySDK;
@@ -102,7 +105,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   public async build(
     props: BuildProps
   ): Promise<TransactionResult<BuildResult>> {
-    if (this.core.useShiva) {
+    if (this.core.usingShiva()) {
       return this.sdk.shiva.build(props);
     }
     return this._build(props);
@@ -133,7 +136,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   // @Logger('Utils:')
   // @ErrorHandler()
   public async populateBuild(props: NoCallback<BuildProps>) {
-    if (this.core.useShiva) {
+    if (this.core.usingShiva()) {
       return this.sdk.shiva.populateBuild(props);
     }
 
@@ -153,7 +156,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   // @Logger('Utils:')
   // @ErrorHandler()
   public async simulateBuild(props: NoCallback<BuildProps>) {
-    if (this.core.useShiva) {
+    if (this.core.usingShiva()) {
       return this.sdk.shiva.simulateBuild(props);
     }
 
@@ -173,8 +176,13 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   public async unwind(
     props: UnwindProps
   ): Promise<TransactionResult> {
-    if (this.core.useShiva) {
-      return this.sdk.shiva.unwind(props);
+    const { account, marketAddress, positionId } = await this.parseUnwindProps(props);
+    const marketPositionId = `${marketAddress.toLowerCase()}-0x${Number(positionId).toString(16)}`
+    const positionDetails = await getPositionDetails(this.core.chainId, account.address.toLowerCase(), marketPositionId) ?? null
+    invariant(positionDetails, `Position not found for ${marketPositionId}; ${account.address.toLowerCase()}; ${positionId}; marketAddress: ${marketAddress}; chainId: ${this.core.chainId}`)
+
+    if (positionDetails.router.id !== zeroAddress) {
+      return this.sdk.shiva.unwind(props, true);
     }
     return this._unwind(props);
   }
@@ -203,7 +211,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   public async unwindMultiple(
     props: UnwindMultipleProps
   ) {
-    if (this.core.useShiva) {
+    if (this.core.usingShiva()) {
       return this.sdk.shiva.unwindMultiple(props);
     }
     return this._unwindMultiple(props);
@@ -213,7 +221,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
     props: UnwindMultipleProps
   ) {
     this.core.useWeb3Provider();
-    const { callback, account, slippage, unwindPercentage, ...rest } = await this.parseUnwindMultipleProps(props);
+    const { account, slippage, unwindPercentage } = await this.parseUnwindMultipleProps(props);
     const decimals = 2;
     const unwindCalls = [];
 
@@ -263,23 +271,9 @@ export class OverlaySDKMarket extends OverlaySDKModule {
     const transactions = [];
 
     for (let i = 0; i < result.length; i++) {
-      const { marketAddress, positionId, priceLimit } = result[i] as UnwindStateSuccess;
-      console.log('result[i]', result[i]);
-
-      const contract = await this.getContractV1Market(marketAddress as Address);
-      const txArguments = [BigInt(positionId), toWei(unwindPercentage), priceLimit] as const;
-
-      transactions.push(
-        this.core.performTransaction({
-          ...rest,
-          account,
-          callback,
-          getGasLimit: (options: TransactionOptions) =>
-            contract.estimateGas.unwind(txArguments, options),
-          sendTransaction: (options: TransactionOptions) =>
-            contract.write.unwind(txArguments, options),
-        })
-      );
+      const unwindState = result[i] as UnwindStateSuccess;
+      const unwindCall = unwindState.useShiva ? this.sdk.shiva.buildUnwindCall(props, unwindState) : this.buildUnwindCall(props, unwindState);
+      transactions.push(unwindCall);
     }
   
     const results = await Promise.allSettled(transactions);
@@ -287,10 +281,31 @@ export class OverlaySDKMarket extends OverlaySDKModule {
     return results;
   }
 
+  public async buildUnwindCall(
+    props: UnwindMultipleProps,
+    unwindState: UnwindStateSuccess,
+  ) {
+    const { callback, account, slippage, unwindPercentage, ...rest } = await this.parseUnwindMultipleProps(props);
+    const { marketAddress, positionId, priceLimit } = unwindState;
+
+    const contract = await this.getContractV1Market(marketAddress as Address);
+    const txArguments = [BigInt(positionId), toWei(unwindPercentage), priceLimit] as const;
+
+    return this.core.performTransaction({
+      ...rest,
+      account,
+      callback,
+      getGasLimit: (options: TransactionOptions) =>
+          contract.estimateGas.unwind(txArguments, options),
+        sendTransaction: (options: TransactionOptions) =>
+          contract.write.unwind(txArguments, options),
+      })
+  }
+
   // @Logger('Utils:')
   // @ErrorHandler()
   public async populateUnwind(props: NoCallback<UnwindProps>) {
-    if (this.core.useShiva) {
+    if (this.core.usingShiva()) {
       return this.sdk.shiva.populateUnwind(props);
     }
 
@@ -310,7 +325,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   // @Logger('Utils:')
   // @ErrorHandler()
   public async simulateUnwind(props: NoCallback<UnwindProps>) {
-    if (this.core.useShiva) {
+    if (this.core.usingShiva()) {
       return this.sdk.shiva.simulateUnwind(props);
     }
 
@@ -330,7 +345,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   public async emergencyWithdraw(
     props: EmergencyWithdrawProps
   ): Promise<TransactionResult> {
-    if (this.core.useShiva) {
+    if (this.core.usingShiva()) {
       return this.sdk.shiva.emergencyWithdraw(props);
     }
     return this._emergencyWithdraw(props);
@@ -360,7 +375,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   // @Logger('Utils:')
   // @ErrorHandler()
   public async populateEmergencyWithdraw(props: NoCallback<EmergencyWithdrawProps>) {
-    if (this.core.useShiva) {
+    if (this.core.usingShiva()) {
       return this.sdk.shiva.populateEmergencyWithdraw(props);
     }
 
@@ -380,7 +395,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   // @Logger('Utils:')
   // @ErrorHandler()
   public async simulateEmergencyWithdraw(props: NoCallback<EmergencyWithdrawProps>) {
-    if (this.core.useShiva) {
+    if (this.core.usingShiva()) {
       return this.sdk.shiva.simulateEmergencyWithdraw(props);
     }
 

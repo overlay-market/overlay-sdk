@@ -2,32 +2,45 @@ import axios from "axios";
 import { request, RequestExtendedOptions } from "graphql-request";
 import {
   UnwindPositionsQuery as UnwindPositionsQueryDocument,
+  UnwindPositionsNoRouterQuery as UnwindPositionsNoRouterQueryDocument,
   ActiveMarketsQuery as ActiveMarketsQueryDocument,
   LiquidatedPositionsQuery as LiquidatedPositionsQueryDocument,
+  LiquidatedPositionsNoRouterQuery as LiquidatedPositionsNoRouterQueryDocument,
   OpenPositionsQuery as OpenPositionsQueryDocument,
+  OpenPositionsNoRouterQuery as OpenPositionsNoRouterQueryDocument,
   NumberOfPositionsQuery as NumberOfPositionsQueryDocument,
   PositionQuery as PositionQueryDocument,
+  PositionNoRouterQuery as PositionNoRouterQueryDocument,
   TotalSupplyHistory as TotalSupplyHistoryDocument,
   LastBlockQuery as LastBlockQueryDocument
 } from "./queries";
 import {
   OpenPositionsQuery,
   OpenPositionsQueryVariables,
+  OpenPositionsNoRouterQuery,
+  OpenPositionsNoRouterQueryVariables,
   UnwindsQuery,
   UnwindsQueryVariables,
+  UnwindsNoRouterQuery,
+  UnwindsNoRouterQueryVariables,
   ActiveMarketsQuery,
   LiquidatedPositionsQuery,
   LiquidatedPositionsQueryVariables,
+  LiquidatedPositionsNoRouterQuery,
+  LiquidatedPositionsNoRouterQueryVariables,
   NumberOfPositionsQuery,
   NumberOfPositionsQueryVariables,
   QueryPositionQuery,
   QueryPositionQueryVariables,
   TotalSupplyHistoryQuery,
   TotalSupplyHistoryQueryVariables,
-  LastBlockQueryQuery
+  LastBlockQueryQuery,
+  QueryPositionNoRouterQuery,
+  QueryPositionNoRouterQueryVariables
 } from "./types";
 import { NETWORKS } from "./constants";
 import { CHAINS, invariant } from "./common";
+import { zeroAddress } from "viem";
 
 export type SubgraphUrl =
   | string
@@ -79,6 +92,7 @@ export type GetOpenPositionsOptions = {
   account: string;
   first?: number;
   skip?: number;
+  noRouter?: boolean;
 };
 
 type OpenPosition = NonNullable<
@@ -92,15 +106,33 @@ export const getOpenPositions = async ({
 }: GetOpenPositionsOptions): Promise<OpenPosition[]> => {
   invariant(chainId in CHAINS, "Unsupported chainId");
   const url = NETWORKS[chainId].SUBGRAPH_URL;
-  return requestAllWithStep<
+  const hasRouter = NETWORKS[chainId].hasShiva;
+  
+  if (hasRouter) {
+    return requestAllWithStep<
     OpenPositionsQuery,
     OpenPosition,
     OpenPositionsQueryVariables
+    >({
+      url,
+      document: OpenPositionsQueryDocument,
+      step: first ?? 1000,
+      extractArray: (result) => result?.account?.positions.map((position) => ({...position, router: position.router || {id: zeroAddress}})) ?? [],
+      variables: {
+        account,
+      },
+    });
+  }
+
+  return requestAllWithStep<
+    OpenPositionsNoRouterQuery,
+    OpenPosition,
+    OpenPositionsNoRouterQueryVariables
   >({
     url,
-    document: OpenPositionsQueryDocument,
+    document: OpenPositionsNoRouterQueryDocument,
     step: first ?? 1000,
-    extractArray: (result) => result?.account?.positions ?? [],
+    extractArray: (result) => result?.account?.positions.map((position) => ({...position, router: {id: zeroAddress}})) ?? [],
     variables: {
       account,
     },
@@ -125,11 +157,25 @@ export const getUnwindPositions = async ({
 }: GetUnwindPositionsOptions): Promise<Unwind[]> => {
   invariant(chainId in CHAINS, "Unsupported chainId");
   const url = NETWORKS[chainId].SUBGRAPH_URL;
-  return requestAllWithStep<UnwindsQuery, Unwind, UnwindsQueryVariables>({
+  const hasRouter = NETWORKS[chainId].hasShiva;
+
+  if (hasRouter) {
+    return requestAllWithStep<UnwindsQuery, Unwind, UnwindsQueryVariables>({
+      url,
+      document: UnwindPositionsQueryDocument,
+      step: first ?? 1000,
+      extractArray: (result) => result?.account?.unwinds.map((unwind) => ({...unwind, position: {...unwind.position, router: unwind.position.router || {id: zeroAddress}}})) ?? [],
+      variables: {
+        account,
+      },
+    });
+  }
+
+  return requestAllWithStep<UnwindsNoRouterQuery, Unwind, UnwindsNoRouterQueryVariables>({
     url,
-    document: UnwindPositionsQueryDocument,
+    document: UnwindPositionsNoRouterQueryDocument,
     step: first ?? 1000,
-    extractArray: (result) => result?.account?.unwinds ?? [],
+    extractArray: (result) => result?.account?.unwinds.map((unwind) => ({...unwind, position: {...unwind.position, router: {id: zeroAddress}}})) ?? [],
     variables: {
       account,
     },
@@ -154,15 +200,33 @@ export const getLiquidatedPositions = async ({
 }: GetliquidatedPositionsOptions): Promise<Liquidated[]> => {
   invariant(chainId in CHAINS, "Unsupported chainId");
   const url = NETWORKS[chainId].SUBGRAPH_URL;
-  return requestAllWithStep<
+  const hasRouter = NETWORKS[chainId].hasShiva;
+
+  if (hasRouter) {
+    return requestAllWithStep<
     LiquidatedPositionsQuery,
     Liquidated,
     LiquidatedPositionsQueryVariables
+    >({
+      url,
+      document: LiquidatedPositionsQueryDocument,
+      step: first ?? 1000,
+      extractArray: (result) => result?.account?.liquidates.map((liquidate) => ({...liquidate, position: {...liquidate.position, router: liquidate.position.router || {id: zeroAddress}}})) ?? [],
+      variables: {
+        account,
+      },
+    });
+  }
+
+  return requestAllWithStep<
+    LiquidatedPositionsNoRouterQuery,
+    Liquidated,
+    LiquidatedPositionsNoRouterQueryVariables
   >({
     url,
-    document: LiquidatedPositionsQueryDocument,
+    document: LiquidatedPositionsNoRouterQueryDocument,
     step: first ?? 1000,
-    extractArray: (result) => result?.account?.liquidates ?? [],
+    extractArray: (result) => result?.account?.liquidates.map((liquidate) => ({...liquidate, position: {...liquidate.position, router: {id: zeroAddress}}})) ?? [],
     variables: {
       account,
     },
@@ -205,34 +269,48 @@ export const getNumberOfPositions = async (chainId: CHAINS, account: string) => 
   }
 }
 
-export const getPositionDetails = async (chainId: CHAINS, account: string, marketPositionId: string) => {
+type PositionDetails = NonNullable<NonNullable<QueryPositionQuery["account"]>["positions"]>[number]
+
+export const getPositionDetails = async (chainId: CHAINS, account: string, marketPositionId: string): Promise<PositionDetails | undefined> => {
   invariant(chainId in CHAINS, "Unsupported chainId");
   const url = NETWORKS[chainId].SUBGRAPH_URL;
-  try {
+  const hasRouter = NETWORKS[chainId].hasShiva;
+  
+  if (hasRouter) {
     const result = await request<QueryPositionQuery, QueryPositionQueryVariables>({
-      document: PositionQueryDocument,
       url,
+      document: PositionQueryDocument,
       variables: {
         account,
-        marketPositionId,
+        marketPositionId
       },
     });
-    return result;
-  } catch (error) {
-    console.error("Error fetching number of positions data:", error);
-    return undefined;
+    return result?.account?.positions[0] ? {...result.account.positions[0], router: result.account.positions[0].router || {id: zeroAddress}} : undefined;
   }
+
+  const result = await request<QueryPositionNoRouterQuery, QueryPositionNoRouterQueryVariables>({
+    url,
+    document: PositionNoRouterQueryDocument,
+    variables: {
+      account,
+      marketPositionId
+    },
+  });
+  return result?.account?.positions[0] ? {...result.account.positions[0], router: {id: zeroAddress}} : undefined;
 }
 
 export const getTotalSupplyDayHistory = async (chainId: CHAINS) => {
   invariant(chainId in CHAINS, "Unsupported chainId");
   const url = NETWORKS[chainId].SUBGRAPH_URL;
+  const now = Math.floor(Date.now() / 1000);
+  const dayAgoTarget = now - 24 * 60 * 60;
+  console.log({dayAgoTarget})
   try {
     const result = await request<TotalSupplyHistoryQuery, TotalSupplyHistoryQueryVariables>({
       document: TotalSupplyHistoryDocument,
       url,
       variables: {
-        first: 24 // first 24 hours
+        since: dayAgoTarget
       },
     });
 
