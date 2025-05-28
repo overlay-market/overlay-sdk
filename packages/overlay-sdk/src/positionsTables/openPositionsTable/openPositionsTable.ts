@@ -77,6 +77,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     account?: Address,
     refreshData?: boolean
   ): Promise<{ data: OpenPositionData[]; total: number }> => {
+    console.log('transformOpenPositions called params', page, pageSize, marketId, account, refreshData);
     let walletClient = account;
     if (!walletClient) {
       invariant(this.sdk.core.web3Provider, "Web3 provider is not set");
@@ -84,71 +85,114 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     }
     const chainId = this.core.chainId;
 
-    const cacheKey = `${walletClient}-${chainId}`;
+    const baseCacheKey = `${walletClient}-${chainId}`;
+    const cacheKeyToUse = marketId ? `${baseCacheKey}-${marketId.toLowerCase()}` : baseCacheKey;
+
     let openPositionsData: OpenPositionData[] = [];
 
-    if (!refreshData && this.openPositionsCache[cacheKey]) {
-      const cachedData = this.openPositionsCache[cacheKey];
+    if (!refreshData && this.openPositionsCache[cacheKeyToUse]) {
+      const cachedData = this.openPositionsCache[cacheKeyToUse];
       if (Date.now() - cachedData.lastUpdated < 3 * 60 * 1000) { // 3 minutes
         openPositionsData = cachedData.data;
-        openPositionsData = this.filterOpenPositionsByMarketId(openPositionsData, marketId);
+        // console.log(`Using cached data for key: ${cacheKeyToUse}`);
         return {
           data: paginate(openPositionsData, page, pageSize).data,
           total: openPositionsData.length
         };
       }
-      delete this.openPositionsCache[cacheKey];
+      // console.log(`Cache stale for key: ${cacheKeyToUse}, deleting.`);
+      delete this.openPositionsCache[cacheKeyToUse];
     }
+    
+    // console.log(`Fetching fresh data. refreshData: ${refreshData}, cacheKey: ${cacheKeyToUse}`);
 
-    if (!this.openPositionsCache[cacheKey] || refreshData) {
-      const [rawOpenData, marketDetails] = await Promise.all([
-        getOpenPositions({
-          chainId: chainId,
-          account: walletClient.toLowerCase()
-        }),
-        getMarketsDetailsByChainId(chainId as CHAINS)
-      ]);
-      const lowercasedMarketDetails = marketDetails && toLowercaseKeys(marketDetails);
+    const [allRawOpenDataFromSubgraph, marketDetails] = await Promise.all([
+      getOpenPositions({
+        chainId: chainId,
+        account: walletClient.toLowerCase()
+      }),
+      getMarketsDetailsByChainId(chainId as CHAINS)
+    ]);
+    // console.log('Fetched all raw open data from subgraph:', allRawOpenDataFromSubgraph.length, 'items');
 
-      let positionsData: {
-        [key: string]: PositionData | null | undefined
-      } = {};
+    const lowercasedMarketDetails = marketDetails && toLowercaseKeys(marketDetails);
+    invariant(lowercasedMarketDetails, "Failed to get market details");
 
-      for (let i = 0; i < rawOpenData.length; i += 15) {
-        const positions = rawOpenData.slice(i, i + 15).map((position) => ({
-          marketId: position.market.id as Address,
-          positionId: BigInt(position.id.split("-")[1]),
-          walletClient: (position.router.id === zeroAddress ? walletClient.toLowerCase() : SHIVA_ADDRESS[chainId].toLowerCase()) as Address
-        }));
-        Object.assign(positionsData, await this.getPositionsData(chainId, positions));
-      }
+    // Filter raw data if marketId is provided, before heavy processing
+    let dataToProcess = allRawOpenDataFromSubgraph; // Default to all if marketId is not provided
 
-      const transformedOpens: OpenPositionData[] = [];
-      invariant(lowercasedMarketDetails, "Failed to get market details");
-
-      for (const open of rawOpenData) {
-        const positionId = BigInt(open.id.split("-")[1]);
-        const marketId = open.market.id as Address;
-        let positionData = positionsData[`${marketId}-${positionId}`];
-
-        const formattedOpen = await this.formatOpenPosition(open, lowercasedMarketDetails, positionData ?? undefined);
-        if (formattedOpen) {
-          transformedOpens.push(formattedOpen);
+    if (marketId) { // marketId is the parameter, e.g., "Cats vs Dogs - Meme War" or "Cats%20vs%20Dogs%20-%20Meme%20War"
+      let targetMarketAddress: string | undefined = undefined;
+      
+      // Iterate through marketDetails to find the address corresponding to the marketId parameter
+      // The marketId parameter could match either the 'marketName' or 'marketId' field within the marketDetails object
+      for (const [address, detail] of lowercasedMarketDetails.entries()) {
+        // detail.marketName (e.g., "Cats vs Dogs - Meme War")
+        // detail.marketId (e.g., "Cats%20vs%20Dogs%20-%20Meme%20War" - as per user's example of marketDetails structure)
+        // The 'address' variable here is the actual market contract address (already lowercased)
+        if (detail.marketName === marketId || (detail as any).marketId === marketId) { 
+          targetMarketAddress = address;
+          break;
         }
       }
 
-      this.openPositionsCache[cacheKey] = {
-        data: transformedOpens,
-        lastUpdated: Date.now()
-      };
-
-      openPositionsData = this.filterOpenPositionsByMarketId(transformedOpens, marketId);
+      if (targetMarketAddress) {
+        // console.log(`Found target market address ${targetMarketAddress} for marketId param "${marketId}"`);
+        dataToProcess = allRawOpenDataFromSubgraph.filter(
+          (open) => open.market.id.toLowerCase() === targetMarketAddress // targetMarketAddress is already lowercase
+        );
+      } else {
+        console.warn(`MarketId param "${marketId}" not found in marketDetails. Processing no positions for this specific marketId.`);
+        dataToProcess = []; // No market found for the given name/ID, so process nothing for this specific call
+      }
     }
 
+    console.log(`Processing ${dataToProcess.length} positions. Original count from subgraph: ${allRawOpenDataFromSubgraph.length}. MarketId param: ${marketId || 'Not specified'}`);
+    
+    let positionsDataFromContracts: {
+      [key: string]: PositionData | null | undefined
+    } = {};
+
+    // Process only the dataToProcess array (which is filtered if marketId was provided)
+    for (let i = 0; i < dataToProcess.length; i += 15) {
+      const positionsBatch = dataToProcess.slice(i, i + 15).map((position) => ({
+        marketId: position.market.id as Address,
+        positionId: BigInt(position.id.split("-")[1]),
+        walletClient: (position.router.id === zeroAddress ? walletClient.toLowerCase() : SHIVA_ADDRESS[chainId].toLowerCase()) as Address
+      }));
+      if (positionsBatch.length > 0) {
+        // console.log(`Fetching contract data for batch of ${positionsBatch.length} positions.`);
+        Object.assign(positionsDataFromContracts, await this.getPositionsData(chainId, positionsBatch));
+      }
+    }
+
+    const transformedOpens: OpenPositionData[] = [];
+    // Transform only the dataToProcess
+    for (const open of dataToProcess) {
+      const positionId = BigInt(open.id.split("-")[1]);
+      const currentMarketAddress = open.market.id as Address;
+      let positionContractData = positionsDataFromContracts[`${currentMarketAddress}-${positionId}`];
+
+      const formattedOpen = await this.formatOpenPosition(open, lowercasedMarketDetails, positionContractData ?? undefined);
+      if (formattedOpen) {
+        transformedOpens.push(formattedOpen);
+      }
+    }
+
+    // Cache the newly fetched and processed data (which is already filtered if marketId was used)
+    this.openPositionsCache[cacheKeyToUse] = {
+      data: transformedOpens,
+      lastUpdated: Date.now()
+    };
+    // console.log(`Cached ${transformedOpens.length} items under key: ${cacheKeyToUse}`);
+
+    openPositionsData = transformedOpens; // Data is already correctly filtered or general as needed
+
+    // console.log('Final open positions data before pagination:', openPositionsData.length, 'items');
     return {
       data: paginate(openPositionsData, page, pageSize).data,
       total: openPositionsData.length
-    }
+    };
   };
 
   private async formatOpenPosition(
@@ -373,7 +417,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
 
     for (let i = 0; i < positions.length; i++) {
       const { marketId, positionId } = positions[i];
-
+      
       if (results[i * 7].status === 'success' && results[i * 7].result as bigint === BigInt(0)) {
         data[`${marketId}-${positionId}`] = null;
         console.log('position not found', marketId, positionId);
@@ -534,16 +578,5 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
         mid: prices[2]
       }
     };
-  }
-
-  // private method to filter open positions by marketId
-  private filterOpenPositionsByMarketId = (
-    openPositions: OpenPositionData[],
-    marketId?: string
-  ): OpenPositionData[] => {
-    if (!marketId) return openPositions;
-    return openPositions.filter(
-      (open) => open.marketName === marketId
-    );
   }
 }
