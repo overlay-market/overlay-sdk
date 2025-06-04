@@ -1,6 +1,6 @@
 {
   "name": "overlay-sdk",
-  "version": "0.1.22-alpha",
+  "version": "0.1.19-beta",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
