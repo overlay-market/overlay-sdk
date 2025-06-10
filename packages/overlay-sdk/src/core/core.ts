@@ -64,14 +64,17 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
 
   public static createRpcProvider(
     chainId: CHAINS,
-    rpcUrl: string
+    rpcUrls: string | string[]
   ): PublicClient {
+    const urls = Array.isArray(rpcUrls) ? rpcUrls : [rpcUrls];
+    const transports = urls.map((url) => http(url));
+
     return createPublicClient({
       batch: {
         multicall: true,
       },
       chain: VIEM_CHAINS[chainId],
-      transport: http(rpcUrl),
+      transport: fallback(transports),
     });
   }
 
@@ -107,16 +110,16 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
     }
 
     if (rpcUrls) {
-      const rpcUrl = rpcUrls[chainId];
+      const rpcConfig = rpcUrls[chainId];
 
-      if (!rpcUrl) {
+      if (!rpcConfig) {
         throw this.error({
           message: `rpcUrl is required for chain: ${chainId}`,
           code: ERROR_CODE.INVALID_ARGUMENT,
         });
       }
       
-      const currentRpcProvider = OverlaySDKCore.createRpcProvider(chainId, rpcUrl);
+      const currentRpcProvider = OverlaySDKCore.createRpcProvider(chainId, rpcConfig);
       return {
         chain,
         rpcProvider: currentRpcProvider,
