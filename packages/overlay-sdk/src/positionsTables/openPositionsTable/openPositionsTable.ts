@@ -419,7 +419,6 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       const { marketId, positionId } = positions[i];
       
       if (results[i * 7].status === 'success' && results[i * 7].result as bigint === BigInt(0)) {
-        data[`${marketId}-${positionId}`] = null;
         console.log('position not found', marketId, positionId);
         continue;
       }
