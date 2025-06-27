@@ -240,8 +240,10 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const isPriceImpactHigh = Number(priceInfo.priceImpactPercentage) - Number(slippage) > 0
 
     const amountExceedsMaxInput = 
-      Number(formatBigNumber(collateral, 18, 18)) > maxInputIncludingFees || 
-      Number(formatBigNumber(collateral, 18, 18)) < formattedMinCollateral
+      Number(formatBigNumber(collateral, 18, 18)) > maxInputIncludingFees
+    
+    const amountBelowMinCollateral = 
+      Number(formatBigNumber(collateral, 18, 18)) < formattedMinCollateral  
 
     // determine estimated collateral
     const preAdjustedOi = Number(formatBigNumber(collateral, 18, 18)) * Number(formatBigNumber(leverage, 18, 18))
@@ -255,6 +257,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     if (showBalanceNotEnoughWarning) tradeState = TradeState.OVLBalanceBelowMinimum
     if (isPriceImpactHigh) tradeState = TradeState.TradeHighPriceImpact
     if (amountExceedsMaxInput) tradeState = TradeState.AmountExceedsMaxInput
+    if (amountBelowMinCollateral) tradeState = TradeState.AmountBelowMinCollateral
     if (showApprovalFlow) tradeState = TradeState.NeedsApproval
 
     return {

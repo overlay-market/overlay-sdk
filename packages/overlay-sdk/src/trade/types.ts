@@ -7,6 +7,7 @@ export enum TradeState {
   Trade = "Trade",
   TradeHighPriceImpact = "Trade - High Price Impact",
   AmountExceedsMaxInput = "Amount Exceeds Max Input",
+  AmountBelowMinCollateral = "Amount Below Min Collateral",
 }
 
 export enum UnwindState {
