@@ -16,7 +16,7 @@ import { SDKError } from '../common/index.js';
 export type LOG_MODE = 'info' | 'debug' | 'none';
 
 export type CustomRPCs = {
-  [chainId: number]: string;
+  [chainId: number]: string | string[];
 };
 
 type OverlaySDKCorePropsRpcProps =
