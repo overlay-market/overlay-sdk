@@ -13,7 +13,7 @@ export default function useSDKWithShiva() {
       [CHAINS.BerachainMainnet]: 'https://rpc.berachain.com',
       [CHAINS.Bepolia]: 'https://bepolia.rpc.berachain.com',
       [CHAINS.ArbitrumSepolia]: 'https://sepolia-rollup.arbitrum.io/rpc',
-      [CHAINS.BscTestnet]: 'https://bsc-testnet.bnbchain.org',
+      [CHAINS.BscTestnet]: ['https://bsctestapi.terminet.io/rpc', 'https://bsc-testnet.bnbchain.org'],
     },
     web3Provider: OverlaySDKCore.createWeb3Provider(chainId as CHAINS, window.ethereum),
     brokerId: 7777,
