@@ -5,6 +5,7 @@ import EthereumLogo from "../../assets/images/ethereum-logo.png";
 import ArbitrumTestnetLogo from "../../assets/images/arbitrum-testnet-logo.png";
 import ImolaLogo from "../../assets/images/imola-logo.png";
 import BartioLogo from "../../assets/images/bartio-logo.png";
+import BscLogo from "../../assets/images/bsc-logo.png";
 import { SupportedChainId } from "../../constants/chains";
 import styled from "@emotion/styled";
 import { Box, Menu, MenuItem } from "@mui/material";
@@ -71,7 +72,8 @@ export const NETWORK_ICONS: { [chainId in SupportedChainId | number]: string } =
     [SupportedChainId.IMOLA]: ImolaLogo,
     [SupportedChainId.BARTIO]: BartioLogo,
     [SupportedChainId.BEPOLIA]: BartioLogo,
-    [SupportedChainId.BSC_TESTNET]: BartioLogo,
+    [SupportedChainId.BSC_TESTNET]: BscLogo,
+    [SupportedChainId.BSC_MAINNET]: BscLogo,
   };
 
 export const NETWORK_LABELS: {
@@ -109,6 +111,12 @@ export const NETWORK_LABELS: {
       <div style={{ color: "#FF648A" }}>Testnet</div>
     </FlexRow>
   ),
+  [SupportedChainId.BSC_MAINNET]: (
+    <FlexRow>
+      <div>BSC Mainnet -</div>
+      <div style={{ color: "#FF648A" }}>Mainnet</div>
+    </FlexRow>
+  ),
 };
 
 const CHAIN_LIST: { [chainId in SupportedChainId | number]: string } = {
@@ -119,6 +127,7 @@ const CHAIN_LIST: { [chainId in SupportedChainId | number]: string } = {
   [SupportedChainId.BARTIO]: "Berachain",
   [SupportedChainId.BEPOLIA]: "Berachain",
   [SupportedChainId.BSC_TESTNET]: "BSC Testnet",
+  [SupportedChainId.BSC_MAINNET]: "BSC Mainnet",
 };
 
 const CHAIN_LIST_ORDER: { [x: number]: number } = {
@@ -129,6 +138,7 @@ const CHAIN_LIST_ORDER: { [x: number]: number } = {
   [5]: SupportedChainId.BARTIO,
   [6]: SupportedChainId.BEPOLIA,
   [7]: SupportedChainId.BSC_TESTNET,
+  [8]: SupportedChainId.BSC_MAINNET,
 };
 
 export default function ChainSwitch() {

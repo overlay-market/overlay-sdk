@@ -1,5 +1,5 @@
 import { type Chain } from 'viem';
-import { mainnet, arbitrum, arbitrumSepolia, berachainTestnetbArtio, berachainBepolia, bscTestnet } from 'viem/chains';
+import { mainnet, arbitrum, arbitrumSepolia, berachainTestnetbArtio, berachainBepolia, bscTestnet, bsc } from 'viem/chains';
 
 import { defineChain } from 'viem'
 import { berachain } from 'wagmi/chains';
@@ -34,10 +34,11 @@ export enum SupportedChainId {
   BERACHAIN_MAINNET = 80094,
   BEPOLIA = 80069,
   BSC_TESTNET = 97,
+  BSC_MAINNET = 56,
 }
 
-export const DEFAULT_NET = SupportedChainId[421614]
-export const DEFAULT_CHAINID: number | Chain = SupportedChainId.ARBITRUM_SEPOLIA
+export const DEFAULT_NET = SupportedChainId[56]
+export const DEFAULT_CHAINID: number | Chain = SupportedChainId.BSC_MAINNET
 
 export const WORKING_CHAINS = [
   SupportedChainId[SupportedChainId.ARBITRUM_SEPOLIA], 
@@ -48,6 +49,7 @@ export const WORKING_CHAINS = [
   SupportedChainId[SupportedChainId.BERACHAIN_MAINNET],
   SupportedChainId[SupportedChainId.BEPOLIA],
   SupportedChainId[SupportedChainId.BSC_TESTNET],
+  SupportedChainId[SupportedChainId.BSC_MAINNET],
 ]
 
 export enum CHAINS {
@@ -58,7 +60,8 @@ export enum CHAINS {
   Imola = 30732,
   BerachainMainnet = 80094,
   Bepolia = 80069,
-  BscTestnet = 97
+  BscTestnet = 97,
+  BscMainnet = 56,
 }
 
 export const VIEM_CHAINS: { [key in CHAINS]: Chain | number} = {
@@ -69,6 +72,7 @@ export const VIEM_CHAINS: { [key in CHAINS]: Chain | number} = {
   [CHAINS.Imola]: imola,
   [CHAINS.BerachainMainnet]: berachain,
   [CHAINS.Bepolia]: berachainBepolia,
-  [CHAINS.BscTestnet]: bscTestnet
+  [CHAINS.BscTestnet]: bscTestnet,
+  [CHAINS.BscMainnet]: bsc,
 };
 
