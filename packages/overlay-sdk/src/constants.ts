@@ -88,7 +88,7 @@ export const SHIVA_ADDRESS: AddressMap = {
   [CHAINS.BerachainMainnet]: "0x7a555c83F7d2D26362C2b4954Cf01EBf9fA07DA0",
   [CHAINS.Bepolia]: "0xFf84cb66F0c302Cd860244868E10D110D8dc505D",
   [CHAINS.BscTestnet]: "0x6385C8b971e822CB02Ced25FCe9aA9604Bed213c",
-  [CHAINS.BscMainnet]: zeroAddress,
+  [CHAINS.BscMainnet]: "0xeB497c228F130BD91E7F13f81c312243961d894A",
 };
 
 interface Network {
@@ -146,6 +146,6 @@ export const NETWORKS: { [chainId: number]: Network } = {
     SUBGRAPH_URL:
       "https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-bsc/prod/gn",
     MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
-    hasShiva: false,
+    hasShiva: true,
   },
 };
