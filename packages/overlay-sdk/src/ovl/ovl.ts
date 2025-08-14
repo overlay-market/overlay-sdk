@@ -1,11 +1,12 @@
-import { Address, encodeFunctionData, getContract, GetContractReturnType, WalletClient } from "viem";
+import { Address, encodeFunctionData, getContract, GetContractReturnType, WalletClient, zeroAddress } from "viem";
 import { OverlaySDKModule } from "../common/class-primitives/sdk-module";
 import { erc20abi } from './abi/erc20abi.js';
+import { V3_POOL_ABI } from "./abi/v3-pool-abi.js";
 import { AllowanceProps, ApproveProps, ParsedTransactionProps, TransferProps } from "./types";
 import { CommonTransactionProps, EtherValue, NoCallback, TransactionOptions, TransactionResult } from "../core/types";
 import { parseValue } from "../common/utils/parse-value";
 import { CHAINS, invariant, NOOP } from "../common";
-import { OVL_ADDRESS } from "../constants";
+import { OVL_ADDRESS, OVL_USDT_POOL_ADDRESS } from "../constants";
 import { formatBigNumber } from "../common/utils";
 import { getTotalSupplyDayHistory } from "../subgraph";
 
@@ -157,6 +158,43 @@ export class OverlaySDKOverlayToken extends OverlaySDKModule {
   }: AllowanceProps): Promise<bigint> {
     const account = await this.core.useAccount(accountProp);
     return (await this.getContract()).read.allowance([account.address, to]);
+  }
+
+  public async price(decimals: number = 4) {
+    const chainId = this.core.chainId;
+    const poolAddress = OVL_USDT_POOL_ADDRESS[chainId as CHAINS];
+    const ovlAddress = OVL_ADDRESS[chainId as CHAINS];
+
+    invariant(poolAddress !== zeroAddress, "OVL/USDT pool not found for this chain");
+
+    const poolContract = getContract({
+      address: poolAddress,
+      abi: V3_POOL_ABI,
+      client: {
+        public: this.core.rpcProvider,
+        wallet: this.core.web3Provider as WalletClient,
+      },
+    });
+
+    const [slot0, token0] = await Promise.all([
+      poolContract.read.slot0(),
+      poolContract.read.token0(),
+    ]);
+
+    const sqrtPriceX96 = slot0[0];
+    const Q96 = 2n ** 96n;
+    const sqrtPrice = Number(sqrtPriceX96) / Number(Q96);
+    const rawPrice = sqrtPrice * sqrtPrice;
+
+    const isToken0OVL = token0.toLowerCase() === ovlAddress.toLowerCase();
+    const price = isToken0OVL ? rawPrice : 1 / rawPrice;
+
+    if (isNaN(price) || price <= 0) {
+      throw new Error('Invalid price calculation from V3 pool');
+    }
+
+    const factor = 10 ** decimals;
+    return Math.round(price * factor) / factor;
   }
 
   // Views
