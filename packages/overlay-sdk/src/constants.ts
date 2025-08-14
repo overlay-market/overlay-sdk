@@ -81,6 +81,16 @@ export const OVL_ADDRESS: AddressMap = {
   [CHAINS.BscMainnet]: "0x1F34c87ded863Fe3A3Cd76FAc8adA9608137C8c3",
 };
 
+export const OVL_USDT_POOL_ADDRESS: AddressMap = {
+  [CHAINS.ArbitrumSepolia]: zeroAddress,
+  [CHAINS.Imola]: zeroAddress,
+  [CHAINS.Bartio]: zeroAddress,
+  [CHAINS.BerachainMainnet]: zeroAddress,
+  [CHAINS.Bepolia]: zeroAddress,
+  [CHAINS.BscTestnet]: zeroAddress,
+  [CHAINS.BscMainnet]: "0x927aE3c2cd88717a1525a55021AF9612C3F04583"
+}
+
 export const SHIVA_ADDRESS: AddressMap = {
   [CHAINS.ArbitrumSepolia]: zeroAddress,
   [CHAINS.Imola]: zeroAddress,

@@ -18,6 +18,7 @@ const Market = () => {
   const [fraction, setFraction] = useState(0n);
   const [buildHash, setBuildHash] = useState('');
   const [unwindHash, setUnwindHash] = useState('');
+  const [ovlPrice, setOvlPrice] = useState(0);
 
   // Fetch active markets and display their id and marketName
   const fetchActiveMarkets = async () => {
@@ -195,6 +196,16 @@ const Market = () => {
     }
   }
 
+  const getOvlPrice = async () => {
+    try {
+      const price = await sdk.ovl.price()
+      setOvlPrice(price)
+      console.log("OVL Price: ", price)
+    } catch (error) {
+      console.error('Error getting OVL price', error)
+    }
+  }
+
   return (
     <div>
       <h3>ovl token methods</h3>
@@ -213,6 +224,9 @@ const Market = () => {
       <button onClick={simulateApproveMarket}>Simulate approve Market</button>
       <br />
       <button onClick={totalSupply}>Total supply</button>
+      <br />
+      <button onClick={getOvlPrice}>Get OVL Price</button>
+      {ovlPrice > 0 && <p>OVL Price: ${ovlPrice}</p>}
       <br />
 
       <h3>Market methods</h3>
