@@ -14,6 +14,7 @@ export default function useSDK() {
       [CHAINS.Bepolia]: 'https://bepolia.rpc.berachain.com',
       [CHAINS.ArbitrumSepolia]: 'https://sepolia-rollup.arbitrum.io/rpc',
       [CHAINS.BscTestnet]: ['https://bsctestapi.terminet.io/rpc', 'https://bsc-testnet.bnbchain.org'],
+      [CHAINS.BscMainnet]: ['https://bsc-rpc.publicnode.com	'],
     },
     web3Provider: OverlaySDKCore.createWeb3Provider(chainId as CHAINS, window.ethereum),
     brokerId: 99
