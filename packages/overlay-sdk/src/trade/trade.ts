@@ -156,8 +156,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const tradingFeeRateParsed = formatBigNumber(tradingFeeRate, 18, 6, true) as number
     const balanceParsed = formatBigNumber(balance, 18, 18, true) as number
 
-    const buildFeeValueFromMaxInput = balanceParsed * tradingFeeRateParsed * (formatBigNumber(leverage, 18, 18, true) as number)
-    const returnValue = balanceParsed - buildFeeValueFromMaxInput
+    const returnValue = balanceParsed/(1+tradingFeeRateParsed * (formatBigNumber(leverage, 18, 18, true) as number))
   
     return Math.trunc(returnValue * Math.pow(10, decimals)) / Math.pow(10, decimals)
   }
