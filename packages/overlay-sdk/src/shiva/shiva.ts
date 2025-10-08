@@ -11,7 +11,7 @@ import {
   zeroAddress,
 } from 'viem'
 import { OverlaySDKModule } from '../common/class-primitives/sdk-module'
-import { NoCallback, OverlaySDKCommonProps, TransactionOptions, TransactionResult } from '../core/types'
+import { NoCallback, OverlaySDKCommonProps, TransactionOptions, TransactionResult, CommonTransactionProps } from '../core/types'
 import { OverlaySDK } from '../sdk'
 import { ShivaABI } from './abis/Shiva'
 import { CHAINS, ERROR_CODE, invariant, NOOP, SDKError, toWei } from '../common'
@@ -980,5 +980,82 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     })
 
     return { ...message, signature, owner: account.address }
+  }
+
+  /**
+   * Get all authorized factory addresses from Shiva contract
+   * @returns Array of factory addresses that Shiva recognizes
+   */
+  public async getAuthorizedFactories(): Promise<Address[]> {
+    const contract = this.getShivaContract()
+    const factories: Address[] = []
+
+    try {
+      let index = 0
+      while (true) {
+        const factory = await contract.read.authorizedFactories([BigInt(index)])
+        if (factory === zeroAddress) break
+        factories.push(factory)
+        index++
+      }
+    } catch (error) {
+      // Array access out of bounds means we've reached the end
+    }
+
+    return factories
+  }
+
+  /**
+   * Add a new factory to Shiva's authorized list (governance only)
+   * @param props.account - Governor account
+   * @param props.factoryAddress - Factory address to authorize
+   * @returns Transaction result
+   */
+  public async addFactory(props: {
+    account: Address
+    factoryAddress: Address
+    callback?: CommonTransactionProps['callback']
+  }): Promise<TransactionResult> {
+    this.core.useWeb3Provider()
+    const { account, factoryAddress, callback } = props
+
+    const contract = this.getShivaContract()
+    const txArguments = [factoryAddress] as const
+
+    return this.core.performTransaction({
+      account,
+      callback,
+      getGasLimit: (options: TransactionOptions) =>
+        contract.estimateGas.addFactory(txArguments, options),
+      sendTransaction: (options: TransactionOptions) =>
+        contract.write.addFactory(txArguments, options),
+    })
+  }
+
+  /**
+   * Remove a factory from Shiva's authorized list (governance only)
+   * @param props.account - Governor account
+   * @param props.factoryAddress - Factory address to remove
+   * @returns Transaction result
+   */
+  public async removeFactory(props: {
+    account: Address
+    factoryAddress: Address
+    callback?: CommonTransactionProps['callback']
+  }): Promise<TransactionResult> {
+    this.core.useWeb3Provider()
+    const { account, factoryAddress, callback } = props
+
+    const contract = this.getShivaContract()
+    const txArguments = [factoryAddress] as const
+
+    return this.core.performTransaction({
+      account,
+      callback,
+      getGasLimit: (options: TransactionOptions) =>
+        contract.estimateGas.removeFactory(txArguments, options),
+      sendTransaction: (options: TransactionOptions) =>
+        contract.write.removeFactory(txArguments, options),
+    })
   }
 }

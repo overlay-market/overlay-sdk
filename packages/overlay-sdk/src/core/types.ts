@@ -35,6 +35,8 @@ export type OverlaySDKCoreProps = {
   brokerId?: number;
   useShiva?: boolean;
   logMode?: LOG_MODE;
+  factoryAddresses?: Address[]; // Optional: override default factory addresses for this chain
+  factoryPeripheryMap?: { [factory: Address]: Address }; // Optional: override default periphery mapping for each factory
 } & OverlaySDKCorePropsRpcProps;
 
 export type OverlaySDKCommonProps =

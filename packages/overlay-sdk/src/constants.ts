@@ -60,7 +60,11 @@ export const ORACLE_LOGO = {
 
 export const FIRST = 10;
 export type AddressMap = { [chainId: number]: Address };
+export type AddressFactoryPeriphery = { factory: Address; periphery: Address };
+export type AddressFactoryPeripheryMap = { [chainId: number]: AddressFactoryPeriphery[] };
 
+// V1 Periphery (State) contract addresses - used for querying position state
+// These are legacy single-periphery addresses for chains that don't use multiple factories
 export const V1_PERIPHERY_ADDRESS: AddressMap = {
   [CHAINS.ArbitrumSepolia]: "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
   [CHAINS.Imola]: "0x0CA6128B528f503C7c649ba9cc02560a8B9fD55e",
@@ -69,6 +73,28 @@ export const V1_PERIPHERY_ADDRESS: AddressMap = {
   [CHAINS.Bepolia]: "0xC50C7a502e6aE874A6299f385F938aF5C30CB91d",
   [CHAINS.BscTestnet]: "0x81BdBf6C69882Fe7c958018D3fF7FcAcb59EF8b7",
   [CHAINS.BscMainnet]: "0x10575a9C8F36F9F42D7DB71Ef179eD9BEf8Df238",
+};
+
+// Factory to periphery (state) mappings per chain
+// Each factory has its own periphery contract for querying position state
+// Factory addresses are derived from this map (single source of truth)
+export const V1_FACTORY_PERIPHERY: AddressFactoryPeripheryMap = {
+  [CHAINS.BscTestnet]: [
+    {
+      factory: "0xB49a63B267515FC1D8232604d05Db4D8Daf00648",
+      periphery: "0x81BdBf6C69882Fe7c958018D3fF7FcAcb59EF8b7",
+    },
+    {
+      factory: "0x73ed124e6426e81cac4becae2720e19ce5836f45",
+      periphery: "0xb5A2FaCa54082758EE78eA7022EE178c4F909A80",
+    },
+  ],
+  [CHAINS.BscMainnet]: [
+    {
+      factory: "0xC35093f76fF3D31Af27A893CDcec585F1899eE54",
+      periphery: "0x10575a9C8F36F9F42D7DB71Ef179eD9BEf8Df238",
+    },
+  ],
 };
 
 export const OVL_ADDRESS: AddressMap = {
@@ -147,7 +173,7 @@ export const NETWORKS: { [chainId: number]: Network } = {
   [CHAINS.BscTestnet]: {
     MARKET_PRICES_API: "https://api.overlay.market/bsc-testnet-charts/v1/charts",
     SUBGRAPH_URL:
-      "https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-bnb-testnet/latest/gn",
+      "https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-bnb-testnet/multi-factory/gn",
     MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
     hasShiva: true,
   },
