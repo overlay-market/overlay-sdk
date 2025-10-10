@@ -1,0 +1,201 @@
+{
+  "account": "0x1d5b02978d14f9111a685d746d3e360d9e33a541",
+  "positions": [
+    {
+      "fractionUnwound": "0",
+      "id": "0x5ec437121a47b86b40fdf1ab4ef95806e60a9247-0x2d6",
+      "createdAtTimestamp": "1759928863",
+      "currentOi": "1308952548",
+      "entryPrice": "15319368525222895687535758",
+      "initialCollateral": "10000000000000000",
+      "isLiquidated": false,
+      "isLong": true,
+      "leverage": "2",
+      "numberOfUniwnds": "0",
+      "positionId": "0x2d6",
+      "market": {
+        "feedAddress": "0x039eb967d8e47ffc145941e6d00b42cfa5d3a07c",
+        "id": "0x5ec437121a47b86b40fdf1ab4ef95806e60a9247",
+        "isShutdown": false
+      },
+      "router": null,
+      "account": "0x1d5b02978d14f9111a685d746d3e360d9e33a541"
+    },
+    {
+      "fractionUnwound": "750000000000000000",
+      "id": "0xb9fb39bd8c24bd4e8edf339a33fb5cd2ed2dd9c8-0x73",
+      "createdAtTimestamp": "1758631499",
+      "currentOi": "182730296147717214",
+      "entryPrice": "101224410752788297309",
+      "initialCollateral": "15000000000000000000",
+      "isLiquidated": false,
+      "isLong": true,
+      "leverage": "5",
+      "numberOfUniwnds": "2",
+      "positionId": "0x73",
+      "market": {
+        "feedAddress": "0x51c670199aaae751395908466bffbc00a5f70b7d",
+        "id": "0xb9fb39bd8c24bd4e8edf339a33fb5cd2ed2dd9c8",
+        "isShutdown": false
+      },
+      "router": {
+        "id": "0xeb497c228f130bd91e7f13f81c312243961d894a"
+      },
+      "account": "0x1d5b02978d14f9111a685d746d3e360d9e33a541"
+    },
+    {
+      "fractionUnwound": "750000000000000000",
+      "id": "0x5ec437121a47b86b40fdf1ab4ef95806e60a9247-0xa6",
+      "createdAtTimestamp": "1758631472",
+      "currentOi": "2050226706622",
+      "entryPrice": "15052943587690000033651550",
+      "initialCollateral": "15000000000000000000",
+      "isLiquidated": false,
+      "isLong": true,
+      "leverage": "8",
+      "numberOfUniwnds": "2",
+      "positionId": "0xa6",
+      "market": {
+        "feedAddress": "0x039eb967d8e47ffc145941e6d00b42cfa5d3a07c",
+        "id": "0x5ec437121a47b86b40fdf1ab4ef95806e60a9247",
+        "isShutdown": false
+      },
+      "router": {
+        "id": "0xeb497c228f130bd91e7f13f81c312243961d894a"
+      },
+      "account": "0x1d5b02978d14f9111a685d746d3e360d9e33a541"
+    },
+    {
+      "fractionUnwound": "937500000000000000",
+      "id": "0x799b52df5394b143c7786b1e6e4533ce1de5d817-0xaa",
+      "createdAtTimestamp": "1756998854",
+      "currentOi": "11110716206498600",
+      "entryPrice": "7922215518529551239",
+      "initialCollateral": "3000000000000000000",
+      "isLiquidated": false,
+      "isLong": true,
+      "leverage": "5",
+      "numberOfUniwnds": "3",
+      "positionId": "0xaa",
+      "market": {
+        "feedAddress": "0xd3b45acd8c49182d5440498389036819f87a1ae8",
+        "id": "0x799b52df5394b143c7786b1e6e4533ce1de5d817",
+        "isShutdown": false
+      },
+      "router": {
+        "id": "0xeb497c228f130bd91e7f13f81c312243961d894a"
+      },
+      "account": "0x1d5b02978d14f9111a685d746d3e360d9e33a541"
+    },
+    {
+      "fractionUnwound": "750000000000000000",
+      "id": "0x5b6a02e0bd8ed1d6d58368d60275f60d26e0fb55-0x1",
+      "createdAtTimestamp": "1756222579",
+      "currentOi": "30229873338700629",
+      "entryPrice": "22241141763948237081",
+      "initialCollateral": "1000000000000000000",
+      "isLiquidated": false,
+      "isLong": false,
+      "leverage": "2",
+      "numberOfUniwnds": "2",
+      "positionId": "0x1",
+      "market": {
+        "feedAddress": "0x4d0509c8cb7280e0dc816c18c35bf7d7b1c8d1f2",
+        "id": "0x5b6a02e0bd8ed1d6d58368d60275f60d26e0fb55",
+        "isShutdown": false
+      },
+      "router": {
+        "id": "0xeb497c228f130bd91e7f13f81c312243961d894a"
+      },
+      "account": "0x1d5b02978d14f9111a685d746d3e360d9e33a541"
+    },
+    {
+      "fractionUnwound": "500000000000000000",
+      "id": "0x204b281d5f5a504043ae2d91f3cf79bbbc1f6e09-0x1",
+      "createdAtTimestamp": "1756222579",
+      "currentOi": "1878838131025936014",
+      "entryPrice": "547689630737994022",
+      "initialCollateral": "1000000000000000000",
+      "isLiquidated": false,
+      "isLong": false,
+      "leverage": "2",
+      "numberOfUniwnds": "1",
+      "positionId": "0x1",
+      "market": {
+        "feedAddress": "0xe3032e5c5e691da22051b8c6c051b646be57a063",
+        "id": "0x204b281d5f5a504043ae2d91f3cf79bbbc1f6e09",
+        "isShutdown": false
+      },
+      "router": {
+        "id": "0xeb497c228f130bd91e7f13f81c312243961d894a"
+      },
+      "account": "0x1d5b02978d14f9111a685d746d3e360d9e33a541"
+    },
+    {
+      "fractionUnwound": "0",
+      "id": "0x809e3b60cfb68d617e75cccc8b15336db7baeb06-0x4",
+      "createdAtTimestamp": "1755112958",
+      "currentOi": "91861445235173475",
+      "entryPrice": "544682547134087104",
+      "initialCollateral": "10000000000000000",
+      "isLiquidated": false,
+      "isLong": true,
+      "leverage": "5",
+      "numberOfUniwnds": "0",
+      "positionId": "0x4",
+      "market": {
+        "feedAddress": "0x80a936d8db9fb909d823e3fcd9e583d98f369c64",
+        "id": "0x809e3b60cfb68d617e75cccc8b15336db7baeb06",
+        "isShutdown": false
+      },
+      "router": {
+        "id": "0xeb497c228f130bd91e7f13f81c312243961d894a"
+      },
+      "account": "0x1d5b02978d14f9111a685d746d3e360d9e33a541"
+    },
+    {
+      "fractionUnwound": "500000000000000000",
+      "id": "0x799b52df5394b143c7786b1e6e4533ce1de5d817-0x6",
+      "createdAtTimestamp": "1755112914",
+      "currentOi": "10579316922620397",
+      "entryPrice": "9423011324861736920",
+      "initialCollateral": "20000000000000000",
+      "isLiquidated": false,
+      "isLong": false,
+      "leverage": "10",
+      "numberOfUniwnds": "1",
+      "positionId": "0x6",
+      "market": {
+        "feedAddress": "0xd3b45acd8c49182d5440498389036819f87a1ae8",
+        "id": "0x799b52df5394b143c7786b1e6e4533ce1de5d817",
+        "isShutdown": false
+      },
+      "router": {
+        "id": "0xeb497c228f130bd91e7f13f81c312243961d894a"
+      },
+      "account": "0x1d5b02978d14f9111a685d746d3e360d9e33a541"
+    },
+    {
+      "fractionUnwound": "0",
+      "id": "0x3fd2f14ae16919fdc7b1c3bef0cdbaa6a6b427dc-0x5",
+      "createdAtTimestamp": "1755112820",
+      "currentOi": "7992285952268022",
+      "entryPrice": "24725570978559019380",
+      "initialCollateral": "19811000000000000",
+      "isLiquidated": false,
+      "isLong": false,
+      "leverage": "10",
+      "numberOfUniwnds": "0",
+      "positionId": "0x5",
+      "market": {
+        "feedAddress": "0xa162ba816339796a9edc2d2b13e6ac41387e7ca7",
+        "id": "0x3fd2f14ae16919fdc7b1c3bef0cdbaa6a6b427dc",
+        "isShutdown": false
+      },
+      "router": {
+        "id": "0xeb497c228f130bd91e7f13f81c312243961d894a"
+      },
+      "account": "0x1d5b02978d14f9111a685d746d3e360d9e33a541"
+    }
+  ]
+}

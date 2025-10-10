@@ -52,27 +52,19 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
     // if the chain has shiva, use the useShiva prop, otherwise set it to false
     this.useShiva = NETWORKS[this.chainId].hasShiva ? props.useShiva ?? false : false;
 
-    // Load default factory-periphery pairs from constants
-    const defaultPeripheryPairs = V1_FACTORY_PERIPHERY[this.chainId] ?? [];
+    // Load factory-periphery pairs from constants (single source of truth)
+    const peripheryPairs = V1_FACTORY_PERIPHERY[this.chainId] ?? [];
 
-    // Derive factory addresses from periphery pairs (single source of truth)
-    const defaultFactories = defaultPeripheryPairs.map(pair => pair.factory);
-    const providedFactories = props.factoryAddresses ?? defaultFactories;
-    this.factoryAddresses = [...providedFactories];
+    // Initialize factory addresses from constants
+    this.factoryAddresses = peripheryPairs.map(pair => pair.factory);
 
-    // Build periphery map
+    // Build periphery map from constants
     const peripheryMap = new Map<string, Address>();
-    for (const { factory, periphery } of defaultPeripheryPairs) {
+    for (const { factory, periphery } of peripheryPairs) {
       peripheryMap.set(factory.toLowerCase(), periphery);
     }
-
-    // Apply user-provided overrides
-    if (props.factoryPeripheryMap) {
-      for (const [factory, periphery] of Object.entries(props.factoryPeripheryMap)) {
-        peripheryMap.set(factory.toLowerCase(), periphery);
-      }
-    }
     this.factoryPeripheryMap = peripheryMap;
+
     const { chain, rpcProvider, web3Provider } = this.init(props);
 
     this.chain = chain;
