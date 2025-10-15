@@ -257,7 +257,8 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       : "";
     const parsedEntryPrice = formatBigNumber(entryPrice, Number(18));
     const parsedValue: string | number | undefined = (() => {
-      if (!positionValue && positionValue === undefined) return undefined;
+      if (positionValue === undefined) return undefined;
+      if (positionValue === BigInt(0)) return "0";
       const fullValue = formatBigNumber(positionValue, 18, 18);
       if (fullValue === undefined) return "-";
       return +fullValue < 1
@@ -417,11 +418,6 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
 
     for (let i = 0; i < positions.length; i++) {
       const { marketId, positionId } = positions[i];
-      
-      if (results[i * 7].status === 'success' && results[i * 7].result as bigint === BigInt(0)) {
-        console.log('position not found', marketId, positionId);
-        continue;
-      }
 
       data[`${marketId}-${positionId}`] = {
         positionValue: results[i * 7].result as bigint,
