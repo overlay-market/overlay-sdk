@@ -25,6 +25,7 @@ import { type OverlaySDKCoreProps, type LOG_MODE, type AccountValue, type Perfor
 import { OverlaySDKCacheable } from "../common/class-primitives/cacheable.js";
 import { getLastProcessedBlock } from "../subgraph.js";
 import { NETWORKS, V1_FACTORY_PERIPHERY, V1_PERIPHERY_ADDRESS } from "../constants.js";
+import { fetchFactoryDeployments } from "../services/factoryDeployments.js";
 
 export default class OverlaySDKCore extends OverlaySDKCacheable {
   #web3Provider: WalletClient | undefined;
@@ -36,8 +37,8 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
   readonly logMode: LOG_MODE;
   readonly brokerId: number;
   readonly useShiva: boolean;
-  readonly factoryAddresses: Address[];
-  private readonly factoryPeripheryMap: Map<string, Address>;
+  private factoryAddresses: Address[];
+  private factoryPeripheryMap: Map<string, Address>;
 
   public get web3Provider(): WalletClient | undefined {
     return this.#web3Provider;
@@ -52,15 +53,15 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
     // if the chain has shiva, use the useShiva prop, otherwise set it to false
     this.useShiva = NETWORKS[this.chainId].hasShiva ? props.useShiva ?? false : false;
 
-    // Load factory-periphery pairs from constants (single source of truth)
-    const peripheryPairs = V1_FACTORY_PERIPHERY[this.chainId] ?? [];
+    // Load default factory-periphery pairs from constants (deprecated, kept for fallback)
+    const defaultPeripheryPairs = V1_FACTORY_PERIPHERY[this.chainId] ?? [];
 
     // Initialize factory addresses from constants
-    this.factoryAddresses = peripheryPairs.map(pair => pair.factory);
+    this.factoryAddresses = defaultPeripheryPairs.map(pair => pair.factory);
 
-    // Build periphery map from constants
+    // Build periphery map from hardcoded fallbacks
     const peripheryMap = new Map<string, Address>();
-    for (const { factory, periphery } of peripheryPairs) {
+    for (const { factory, periphery } of defaultPeripheryPairs) {
       peripheryMap.set(factory.toLowerCase(), periphery);
     }
     this.factoryPeripheryMap = peripheryMap;
@@ -70,6 +71,38 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
     this.chain = chain;
     this.rpcProvider = rpcProvider;
     this.#web3Provider = web3Provider;
+
+    // Fetch factory deployments from API asynchronously
+    // This will update the factory map once loaded, upgrading from hardcoded fallbacks
+    this.loadFactoryDeploymentsFromAPI();
+  }
+
+  /**
+   * Loads factory deployments from API and updates internal mappings
+   * Called automatically in constructor, runs in background
+   */
+  private async loadFactoryDeploymentsFromAPI(): Promise<void> {
+    try {
+      const factoryPairs = await fetchFactoryDeployments(this.chainId);
+
+      if (factoryPairs.length === 0) {
+        return;
+      }
+
+      // Update factory addresses list
+      const apiFactories = factoryPairs.map(pair => pair.factory);
+      this.factoryAddresses = [...apiFactories];
+
+      // Update periphery map
+      for (const { factory, periphery } of factoryPairs) {
+        this.factoryPeripheryMap.set(factory.toLowerCase(), periphery);
+      }
+
+      console.log(`[SDK] Loaded ${factoryPairs.length} factory deployments from API`);
+    } catch (error) {
+      console.warn(`[SDK] Failed to fetch factory deployments, using fallback configuration`);
+      // Continue with hardcoded fallbacks - no action needed
+    }
   }
 
   public usingShiva() {
@@ -86,11 +119,45 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
 
   /**
    * Resolve the periphery (state) contract for a given factory
-   * Falls back to the legacy single periphery per chain when no direct mapping exists
+   * @param factory - Factory address to resolve periphery for
+   * @param options - Options for resolution behavior
+   * @param options.throwOnError - If true, throws error when factory not found (default: true)
+   * @returns Periphery address if found, undefined if not found and throwOnError is false
+   * @throws {SDKError} If factory not found and throwOnError is true
    */
-  public getPeripheryForFactory(factory: Address): Address | undefined {
-    const periphery = this.factoryPeripheryMap.get(factory.toLowerCase());
-    return periphery ?? V1_PERIPHERY_ADDRESS[this.chainId];
+  public getPeripheryForFactory(
+    factory: Address,
+    options: { throwOnError?: boolean } = {}
+  ): Address | undefined {
+    const { throwOnError = true } = options;
+    const factoryLower = factory.toLowerCase();
+    const periphery = this.factoryPeripheryMap.get(factoryLower);
+
+    if (periphery) {
+      return periphery;
+    }
+
+    // Not found - throw error or return undefined
+    if (throwOnError) {
+      const configuredFactories = Array.from(this.factoryPeripheryMap.keys());
+      throw this.error({
+        message:
+          `Periphery not configured for factory ${factory}. ` +
+          `Configured factories: ${configuredFactories.join(", ")}. ` +
+          `Check if factory address is correct or add mapping via factoryPeripheryMap option.`,
+        code: ERROR_CODE.INVALID_ARGUMENT,
+      });
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Get all configured factory-periphery mappings for debugging
+   * @returns Object with factory addresses as keys and periphery addresses as values
+   */
+  public getFactoryPeripheryMappings(): Record<string, Address> {
+    return Object.fromEntries(this.factoryPeripheryMap.entries());
   }
 
   // Static Provider Creation

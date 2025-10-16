@@ -75,9 +75,15 @@ export const V1_PERIPHERY_ADDRESS: AddressMap = {
   [CHAINS.BscMainnet]: "0x10575a9C8F36F9F42D7DB71Ef179eD9BEf8Df238",
 };
 
-// Factory to periphery (state) mappings per chain
-// Each factory has its own periphery contract for querying position state
-// Factory addresses are derived from this map (single source of truth)
+/**
+ * @deprecated Factory deployments are now fetched automatically from API.
+ *
+ * Factory to periphery (state) mappings per chain.
+ * Each factory has its own periphery contract for querying position state.
+ *
+ * The SDK automatically fetches latest factory deployments from the API on initialization.
+ * This constant is kept as a fallback for when API is unavailable or returns no data.
+ */
 export const V1_FACTORY_PERIPHERY: AddressFactoryPeripheryMap = {
   [CHAINS.BscTestnet]: [
     {
@@ -87,6 +93,11 @@ export const V1_FACTORY_PERIPHERY: AddressFactoryPeripheryMap = {
     {
       factory: "0xb5F885b61e2cC1515a66A2E6636FCAA43daBf044",
       periphery: "0x3A6892e5da2f87F3865aA1aEA2fcaCCE27C44ea8",
+    },
+    {
+      // Old deployment - kept for backward compatibility with existing positions
+      factory: "0xB49a63B267515FC1D8232604d05Db4D8Daf00648",
+      periphery: "0x81BdBf6C69882Fe7c958018D3fF7FcAcb59EF8b7",
     },
   ],
   [CHAINS.BscMainnet]: [

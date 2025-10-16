@@ -71,8 +71,10 @@ describe('OverlaySDKCore', () => {
     expect(core.getFactories()).toEqual([expectedFactory]);
     expect(core.getPeripheryForFactory(expectedFactory)).toBe(expectedPeriphery);
 
-    // Unknown factory falls back to legacy V1_PERIPHERY_ADDRESS
-    expect(core.getPeripheryForFactory('0xdeadbeef00000000000000000000000000000000')).toBeDefined();
+    // Unknown factory throws error
+    expect(() =>
+      core.getPeripheryForFactory('0xdeadbeef00000000000000000000000000000000')
+    ).toThrow(/Periphery not configured for factory/);
   });
 
   it('resolves periphery from default V1_FACTORY_PERIPHERY mapping', () => {
