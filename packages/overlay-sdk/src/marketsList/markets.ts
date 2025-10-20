@@ -303,14 +303,23 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
     }
 
     const results = await this.core.rpcProvider.multicall({
-      allowFailure: false,
+      allowFailure: true,
       contracts: calls
     })
 
     for (let i = 0; i < results.length; i += 2) {
       const marketAddress = markets[i / 2]
-      const marketState = results[i] as MarketState
-      const isShutdown = results[i + 1] as boolean
+      const marketStateResult = results[i]
+      const isShutdownResult = results[i + 1]
+
+      // Check if either call failed (e.g., stale price feed)
+      if (marketStateResult.status === 'failure' || isShutdownResult.status === 'failure') {
+        console.warn(`⚠️ Skipping market ${marketAddress} due to stale price feed or contract error`)
+        continue  // Skip this market
+      }
+
+      const marketState = marketStateResult.result as MarketState
+      const isShutdown = isShutdownResult.result as boolean
 
       marketsData[marketAddress] = {
         marketState,
