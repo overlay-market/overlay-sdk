@@ -323,6 +323,39 @@ export const getTotalSupplyDayHistory = async (chainId: CHAINS) => {
   }
 }
 
+/**
+ * Calculate the 24-hour supply change in OVL tokens
+ * Returns positive for net minting, negative for net burning
+ */
+export const getSupplyChange24h = async (chainId: CHAINS): Promise<number | undefined> => {
+  invariant(chainId in CHAINS, "Unsupported chainId");
+
+  try {
+    const totalSupplyHistory = await getTotalSupplyDayHistory(chainId);
+
+    if (!totalSupplyHistory || totalSupplyHistory.length < 2) {
+      console.warn("Insufficient supply history data for 24h calculation");
+      return undefined;
+    }
+
+    const WEI_TO_TOKEN = 1e18;
+
+    // Data is sorted desc (newest first)
+    // Use close of most recent hour for current supply
+    const currentSupply = parseFloat(totalSupplyHistory[0].close) / WEI_TO_TOKEN;
+
+    // Use open of oldest hour for 24h ago supply (start of the period)
+    const oldestEntry = totalSupplyHistory[totalSupplyHistory.length - 1];
+    const oldestSupply = parseFloat(oldestEntry.open) / WEI_TO_TOKEN;
+
+    // Return the change: negative = burn, positive = mint
+    return currentSupply - oldestSupply;
+  } catch (error) {
+    console.error("Error calculating 24h supply change:", error);
+    return undefined;
+  }
+}
+
 export const getLastProcessedBlock = async (chainId: CHAINS) => {
   invariant(chainId in CHAINS, "Unsupported chainId");
   const url = NETWORKS[chainId].SUBGRAPH_URL;
