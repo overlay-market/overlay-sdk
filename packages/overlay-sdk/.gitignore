@@ -3,7 +3,14 @@
 # dependencies
 /node_modules
 /dist
+
+# Environment variables
 .env
 *.env
+.env.test
+!.env.test.example
+
+# Test artifacts
+/coverage
 
 

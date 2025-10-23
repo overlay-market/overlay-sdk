@@ -25,6 +25,25 @@ import { OverlaySDK } from 'overlay-sdk'
 
 ```
 
+## Testing
+
+Run the automated test suite from the package directory:
+
+```
+cd packages/overlay-sdk
+pnpm test
+```
+
+The default run executes all unit suites. Integration tests that depend on a BSC mainnet RPC (including the Anvil fork harness) are skipped unless an RPC URL is provided. To enable them, export either `BSC_RPC_URL` or `BSC_MAINNET_RPC_URL` (e.g. your Alchemy endpoint) before running `pnpm test`.
+
+### Live integration checks
+
+- Copy `.env.test.example` to `.env.test` (or `.env`) and fill in the RPC URL. Set `SUBGRAPH_TEST_ACCOUNT` if you want the integrations to target a specific address with positions; otherwise the tests fall back to the zero address.
+- **Anvil fork smoke test** – set `BSC_MAINNET_RPC_URL` (or `BSC_RPC_URL`) and optionally `FORK_BLOCK_NUMBER`, then run `pnpm vitest run test/integration/anvil.integration.test.ts --pool=threads`. This spins a local Anvil fork and verifies `OverlaySDKCore` resolves the expected factory → periphery mapping on-chain.
+- **SDK live integration (read-only)** – set `BSC_MAINNET_RPC_URL` (or `BSC_RPC_URL`), then run `pnpm vitest run test/integration/sdk.integration.test.ts --pool=threads`. The suite exercises the major SDK modules (core, markets, market, trade, state, OVL, account, and position tables) directly against the upstream RPC. All write-path assertions are disabled; only read flows run by default.
+- **Real subgraph tests** – run `pnpm vitest run test/integration/subgraph.integration.test.ts --pool=threads`. The suite uses the BSC mainnet subgraph URL defined in `NETWORKS` and performs live queries (requires network access).
+- **Refresh fixtures** – run `pnpm fixtures` from `packages/overlay-sdk` to snapshot the current BSC market details and subgraph responses into `test/fixtures/`.
+
 ## Initialization
 
 Before using the SDK create an instance of the OverlaySDK class:
@@ -56,7 +75,7 @@ import { OverlaySDK, CHAINS } from "overlay-sdk";
 const web3Provider = window.ethereum;
 
 const sdk = new OverlaySDK({
-  chainId: CHAINS.Bartio,
+  chainId: CHAINS.BscMainnet,
   rpcUrls: {
     [CHAINS.ArbitrumSepolia]: 'https://arb-sepolia.g.alchemy.com/v2/xxx',
     [CHAINS.Bartio]: 'https://bera-testnet.nodeinfra.com',
@@ -64,6 +83,61 @@ const sdk = new OverlaySDK({
   web3Provider,
 });
 ```
+
+### Multiple Factories Support
+
+The SDK supports multiple OverlayV1Factory contracts per chain. Factory and periphery addresses are defined in the SDK's `V1_FACTORY_PERIPHERY` constants for BSC Mainnet and BSC Testnet.
+
+**BSC Mainnet** (single factory):
+- Factory `0xC35093f76fF3D31Af27A893CDcec585F1899eE54` → Periphery `0x10575a9C8F36F9F42D7DB71Ef179eD9BEf8Df238`
+
+**BSC Testnet** (multiple factories):
+- Factory `0xB49a63B267515FC1D8232604d05Db4D8Daf00648` → Periphery `0x81BdBf6C69882Fe7c958018D3fF7FcAcb59EF8b7`
+- Factory `0x73ed124e6426e81cac4becae2720e19ce5836f45` → Periphery `0xb5A2FaCa54082758EE78eA7022EE178c4F909A80`
+
+The SDK automatically loads all configured factories:
+
+```ts
+import { OverlaySDK, CHAINS } from "overlay-sdk";
+
+const sdk = new OverlaySDK({
+  chainId: CHAINS.BscTestnet,
+  rpcProvider,
+  web3Provider,
+});
+
+// Get all factories for the chain (automatically loaded from constants)
+const factories = sdk.core.getFactories();
+console.log("Configured factories:", factories);
+// Output: ['0xB49a63B267515FC1D8232604d05Db4D8Daf00648', '0x73ed124e6426e81cac4becae2720e19ce5836f45']
+
+// Get periphery for a specific factory
+const periphery = sdk.core.getPeripheryForFactory(factories[0]);
+console.log("Periphery:", periphery);
+// Output: '0x81BdBf6C69882Fe7c958018D3fF7FcAcb59EF8b7'
+```
+
+When using Shiva on Bsc networks, you can query and manage authorized factories:
+
+```ts
+// Get all factories authorized by Shiva
+const authorizedFactories = await sdk.shiva.getAuthorizedFactories();
+console.log("Shiva authorized factories:", authorizedFactories);
+
+// Add a new factory (requires governance permissions)
+await sdk.shiva.addFactory({
+  account: governorAccount,
+  factoryAddress: "0xNewFactory...",
+});
+
+// Remove a factory (requires governance permissions)
+await sdk.shiva.removeFactory({
+  account: governorAccount,
+  factoryAddress: "0xOldFactory...",
+});
+```
+
+The protocol validates markets against all authorized factories, allowing flexible deployment across multiple factory instances.
 
 Custom Broker ID. This will be used in Shiva events to filter out transactions from other brokers. You can set any number which is unique to your application. Default is 0.
 

@@ -1,9 +1,21 @@
+export interface IFactoryDeployment {
+  _id?: string;
+  chainId: number;
+  factoryAddress: string;
+  tokenAddress: string;
+  stateAddress: string;
+  subgraphUrl: string;
+  shivaAddress: string;
+  __v?: number;
+}
+
 export interface IChainInfo {
   chainId: number;
   chainName: string;
   deploymentAddress: string;
   explorerUrl: string;
   disabled: boolean;
+  factoryDeployment?: IFactoryDeployment;
 }
 
 export interface IMarketDetails {

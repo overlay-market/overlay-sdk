@@ -12,7 +12,6 @@ import {
   ONE_BN,
   PRICE_CURRENCY_FROM_QUOTE,
   SHIVA_ADDRESS,
-  V1_PERIPHERY_ADDRESS,
 } from "../../constants";
 import { getMarketsDetailsByChainId } from "../../services/marketsDetails";
 import { OverlaySDKModule } from "../../common/class-primitives/sdk-module";
@@ -357,46 +356,65 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       args: readonly unknown[];
     }[] = [];
 
+    const uniqueMarkets = new Map<string, Address>();
+    for (const { marketId } of positions) {
+      const key = marketId.toLowerCase();
+      if (!uniqueMarkets.has(key)) {
+        uniqueMarkets.set(key, marketId);
+      }
+    }
+
+    const peripheryByMarket = new Map<string, Address>();
+    await Promise.all(
+      Array.from(uniqueMarkets.entries()).map(async ([key, marketAddress]) => {
+        const periphery = await this.sdk.market.periphery(marketAddress);
+        invariant(periphery, `Periphery not configured for market ${marketAddress}`);
+        peripheryByMarket.set(key, periphery);
+      })
+    );
+
     for (const { marketId, positionId, walletClient } of positions) {
+      const periphery = peripheryByMarket.get(marketId.toLowerCase());
+      invariant(periphery, `Missing periphery for market ${marketId}`);
       const positionCalls = [
         {
-          address: V1_PERIPHERY_ADDRESS[chainId],
+          address: periphery,
           abi: OverlayV1StateABIPositionFunctions.filter((abi) => abi.name === "value"),
           functionName: "value",
           args: [marketId, walletClient, positionId],
         },
         {
-          address: V1_PERIPHERY_ADDRESS[chainId],
+          address: periphery,
           abi: OverlayV1StateABIPositionFunctions.filter((abi) => abi.name === "oi"),
           functionName: "oi",
           args: [marketId, walletClient, positionId],
         },
         {
-          address: V1_PERIPHERY_ADDRESS[chainId],
+          address: periphery,
           abi: OverlayV1StateABIPositionFunctions.filter((abi) => abi.name === "liquidationPrice"),
           functionName: "liquidationPrice",
           args: [marketId, walletClient, positionId],
         },
         {
-          address: V1_PERIPHERY_ADDRESS[chainId],
+          address: periphery,
           abi: OverlayV1StateABIPositionFunctions.filter((abi) => abi.name === "position"),
           functionName: "position",
           args: [marketId, walletClient, positionId],
         },
         {
-          address: V1_PERIPHERY_ADDRESS[chainId],
+          address: periphery,
           abi: OverlayV1StateABIPositionFunctions.filter((abi) => abi.name === "cost"),
           functionName: "cost",
           args: [marketId, walletClient, positionId],
         },
         {
-          address: V1_PERIPHERY_ADDRESS[chainId],
+          address: periphery,
           abi: OverlayV1StateABIPositionFunctions.filter((abi) => abi.name === "tradingFee"),
           functionName: "tradingFee",
           args: [marketId, walletClient, positionId],
         },
         {
-          address: V1_PERIPHERY_ADDRESS[chainId],
+          address: periphery,
           abi: OverlayV1StateABIPositionFunctions.filter((abi) => abi.name === "mid"),
           functionName: "mid",
           args: [marketId],
@@ -478,7 +496,9 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       mid: bigint;
     }
   }> {
-    const contract = { address: V1_PERIPHERY_ADDRESS[chainId], abi: OverlayV1StateABI };
+    const periphery = await this.sdk.market.periphery(marketId);
+    invariant(periphery, `Periphery not configured for market ${marketId}`);
+    const contract = { address: periphery, abi: OverlayV1StateABI };
 
     const [
       positionValue,

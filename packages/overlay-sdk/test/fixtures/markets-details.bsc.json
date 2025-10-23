@@ -1,0 +1,549 @@
+[
+  {
+    "_id": "66d71b2f72d1c12e59686e23",
+    "marketName": "Counter-Strike 2 Skins",
+    "logo": "csgoLogo",
+    "currency": "USD",
+    "descriptionText": "TL;DR -- The market cap of the top 5000 most commonly traded Counter Strike skins.\\n\\nThe source of data is the API provided by several skin aggregators. \\n\\nIn order to be robust, yet representative, the methodology relies on a set of criteria to select the items that will be included in the index. The criteria are as follows:\\n\\nHighly Traded: The index is limited to the top 5000 most traded items. The most traded item is the one that has the most number of unique minimum listing prices in the analysis period.\\n\\nMinimum Number of Listings: The current version of the index is restricted to items with at least 100 listings on all days of the analysis period. This ensures that the items are not too concentrated in the hands of a few traders. Further, the number of listings per item is set to the minimum number of listings observed for that item in the analysis period.\\n\\nDetermining the Value of Each Item: The value for each item is derived using two key metrics from the API. Number of Listings, and Minimum Price.\\n\\nNumber of Listings: This represents the total number listings across all tracked exchanges. It captures the supply of that item in the market.\\n\\nMinimum Price: Among all the listings for an item, this is the lowest price at which the item is being offered.\\n\\nThe 'Market Capitalization' for each item is then calculated as: MCap = Number of Listings * Minimum Price. The sum of all these MCaps at a point in time is the index value for that point in time. However, to restrict manipulability and ensure robustness of the index over time, some further safety measures are imposed that may force the index value to diverge from the pure sum of all MCaps.",
+    "indexesConstruction": [
+      "Most traded Counter Strike 2 skins"
+    ],
+    "fullLogo": "",
+    "oracleLogo": "OVERLAY",
+    "sources": [],
+    "chains": [
+      {
+        "chainId": 56,
+        "chainName": "BSC Mainnet",
+        "deploymentAddress": "0x5ec437121a47b86b40fdf1ab4ef95806e60a9247",
+        "explorerUrl": "https://bscscan.com/address/0x5ec437121a47b86b40fdf1ab4ef95806e60a9247",
+        "disabled": false,
+        "_id": "6890bd5680e0d33943b4d903"
+      }
+    ],
+    "__v": 0,
+    "marketId": "Counter-Strike%202%20Skins"
+  },
+  {
+    "_id": "66d71dba0f2057d6cb5c0df2",
+    "marketName": "BTC Dominance",
+    "logo": "BtcdLogo",
+    "currency": "PERCENTAGE",
+    "descriptionText": "TL:DR -- The share of BTC out of the entire crypto market. \\n\\nThe source of data is the API provided by Chainlink, Coinmarketcap, Cryptocompare, and others.\\n\\nThe market capitalization of Bitcoin is divided by the market capitalization of the entire crypto market. The result is the Bitcoin Dominance value.",
+    "indexesConstruction": [],
+    "fullLogo": "",
+    "oracleLogo": "OVERLAY",
+    "sources": [
+      {
+        "name": "Chainlink",
+        "_id": "66d71dba0f2057d6cb5c0df3"
+      },
+      {
+        "name": "Coinmarketcap",
+        "_id": "66d71dba0f2057d6cb5c0df4"
+      },
+      {
+        "name": "Cryptocompare",
+        "_id": "66d71dba0f2057d6cb5c0df5"
+      },
+      {
+        "name": "More...",
+        "_id": "66d71dba0f2057d6cb5c0df6"
+      }
+    ],
+    "chains": [
+      {
+        "chainId": 56,
+        "chainName": "BSC Mainnet",
+        "deploymentAddress": "0x204b281d5f5a504043ae2d91f3cf79bbbc1f6e09",
+        "explorerUrl": "https://bscscan.com/address/0x204b281d5f5a504043ae2d91f3cf79bbbc1f6e09",
+        "disabled": false,
+        "_id": "68b068c943b186b766331186"
+      }
+    ],
+    "__v": 0,
+    "marketId": "BTC%20Dominance"
+  },
+  {
+    "_id": "66d722b91f2d1f72f53efdd4",
+    "marketName": "AI Index",
+    "logo": "AIIndexLogo",
+    "currency": "",
+    "descriptionText": "AI Index\\nTL;DR -- The market cap of the top AI related protocols on crypto.\\n\\nThe source of data is the API provided by Coinmarketcap, Cryptocompare, supplemented by Uniswap, Kucoin, and others.\\n\\nThe following projects are cap-weighted in this index:\\n- Render\\n- Bittensor\\n- Artificial Superintelligence Alliance\\n- NEAR Protocol\\n- Akash Network\\n- AIOZ Network\\n- The Graph\\n- Grass\\n- Internet Computer\\n- Livepeer",
+    "indexesConstruction": [],
+    "fullLogo": "AIIndexFull",
+    "oracleLogo": "OVERLAY",
+    "sources": [
+      {
+        "name": "Coinmarketcap",
+        "_id": "66d722b91f2d1f72f53efdd5"
+      },
+      {
+        "name": "Cryptocompare",
+        "_id": "66d722b91f2d1f72f53efdd6"
+      },
+      {
+        "name": "Uniswap",
+        "_id": "66d722b91f2d1f72f53efdd7"
+      },
+      {
+        "name": "Kucoin",
+        "_id": "66d722b91f2d1f72f53efdd8"
+      },
+      {
+        "name": "Others",
+        "_id": "66d722b91f2d1f72f53efdd9"
+      }
+    ],
+    "chains": [
+      {
+        "chainId": 56,
+        "chainName": "BSC Mainnet",
+        "deploymentAddress": "0xb9fb39bd8c24bd4e8edf339a33fb5cd2ed2dd9c8",
+        "explorerUrl": "https://bscscan.com/address/0xb9fb39bd8c24bd4e8edf339a33fb5cd2ed2dd9c8",
+        "disabled": false,
+        "_id": "68a88b8d6e89d36136f9d7da"
+      }
+    ],
+    "__v": 0,
+    "marketId": "AI%20Index"
+  },
+  {
+    "_id": "681e1a212c045aa296090f06",
+    "marketName": "Binance Alpha Index",
+    "logo": "-",
+    "currency": "",
+    "descriptionText": "Binance Alpha Index\\nTL;DR -- This index represents the market cap of the top 10 tokens listed on Binance Alpha sorted by MCAP.\\nThe source of data is the API provided by main CEX’S and DEX’S.\\n The following tokens are cap-weighted in this index:\\nFARTCOIN\\n MORPHO\\n AIXBT\\n AI16Z\\n ONDO\\n VIRTUAL\\n AERO\\n SYRUP\\n KOGE\\n ALCH\\n",
+    "indexesConstruction": [],
+    "fullLogo": "",
+    "oracleLogo": "OVERLAY",
+    "sources": [
+      {
+        "name": "CMC",
+        "_id": "681e1a212c045aa296090f07"
+      },
+      {
+        "name": "CG",
+        "_id": "681e1a212c045aa296090f08"
+      },
+      {
+        "name": "CC",
+        "_id": "681e1a212c045aa296090f09"
+      },
+      {
+        "name": "KUCOIN",
+        "_id": "681e1a212c045aa296090f0a"
+      },
+      {
+        "name": "GATE.IO",
+        "_id": "681e1a212c045aa296090f0b"
+      },
+      {
+        "name": "MEXC",
+        "_id": "681e1a212c045aa296090f0c"
+      },
+      {
+        "name": "DEXSCREENER",
+        "_id": "681e1a212c045aa296090f0d"
+      }
+    ],
+    "chains": [
+      {
+        "chainId": 56,
+        "chainName": "BSC Mainnet",
+        "deploymentAddress": "0x799b52df5394b143c7786b1e6e4533ce1de5d817",
+        "explorerUrl": "https://bscscan.com/address/0x799b52df5394b143c7786b1e6e4533ce1de5d817",
+        "disabled": false,
+        "_id": "689ba44536564f5927118f58"
+      }
+    ],
+    "__v": 0,
+    "marketId": "Binance%20Alpha%20Index"
+  },
+  {
+    "_id": "681e1f99032d1437a527a400",
+    "marketName": "BNB / USD",
+    "logo": "-",
+    "currency": "USD",
+    "descriptionText": "BNB Futures Market\\nTL;DR – The price of BNB against USD.\\nThe source of data is the API provided by main DEX’S and ND CEX’S.\\n",
+    "indexesConstruction": [],
+    "fullLogo": "",
+    "oracleLogo": "OVERLAY",
+    "sources": [
+      {
+        "name": "CG",
+        "_id": "681e1f99032d1437a527a401"
+      },
+      {
+        "name": "GATE.IO",
+        "_id": "681e1f99032d1437a527a402"
+      },
+      {
+        "name": "DEXSCREENER",
+        "_id": "681e1f99032d1437a527a403"
+      },
+      {
+        "name": "MEXC",
+        "_id": "681e1f99032d1437a527a404"
+      },
+      {
+        "name": "CMC",
+        "_id": "681e1f99032d1437a527a405"
+      },
+      {
+        "name": "CC",
+        "_id": "681e1f99032d1437a527a406"
+      },
+      {
+        "name": "KUCOIN",
+        "_id": "681e1f99032d1437a527a407"
+      }
+    ],
+    "chains": [
+      {
+        "chainId": 56,
+        "chainName": "BSC Mainnet",
+        "deploymentAddress": "0x6bfde86c4c5aabb614addb51bdad1c4450bd2901",
+        "explorerUrl": "https://bscscan.com/address/0x6bfde86c4c5aabb614addb51bdad1c4450bd2901",
+        "disabled": false,
+        "_id": "689a2839500ea4af86e5af66"
+      }
+    ],
+    "__v": 0,
+    "marketId": "BNB%20%2F%20USD"
+  },
+  {
+    "_id": "68210ad4e9d2da196e6da565",
+    "marketName": "Made In USA Index",
+    "logo": "-",
+    "currency": "",
+    "descriptionText": "Binance Alpha Index\\nTL;DR -- This index represents the market cap of the top 10 tokens Made In USA sorted by MCAP.\\nThe source of data is the API provided by main CEX’S and DEX’S.\\n The following tokens are cap-weighted in this index:\\nXRP\\n SOL\\n ADA\\n LINK\\n AVAX\\n SUI\\n XLM\\n HBAR\\n BCH\\n LTC\\n",
+    "indexesConstruction": [],
+    "fullLogo": "",
+    "oracleLogo": "OVERLAY",
+    "sources": [
+      {
+        "name": "CMC",
+        "_id": "68210ad4e9d2da196e6da566"
+      },
+      {
+        "name": "CG",
+        "_id": "68210ad4e9d2da196e6da567"
+      },
+      {
+        "name": "CC",
+        "_id": "68210ad4e9d2da196e6da568"
+      },
+      {
+        "name": "KUCOIN",
+        "_id": "68210ad4e9d2da196e6da569"
+      },
+      {
+        "name": "GATE.IO",
+        "_id": "68210ad4e9d2da196e6da56a"
+      },
+      {
+        "name": "MEXC",
+        "_id": "68210ad4e9d2da196e6da56b"
+      },
+      {
+        "name": "DEXSCREENER",
+        "_id": "68210ad4e9d2da196e6da56c"
+      }
+    ],
+    "chains": [
+      {
+        "chainId": 56,
+        "chainName": "BSC Mainnet",
+        "deploymentAddress": "0x5b6a02e0bd8ed1d6d58368d60275f60d26e0fb55",
+        "explorerUrl": "https://bscscan.com/address/0x5b6a02e0bd8ed1d6d58368d60275f60d26e0fb55",
+        "disabled": false,
+        "_id": "68b068aa0955c6e78a3e643f"
+      }
+    ],
+    "__v": 0,
+    "marketId": "Made%20In%20USA%20Index"
+  },
+  {
+    "_id": "6822202224532228131c78a3",
+    "marketName": "SOL/USD",
+    "logo": "-",
+    "currency": "USD",
+    "descriptionText": "SOL Futures Market\\nTL;DR – The price of SOL against USD.\\nThe source of data is the API provided by main DEX’S and ND CEX’S.\\n",
+    "indexesConstruction": [],
+    "fullLogo": "",
+    "oracleLogo": "OVERLAY",
+    "sources": [
+      {
+        "name": "CG",
+        "_id": "6822202224532228131c78a4"
+      },
+      {
+        "name": "GATE.IO",
+        "_id": "6822202224532228131c78a5"
+      },
+      {
+        "name": "DEXSCREENER",
+        "_id": "6822202224532228131c78a6"
+      },
+      {
+        "name": "MEXC",
+        "_id": "6822202224532228131c78a7"
+      },
+      {
+        "name": "CMC",
+        "_id": "6822202224532228131c78a8"
+      },
+      {
+        "name": "CC",
+        "_id": "6822202224532228131c78a9"
+      },
+      {
+        "name": "KUCOIN",
+        "_id": "6822202224532228131c78aa"
+      }
+    ],
+    "chains": [
+      {
+        "chainId": 56,
+        "chainName": "BSC Mainnet",
+        "deploymentAddress": "0x23cefe1c6ea3c067f9500c8d9961baf01c39ce3e",
+        "explorerUrl": "https://bscscan.com/address/0x23cefe1c6ea3c067f9500c8d9961baf01c39ce3e",
+        "disabled": false,
+        "_id": "68c4422ed7cd3ea0fc7013f5"
+      }
+    ],
+    "__v": 0,
+    "marketId": "SOL%2FUSD"
+  },
+  {
+    "_id": "682d6226260c7833845f7a40",
+    "marketName": "The Weeknd Index",
+    "logo": "-",
+    "currency": "PERCENTAGE",
+    "descriptionText": "TLDR:  The Weeknd’s Index Market:\\n The Weeknd Index Market tracks the average popularity of The Weeknd’s Spotify tracks as a market index. The index is updated daily at 00:00 UTC, based on Spotify's popularity scores for his songs, Data points are validated against previous values and popularity algorithm to ensure stability,The index provides a measure of his current musical relevance and engagement on Spotify.\\n",
+    "indexesConstruction": [],
+    "fullLogo": "",
+    "oracleLogo": "OVERLAY",
+    "sources": [
+      {
+        "name": "Spotify Official API",
+        "_id": "682d6226260c7833845f7a41"
+      }
+    ],
+    "chains": [
+      {
+        "chainId": 56,
+        "chainName": "BSC Mainnet",
+        "deploymentAddress": "0x809e3b60cfb68d617e75cccc8b15336db7baeb06",
+        "explorerUrl": "https://bscscan.com/address/0x809e3b60cfb68d617e75cccc8b15336db7baeb06",
+        "disabled": false,
+        "_id": "689a279a135d895c79b9c681"
+      }
+    ],
+    "__v": 0,
+    "marketId": "The%20Weeknd%20Index"
+  },
+  {
+    "_id": "68387b3db4f46f1a08ad3f72",
+    "marketName": "Strategic Reserve Index",
+    "logo": "-",
+    "currency": "",
+    "descriptionText": "Strategic Reserve Index\\nTL;DR -- This index represents the market cap of the US Strategic Crypto Reserve Tokens.\\nThe source of data is the API provided by main CEX’S and DEX’S.\\n The following tokens are cap-weighted in this index:\\nBTC\\n ETH\\n ADA\\n XRP\\n SOL\\n",
+    "indexesConstruction": [],
+    "fullLogo": "",
+    "oracleLogo": "OVERLAY",
+    "sources": [
+      {
+        "name": "CMC",
+        "_id": "68387b3db4f46f1a08ad3f73"
+      },
+      {
+        "name": "CG",
+        "_id": "68387b3db4f46f1a08ad3f74"
+      },
+      {
+        "name": "CC",
+        "_id": "68387b3db4f46f1a08ad3f75"
+      },
+      {
+        "name": "KUCOIN",
+        "_id": "68387b3db4f46f1a08ad3f76"
+      },
+      {
+        "name": "GATE.IO",
+        "_id": "68387b3db4f46f1a08ad3f77"
+      },
+      {
+        "name": "MEXC",
+        "_id": "68387b3db4f46f1a08ad3f78"
+      }
+    ],
+    "chains": [
+      {
+        "chainId": 56,
+        "chainName": "BSC Mainnet",
+        "deploymentAddress": "0x3fd2f14ae16919fdc7b1c3bef0cdbaa6a6b427dc",
+        "explorerUrl": "https://bscscan.com/address/0x3fd2f14ae16919fdc7b1c3bef0cdbaa6a6b427dc",
+        "disabled": false,
+        "_id": "689a27d2534dacd8de1be9a1"
+      }
+    ],
+    "__v": 0,
+    "marketId": "Strategic%20Reserve%20Index"
+  },
+  {
+    "_id": "68484cba6a13826c87162227",
+    "marketName": "ETH / USD",
+    "logo": "-",
+    "currency": "USD",
+    "descriptionText": "ETH Futures Market\\nTL;DR – The price of ETH against USD.\\nThe source of data is the API provided by main DEX’S and ND CEX’S.\\n",
+    "indexesConstruction": [],
+    "fullLogo": "",
+    "oracleLogo": "OVERLAY",
+    "sources": [
+      {
+        "name": "CG",
+        "_id": "68484cba6a13826c87162228"
+      },
+      {
+        "name": "GATE.IO",
+        "_id": "68484cba6a13826c87162229"
+      },
+      {
+        "name": "DEXSCREENER",
+        "_id": "68484cba6a13826c8716222a"
+      },
+      {
+        "name": "MEXC",
+        "_id": "68484cba6a13826c8716222b"
+      },
+      {
+        "name": "CMC",
+        "_id": "68484cba6a13826c8716222c"
+      },
+      {
+        "name": "CC",
+        "_id": "68484cba6a13826c8716222d"
+      },
+      {
+        "name": "KUCOIN",
+        "_id": "68484cba6a13826c8716222e"
+      }
+    ],
+    "chains": [
+      {
+        "chainId": 56,
+        "chainName": "BSC Mainnet",
+        "deploymentAddress": "0x6ab3469c76adf1eef65ee105dac1093c130468ba",
+        "explorerUrl": "https://bscscan.com/address/0x6ab3469c76adf1eef65ee105dac1093c130468ba",
+        "disabled": false,
+        "_id": "68bee359e412bee99987db71"
+      }
+    ],
+    "__v": 0,
+    "marketId": "ETH%20%2F%20USD"
+  },
+  {
+    "_id": "68484d059c22034eaac62cd7",
+    "marketName": "BTC / USD",
+    "logo": "-",
+    "currency": "USD",
+    "descriptionText": "BTC Futures Market\\nTL;DR – The price of BTC against USD.\\nThe source of data is the API provided by main DEX’S and ND CEX’S.\\n",
+    "indexesConstruction": [],
+    "fullLogo": "",
+    "oracleLogo": "OVERLAY",
+    "sources": [
+      {
+        "name": "CG",
+        "_id": "68484d059c22034eaac62cd8"
+      },
+      {
+        "name": "GATE.IO",
+        "_id": "68484d059c22034eaac62cd9"
+      },
+      {
+        "name": "DEXSCREENER",
+        "_id": "68484d059c22034eaac62cda"
+      },
+      {
+        "name": "MEXC",
+        "_id": "68484d059c22034eaac62cdb"
+      },
+      {
+        "name": "CMC",
+        "_id": "68484d059c22034eaac62cdc"
+      },
+      {
+        "name": "CC",
+        "_id": "68484d059c22034eaac62cdd"
+      },
+      {
+        "name": "KUCOIN",
+        "_id": "68484d059c22034eaac62cde"
+      }
+    ],
+    "chains": [
+      {
+        "chainId": 56,
+        "chainName": "BSC Mainnet",
+        "deploymentAddress": "0x3d9701e8fe563d82c3787b3a783d8a218591e4a3",
+        "explorerUrl": "https://bscscan.com/address/0x3d9701e8fe563d82c3787b3a783d8a218591e4a3",
+        "disabled": false,
+        "_id": "68bafbe1ff807f83590e7391"
+      }
+    ],
+    "__v": 0,
+    "marketId": "BTC%20%2F%20USD"
+  },
+  {
+    "_id": "68cab3de284b75d5c1e2f0b3",
+    "marketName": "MrBeast Index",
+    "logo": "MrBeastLogo",
+    "currency": "",
+    "descriptionText": "TL;DR – This index represents a popularity-based market derived from engagement metrics on the MrBeast YouTube channel. The market value is calculated through decomposition of engagement data, which then drives a Geometric Brownian Motion model to reflect the channel dynamic popularity.\\n\\nData Source – The data is sourced from the YouTube API v3.",
+    "indexesConstruction": [],
+    "fullLogo": "",
+    "oracleLogo": "OVERLAY",
+    "sources": [],
+    "chains": [
+      {
+        "chainId": 56,
+        "chainName": "BSC Mainnet",
+        "deploymentAddress": "0x02e9bbcf589ffcbdcc7f26064bf718611523a2bf",
+        "explorerUrl": "https://bscscan.com/address/0x02e9bbcf589ffcbdcc7f26064bf718611523a2bf",
+        "disabled": false,
+        "_id": "68e3eeed12f4b3304b1f7144"
+      }
+    ],
+    "__v": 0,
+    "marketId": "MrBeast%20Index"
+  },
+  {
+    "_id": "68d49dcaf09517daef484675",
+    "marketName": "ASTER vs MYX",
+    "logo": "aster-myx",
+    "currency": "",
+    "descriptionText": "Aster Vs Myx  Index\\n\\nTL;DR — This index represents the Fully Diluted Valuation (FDV) of Aster relative to Myx, expressed as a ratio.\\nThe source of data is the API provided by major CEXs and DEXs.\\n\\nThe following two tokens are included in this index:\\n\\nAster (ASTER)\\nMyx (MYX)\\n\\nSources:\\n\\nCoinMarketCap (CMC)\\nCoinGecko (CG)\\nCoinCheckup (CC)\\nKuCoin\\nGate.io\\nMEXC\\nDexscreener",
+    "indexesConstruction": [],
+    "fullLogo": "",
+    "oracleLogo": "OVERLAY",
+    "sources": [],
+    "chains": [
+      {
+        "chainId": 56,
+        "chainName": "BSC Mainnet",
+        "deploymentAddress": "0x377d6e6647189aa7ea9a5e12f4bdc7ecaebb7d45",
+        "explorerUrl": "https://bscscan.com/address/0x377d6e6647189aa7ea9a5e12f4bdc7ecaebb7d45",
+        "disabled": false,
+        "_id": "68d49dea798c4fef20fdda31"
+      }
+    ],
+    "__v": 1,
+    "buttons": {
+      "long": "ASTER",
+      "short": "MYX"
+    },
+    "marketId": "ASTER%20vs%20MYX"
+  }
+]

@@ -15,6 +15,7 @@ import {
 } from "viem";
 import { OverlayV1MarketABI } from "./abis/OverlayV1Market.js";
 import { OverlayV1Market2ABI } from "./abis/OverlayV1Market2.js";
+import { OverlayV1FactoryABI } from "./abis/OverlayV1Factory.js";
 import { OverlaySDKModule } from "../common/class-primitives/sdk-module.js";
 import { NoCallback, OverlaySDKCommonProps, TransactionCallback, TransactionOptions, TransactionResult } from "../core/types.js";
 import { BuildInnerProps, BuildProps, BuildResult, EmergencyWithdrawInnerProps, EmergencyWithdrawProps, UnwindInnerProps, UnwindMultipleInnerProps, UnwindMultipleProps, UnwindProps } from "./types.js";
@@ -27,6 +28,8 @@ import { getPositionDetails } from "../subgraph.js";
 export class OverlaySDKMarket extends OverlaySDKModule {
   private sdk: OverlaySDK;
   static readonly PRECISION = 10n ** 27n;
+  private readonly marketFactoryCache = new Map<string, Address>();
+  private readonly marketPeripheryCache = new Map<string, Address>();
 
   private static BUILD_SIGNATURE_V1_1 = toEventHash(
     getAbiItem({abi: OverlayV1MarketABI, name: "Build"})
@@ -59,8 +62,73 @@ export class OverlaySDKMarket extends OverlaySDKModule {
   // @Logger("Balances:")
   // @ErrorHandler()
   public async factory(market: Address): Promise<Address> {
+    const cacheKey = market.toLowerCase();
+    const cached = this.marketFactoryCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const contract = await this.getContractV1Market(market);
-    return contract.read.factory();
+    const factoryAddress = await contract.read.factory();
+    this.marketFactoryCache.set(cacheKey, factoryAddress);
+    return factoryAddress;
+  }
+
+  public async periphery(market: Address): Promise<Address> {
+    const cacheKey = market.toLowerCase();
+    const cached = this.marketPeripheryCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const factoryAddress = await this.factory(market);
+    const periphery = this.core.getPeripheryForFactory(factoryAddress);
+    invariant(periphery, `Periphery not configured for factory ${factoryAddress}`);
+    this.marketPeripheryCache.set(cacheKey, periphery);
+    return periphery;
+  }
+
+  /**
+   * Validate if a market is registered in any of the configured factories
+   * @param market - Market address to validate
+   * @param factoryAddress - Optional specific factory to check. If not provided, checks all configured factories
+   * @returns true if market is valid, false otherwise
+   */
+  public async isValidMarket(market: Address, factoryAddress?: Address): Promise<boolean> {
+    const factoriesToCheck = factoryAddress
+      ? [factoryAddress]
+      : this.core.getFactories();
+
+    if (factoriesToCheck.length === 0) {
+      // No factories configured, fall back to checking the market's factory() method
+      try {
+        const marketFactory = await this.factory(market);
+        return marketFactory !== zeroAddress;
+      } catch {
+        return false;
+      }
+    }
+
+    for (const factoryAddr of factoriesToCheck) {
+      try {
+        const factoryContract = getContract({
+          address: factoryAddr,
+          abi: OverlayV1FactoryABI,
+          client: {
+            public: this.core.rpcProvider,
+          },
+        });
+        const isValid = await factoryContract.read.isMarket([market]);
+        if (isValid) {
+          return true;
+        }
+      } catch (error) {
+        // Continue checking other factories
+        continue;
+      }
+    }
+
+    return false;
   }
 
   public async getIsShutdown(market: Address): Promise<boolean> {

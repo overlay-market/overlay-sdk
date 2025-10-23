@@ -1,7 +1,7 @@
 import {Abi, type Address} from "viem";
 import { OverlaySDKModule } from "../common/class-primitives/sdk-module.js";
 import { OverlaySDKCommonProps } from "../core/types.js";
-import { MARKET_LOGO, PRICE_CURRENCY_FROM_QUOTE, V1_PERIPHERY_ADDRESS, ORACLE_LOGO } from "../constants.js";
+import { MARKET_LOGO, PRICE_CURRENCY_FROM_QUOTE, ORACLE_LOGO } from "../constants.js";
 import { OverlaySDK } from "../sdk.js";
 import { formatBigNumber } from "../common/utils/formatBigNumber.js";
 import { formatFundingRateToAnnual, formatFundingRateToDaily } from "../common/utils/formatWei.js";
@@ -268,8 +268,6 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
     const OverlayV1MarketABIFunctions = OverlayV1Market2ABI.filter((abi) => abi.type === "function")
     const OverlayV1StateABIFunctions = OverlayV1StateABI.filter((abi) => abi.type === "function")
 
-    const stateContract = { address: V1_PERIPHERY_ADDRESS[chainId], abi: OverlayV1StateABIFunctions }
-
     const marketsData: MarketOnchainData = {}
 
     const calls: {
@@ -279,11 +277,20 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
       args: readonly unknown[];
     }[] = [];
 
-    for (const marketAddress of markets) {
+    const marketPeripheries = await Promise.all(
+      markets.map(async (marketAddress) => {
+        const periphery = await this.sdk.market.periphery(marketAddress);
+        invariant(periphery, `Periphery not configured for market ${marketAddress}`);
+        return { marketAddress, periphery };
+      })
+    );
+
+    for (const { marketAddress, periphery } of marketPeripheries) {
       const marketContract = { address: marketAddress, abi: OverlayV1MarketABIFunctions }
       
       calls.push({
-        ...stateContract,
+        address: periphery,
+        abi: OverlayV1StateABIFunctions,
         functionName: "marketState",
         args: [marketAddress],
       })
@@ -296,14 +303,23 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
     }
 
     const results = await this.core.rpcProvider.multicall({
-      allowFailure: false,
+      allowFailure: true,
       contracts: calls
     })
 
     for (let i = 0; i < results.length; i += 2) {
       const marketAddress = markets[i / 2]
-      const marketState = results[i] as MarketState
-      const isShutdown = results[i + 1] as boolean
+      const marketStateResult = results[i]
+      const isShutdownResult = results[i + 1]
+
+      // Check if either call failed (e.g., stale price feed)
+      if (marketStateResult.status === 'failure' || isShutdownResult.status === 'failure') {
+        console.warn(`⚠️ Skipping market ${marketAddress} due to stale price feed or contract error`)
+        continue  // Skip this market
+      }
+
+      const marketState = marketStateResult.result as MarketState
+      const isShutdown = isShutdownResult.result as boolean
 
       marketsData[marketAddress] = {
         marketState,
