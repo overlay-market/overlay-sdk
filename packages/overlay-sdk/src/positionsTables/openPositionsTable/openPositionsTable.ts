@@ -39,6 +39,7 @@ export type OpenPositionData = {
   marketAddress: Address;
   positionId: number;
   priceCurrency: string;
+  deprecated?: boolean;
 };
 
 export type PositionData = {
@@ -121,24 +122,23 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     let dataToProcess = allRawOpenDataFromSubgraph; // Default to all if marketId is not provided
 
     if (marketId) { // marketId is the parameter, e.g., "Cats vs Dogs - Meme War" or "Cats%20vs%20Dogs%20-%20Meme%20War"
-      let targetMarketAddress: string | undefined = undefined;
-      
-      // Iterate through marketDetails to find the address corresponding to the marketId parameter
-      // The marketId parameter could match either the 'marketName' or 'marketId' field within the marketDetails object
+      const targetMarketAddresses: string[] = [];
+
+      // Iterate through marketDetails to find ALL addresses corresponding to the marketId parameter
+      // This handles cases where multiple markets have the same name (e.g., old deprecated + new active)
       for (const [address, detail] of lowercasedMarketDetails.entries()) {
         // detail.marketName (e.g., "Cats vs Dogs - Meme War")
         // detail.marketId (e.g., "Cats%20vs%20Dogs%20-%20Meme%20War" - as per user's example of marketDetails structure)
         // The 'address' variable here is the actual market contract address (already lowercased)
-        if (detail.marketName === marketId || (detail as any).marketId === marketId) { 
-          targetMarketAddress = address;
-          break;
+        if (detail.marketName === marketId || (detail as any).marketId === marketId) {
+          targetMarketAddresses.push(address);
         }
       }
 
-      if (targetMarketAddress) {
-        // console.log(`Found target market address ${targetMarketAddress} for marketId param "${marketId}"`);
+      if (targetMarketAddresses.length > 0) {
+        // console.log(`Found ${targetMarketAddresses.length} market address(es) for marketId param "${marketId}"`);
         dataToProcess = allRawOpenDataFromSubgraph.filter(
-          (open) => open.market.id.toLowerCase() === targetMarketAddress // targetMarketAddress is already lowercase
+          (open) => targetMarketAddresses.includes(open.market.id.toLowerCase())
         );
       } else {
         console.warn(`MarketId param "${marketId}" not found in marketDetails. Processing no positions for this specific marketId.`);
@@ -196,7 +196,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
 
   private async formatOpenPosition(
     open: OpenPosition,
-    marketDetails: Map<string, { marketName: string; currency: string }>,
+    marketDetails: Map<string, { marketName: string; currency: string; deprecated?: boolean }>,
     positionData?: PositionData
   ) {
     const positionId = BigInt(open.id.split("-")[1]);
@@ -246,6 +246,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
   
     const marketName =
       marketDetails?.get(open.id.split("-")[0].toLowerCase())?.marketName ?? "";
+    const deprecated = marketDetails?.get(open.id.split("-")[0].toLowerCase())?.deprecated;
     const marketDetailsCurrency = marketDetails
       ?.get(open.id.split("-")[0].toLowerCase())
       ?.currency.trim();
@@ -330,6 +331,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       unrealizedPnL: unrealizedPnL,
       parsedFunding: parsedFunding,
       priceCurrency: priceCurrency,
+      deprecated: deprecated,
     };
   }
 

@@ -15,6 +15,7 @@ export interface IChainInfo {
   deploymentAddress: string;
   explorerUrl: string;
   disabled: boolean;
+  deprecated?: boolean;
   factoryDeployment?: IFactoryDeployment;
 }
 
@@ -53,8 +54,10 @@ export interface IMarketDetails {
 
 export interface MarketDetails {
   id: string;
+  marketId: string;
   marketName: string;
   disabled: boolean;
+  deprecated?: boolean;
   logo: string;
   currency: string;
   descriptionText?: string;

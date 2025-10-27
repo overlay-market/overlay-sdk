@@ -14,6 +14,7 @@ export type MarketData = {
   id: string;
   marketName: string;
   disabled: boolean;
+  deprecated?: boolean;
   logo: string;
   currency: string;
   descriptionText?: string;
@@ -144,10 +145,10 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
     const marketAddresses = marketDetailsValues ? marketDetailsValues.map(market => market.id as Address) : []
     const marketOnchainData = await this._getMarketOnchainData(marketAddresses, chainId)
 
-    const transformedMarketsData = marketDetailsValues 
-    ?  
+    const transformedMarketsData = marketDetailsValues
+    ?
       await Promise.allSettled(marketDetailsValues.map(async(market) => {
-        if (market.disabled) return undefined
+        if (market.disabled || market.deprecated) return undefined
         const marketId = market.id as Address
         
         const {marketState: result, isShutdown} = marketOnchainData[marketId]
@@ -201,7 +202,7 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
         .map(item => item.value)
         .filter(item => item !== undefined)
         .map(market => {
-          if (!marketDetails.get(market.id)?.disabled && marketDetailsIds.includes(market.id)
+          if (!marketDetails.get(market.id)?.disabled && !marketDetails.get(market.id)?.deprecated && marketDetailsIds.includes(market.id)
           ) {
             const marketName = marketDetails.get(market.id)?.marketName ?? '';
             const marketDetailsCurrency = marketDetails.get(market.id)?.currency.trim();
