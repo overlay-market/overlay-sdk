@@ -39,6 +39,7 @@ export type OpenPositionData = {
   marketAddress: Address;
   positionId: number;
   priceCurrency: string;
+  deprecated?: boolean;
 };
 
 export type PositionData = {
@@ -196,7 +197,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
 
   private async formatOpenPosition(
     open: OpenPosition,
-    marketDetails: Map<string, { marketName: string; currency: string }>,
+    marketDetails: Map<string, { marketName: string; currency: string; deprecated?: boolean }>,
     positionData?: PositionData
   ) {
     const positionId = BigInt(open.id.split("-")[1]);
@@ -246,6 +247,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
   
     const marketName =
       marketDetails?.get(open.id.split("-")[0].toLowerCase())?.marketName ?? "";
+    const deprecated = marketDetails?.get(open.id.split("-")[0].toLowerCase())?.deprecated;
     const marketDetailsCurrency = marketDetails
       ?.get(open.id.split("-")[0].toLowerCase())
       ?.currency.trim();
@@ -330,6 +332,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       unrealizedPnL: unrealizedPnL,
       parsedFunding: parsedFunding,
       priceCurrency: priceCurrency,
+      deprecated: deprecated,
     };
   }
 

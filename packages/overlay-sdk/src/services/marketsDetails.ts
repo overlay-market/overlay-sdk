@@ -4,7 +4,7 @@ import { type Address } from "viem";
 import { NETWORKS } from "../constants";
 import { CHAINS, invariant } from "../common";
 
-export const getMarketsDetailsByChainId = async (chainId: CHAINS) => {
+export const getMarketsDetailsByChainId = async (chainId: CHAINS): Promise<Map<string, MarketDetails> | undefined> => {
   invariant(chainId in CHAINS, "Unsupported chainId");
   const url = NETWORKS[chainId].MARKETS_DETAILS_API;
   try {
@@ -13,11 +13,12 @@ export const getMarketsDetailsByChainId = async (chainId: CHAINS) => {
 
       const marketsDetailsMap: Map<string, MarketDetails> = new Map(
         marketsDetailsData.map((market) => {
-          const marketDetail = {
+          const marketDetail: MarketDetails = {
             id: market.chains[0].deploymentAddress,
             marketId: market.marketId,
             marketName: market.marketName,
             disabled: market.chains[0].disabled,
+            deprecated: market.chains[0].deprecated,
             logo: market.logo,
             currency: market.currency,
             descriptionText: market.descriptionText,
@@ -25,11 +26,11 @@ export const getMarketsDetailsByChainId = async (chainId: CHAINS) => {
             oracleLogo: market.oracleLogo,
             buttons: market.buttons,
           };
-      
+
           return [marketDetail.id, marketDetail];
         })
       );
-        
+
       return marketsDetailsMap;
   } catch (error) {
     console.error("market details", error);
@@ -48,6 +49,7 @@ export const getMarketDetailsById = async (marketId: string, chainId: CHAINS) =>
     const marketDetail = {
       marketName: marketDetailsData.marketName,
       disabled: marketDetailsData.chains[0].disabled,
+      deprecated: marketDetailsData.chains[0].deprecated,
       logo: marketDetailsData.logo,
       currency: marketDetailsData.currency,
       descriptionText: marketDetailsData.descriptionText,
