@@ -6,6 +6,7 @@ import { OverlaySDK } from "../sdk.js";
 import { formatBigNumber } from "../common/utils/formatBigNumber.js";
 import { formatFundingRateToAnnual, formatFundingRateToDaily } from "../common/utils/formatWei.js";
 import { getMarketDetailsById, getMarketsDetailsByChainId } from "../services/marketsDetails.js";
+import { MarketDetails } from "../services/types/marketDetailsTypes.js";
 import { CHAINS, invariant } from "../common/index.js";
 import { OverlayV1Market2ABI } from "../markets/abis/OverlayV1Market2.js";
 import { OverlayV1StateABI } from "../markets/abis/OverlayV1State.js";
@@ -90,6 +91,7 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
   private sdk: OverlaySDK;
   private marketDetailsCache: Record<string, { data: any; lastUpdated: number }> = {};
   private activeMarketsCache?: { data: ExpandedMarketData[]; lastUpdated: number };
+  private allMarketsDetailsCache?: { data: Map<string, MarketDetails>; lastUpdated: number };
 
   constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK) {
     super(props);
@@ -126,6 +128,30 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
     }
 
     return marketData;
+  }
+
+  public async getAllMarketsDetails(noCaching: boolean = false): Promise<Map<string, MarketDetails>> {
+    const chainId = this.core.chainId;
+    invariant(chainId in CHAINS, "Unsupported chainId");
+
+    if (!noCaching && this.allMarketsDetailsCache) {
+      if (Date.now() - this.allMarketsDetailsCache.lastUpdated < 60 * 60 * 1000) { // 1 hour
+        return this.allMarketsDetailsCache.data;
+      }
+      this.allMarketsDetailsCache = undefined;
+    }
+
+    const marketDetails = await getMarketsDetailsByChainId(chainId);
+
+    if (!marketDetails) {
+      return new Map();
+    }
+
+    if (!noCaching) {
+      this.allMarketsDetailsCache = { data: marketDetails, lastUpdated: Date.now() };
+    }
+
+    return marketDetails;
   }
 
   public async getActiveMarkets(noCaching: boolean = false) {
