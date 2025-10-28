@@ -46,12 +46,14 @@ export const getMarketDetailsById = async (marketId: string, chainId: CHAINS) =>
   try {
     const marketDetailsData = (await axios.get(`${url}/${marketId}`))
       .data as IMarketDetails;
-    const chain = marketDetailsData.chains.find((chain) => chain.chainId === chainId);
+    // Prefer non-deprecated chains when multiple chains exist for the same chainId
+    const chain = marketDetailsData.chains.find((chain) => chain.chainId === chainId && !chain.deprecated)
+      || marketDetailsData.chains.find((chain) => chain.chainId === chainId);
 
     const marketDetail = {
       marketName: marketDetailsData.marketName,
-      disabled: marketDetailsData.chains[0].disabled,
-      deprecated: marketDetailsData.chains[0].deprecated,
+      disabled: chain?.disabled ?? false,
+      deprecated: chain?.deprecated ?? false,
       logo: marketDetailsData.logo,
       currency: marketDetailsData.currency,
       descriptionText: marketDetailsData.descriptionText,
