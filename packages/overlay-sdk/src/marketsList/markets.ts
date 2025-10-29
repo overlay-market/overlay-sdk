@@ -6,6 +6,7 @@ import { OverlaySDK } from "../sdk.js";
 import { formatBigNumber } from "../common/utils/formatBigNumber.js";
 import { formatFundingRateToAnnual, formatFundingRateToDaily } from "../common/utils/formatWei.js";
 import { getMarketDetailsById, getMarketsDetailsByChainId } from "../services/marketsDetails.js";
+import { MarketDetails } from "../services/types/marketDetailsTypes.js";
 import { CHAINS, invariant } from "../common/index.js";
 import { OverlayV1Market2ABI } from "../markets/abis/OverlayV1Market2.js";
 import { OverlayV1StateABI } from "../markets/abis/OverlayV1State.js";
@@ -14,6 +15,7 @@ export type MarketData = {
   id: string;
   marketName: string;
   disabled: boolean;
+  deprecated?: boolean;
   logo: string;
   currency: string;
   descriptionText?: string;
@@ -89,6 +91,7 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
   private sdk: OverlaySDK;
   private marketDetailsCache: Record<string, { data: any; lastUpdated: number }> = {};
   private activeMarketsCache?: { data: ExpandedMarketData[]; lastUpdated: number };
+  private allMarketsDetailsCache?: { data: Map<string, MarketDetails>; lastUpdated: number };
 
   constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK) {
     super(props);
@@ -127,6 +130,30 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
     return marketData;
   }
 
+  public async getAllMarketsDetails(noCaching: boolean = false): Promise<Map<string, MarketDetails>> {
+    const chainId = this.core.chainId;
+    invariant(chainId in CHAINS, "Unsupported chainId");
+
+    if (!noCaching && this.allMarketsDetailsCache) {
+      if (Date.now() - this.allMarketsDetailsCache.lastUpdated < 60 * 60 * 1000) { // 1 hour
+        return this.allMarketsDetailsCache.data;
+      }
+      this.allMarketsDetailsCache = undefined;
+    }
+
+    const marketDetails = await getMarketsDetailsByChainId(chainId);
+
+    if (!marketDetails) {
+      return new Map();
+    }
+
+    if (!noCaching) {
+      this.allMarketsDetailsCache = { data: marketDetails, lastUpdated: Date.now() };
+    }
+
+    return marketDetails;
+  }
+
   public async getActiveMarkets(noCaching: boolean = false) {
     const chainId = this.core.chainId;
     invariant(chainId in CHAINS, "Unsupported chainId");
@@ -144,10 +171,10 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
     const marketAddresses = marketDetailsValues ? marketDetailsValues.map(market => market.id as Address) : []
     const marketOnchainData = await this._getMarketOnchainData(marketAddresses, chainId)
 
-    const transformedMarketsData = marketDetailsValues 
-    ?  
+    const transformedMarketsData = marketDetailsValues
+    ?
       await Promise.allSettled(marketDetailsValues.map(async(market) => {
-        if (market.disabled) return undefined
+        if (market.disabled || market.deprecated) return undefined
         const marketId = market.id as Address
         
         const {marketState: result, isShutdown} = marketOnchainData[marketId]
@@ -201,7 +228,7 @@ export class OverlaySDKMarkets extends OverlaySDKModule {
         .map(item => item.value)
         .filter(item => item !== undefined)
         .map(market => {
-          if (!marketDetails.get(market.id)?.disabled && marketDetailsIds.includes(market.id)
+          if (!marketDetails.get(market.id)?.disabled && !marketDetails.get(market.id)?.deprecated && marketDetailsIds.includes(market.id)
           ) {
             const marketName = marketDetails.get(market.id)?.marketName ?? '';
             const marketDetailsCurrency = marketDetails.get(market.id)?.currency.trim();

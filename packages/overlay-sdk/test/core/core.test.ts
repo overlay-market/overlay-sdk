@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import OverlaySDKCore from '@src/core/core.js';
 import { CHAINS } from '@src/common/constants.js';
-import { V1_FACTORY_PERIPHERY } from '@src/constants.js';
+import { V1_FACTORY_PERIPHERY, type AddressFactoryPeriphery } from '@src/constants.js';
 import { ERROR_CODE, SDKError } from '@src/common/utils/sdk-error.js';
 import type { PublicClient, WalletClient } from 'viem';
 
@@ -36,10 +36,9 @@ const mockWeb3Provider = (account?: string): WalletClient => {
 describe('OverlaySDKCore', () => {
   const chainId = CHAINS.BscMainnet;
   // Core now always uses addresses from V1_FACTORY_PERIPHERY constants
-  // BSC Mainnet has one factory/periphery pair
-  const expectedPair = V1_FACTORY_PERIPHERY[chainId][0];
-  const expectedFactory = expectedPair.factory;
-  const expectedPeriphery = expectedPair.periphery;
+  // BSC Mainnet has multiple factory/periphery pairs
+  const expectedPairs = V1_FACTORY_PERIPHERY[chainId];
+  const expectedFactories = expectedPairs.map(pair => pair.factory);
 
   let rpcProvider: PublicClient;
   let web3Provider: WalletClient;
@@ -68,8 +67,12 @@ describe('OverlaySDKCore', () => {
     expect(core.logMode).toBe('debug');
 
     // Factories come from V1_FACTORY_PERIPHERY constants
-    expect(core.getFactories()).toEqual([expectedFactory]);
-    expect(core.getPeripheryForFactory(expectedFactory)).toBe(expectedPeriphery);
+    expect(core.getFactories()).toEqual(expectedFactories);
+
+    // Each factory should have a corresponding periphery
+    expectedPairs.forEach((pair: AddressFactoryPeriphery) => {
+      expect(core.getPeripheryForFactory(pair.factory)).toBe(pair.periphery);
+    });
 
     // Unknown factory throws error
     expect(() =>

@@ -107,8 +107,12 @@ describe.skipIf(!SHOULD_RUN)('OverlaySDK BSC fork integration', () => {
       // Core
       const factories = sdk.core.getFactories();
       expect(factories.length).toBeGreaterThan(0);
-      const peripheryForFactory = sdk.core.getPeripheryForFactory(factories[0]);
-      expect(peripheryForFactory).toBeDefined();
+
+      // Verify each factory has a corresponding periphery
+      factories.forEach(factory => {
+        const peripheryForFactory = sdk.core.getPeripheryForFactory(factory);
+        expect(peripheryForFactory).toBeDefined();
+      });
  
       const feeData = await sdk.core.getFeeData();
       expect(feeData.maxFeePerGas).toBeGreaterThan(0n);
