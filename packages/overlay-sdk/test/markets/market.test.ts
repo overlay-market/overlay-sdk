@@ -141,6 +141,25 @@ describe('OverlaySDKMarket', () => {
     await expect(market.isValidMarket('0xother')).resolves.toBe(false);
   });
 
+  it('validates markets with multiple factories', async () => {
+    contractFactory.mockImplementation(({ abi }) =>
+      abi === OverlayV1FactoryABI ? factoryContractMock : marketContractMock,
+    );
+    // Simulate BSC mainnet with two factories
+    const { market } = createMarket({
+      getFactories: vi.fn().mockReturnValue(['0xfactory1', '0xfactory2']),
+      getPeripheryForFactory: vi.fn().mockReturnValue('0xperiphery')
+    });
+
+    // Market is valid if ANY factory recognizes it
+    factoryContractMock.read.isMarket
+      .mockResolvedValueOnce(false)  // First factory doesn't recognize it
+      .mockResolvedValueOnce(true);  // Second factory recognizes it
+
+    await expect(market.isValidMarket('0xmarket')).resolves.toBe(true);
+    expect(factoryContractMock.read.isMarket).toHaveBeenCalledTimes(2);
+  });
+
   it('falls back to factory() when no factories configured', async () => {
     contractFactory.mockResolvedValue(marketContractMock);
     const { market, core } = createMarket({ getFactories: vi.fn().mockReturnValue([]) });
