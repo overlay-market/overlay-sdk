@@ -154,6 +154,45 @@ export const ShivaABI = [
   },
   {
     "type": "function",
+    "name": "buildStable",
+    "inputs": [
+      {
+        "name": "params",
+        "type": "tuple",
+        "internalType": "struct ShivaStructs.BuildStable",
+        "components": [
+          { "name": "ovlMarket", "type": "address", "internalType": "contract IOverlayV1Market" },
+          { "name": "brokerId", "type": "uint32", "internalType": "uint32" },
+          { "name": "isLong", "type": "bool", "internalType": "bool" },
+          { "name": "stableCollateral", "type": "uint256", "internalType": "uint256" },
+          { "name": "leverage", "type": "uint256", "internalType": "uint256" },
+          { "name": "priceLimit", "type": "uint256", "internalType": "uint256" },
+          { "name": "minOvl", "type": "uint256", "internalType": "uint256" }
+        ]
+      }
+    ],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "lbsc",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "address", "internalType": "contract ILoanBasedStableCollateral" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "loanIds",
+    "inputs": [
+      { "name": "market", "type": "address", "internalType": "contract IOverlayV1Market" },
+      { "name": "positionId", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "cancelNonce",
     "inputs": [{ "name": "nonce", "type": "uint256", "internalType": "uint256" }],
     "outputs": [],
