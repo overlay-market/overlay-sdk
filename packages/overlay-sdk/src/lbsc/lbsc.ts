@@ -3,6 +3,7 @@ import {
   getContract,
   GetContractReturnType,
   PublicClient,
+  WalletClient,
 } from 'viem'
 import { OverlaySDKModule } from '../common/class-primitives/sdk-module'
 import { OverlaySDKCommonProps, TransactionResult } from '../core/types'
@@ -189,7 +190,10 @@ export class OverlaySDKLBSC extends OverlaySDKModule {
     const stableContract = getContract({
       address: stableTokenAddress,
       abi: ERC20ApproveABI,
-      client: this.core.rpcProvider,
+      client: {
+        public: this.core.rpcProvider,
+        wallet: this.core.web3Provider as WalletClient,
+      },
     })
 
     const txArguments = [lbscAddress, amount] as const

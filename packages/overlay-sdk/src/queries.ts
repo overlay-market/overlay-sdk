@@ -32,6 +32,16 @@ export const OpenPositionsQuery = gql`
         router {
           id
         }
+        loan {
+          id
+          loanId
+          stableAmount
+          ovlAmount
+          price
+          ovlRepaid
+          collateralReturned
+          collateralSeized
+        }
       }
     }
   }
@@ -65,6 +75,16 @@ export const OpenPositionsNoRouterQuery = gql`
           feedAddress
           id
           isShutdown
+        }
+        loan {
+          id
+          loanId
+          stableAmount
+          ovlAmount
+          price
+          ovlRepaid
+          collateralReturned
+          collateralSeized
         }
       }
     }

@@ -40,6 +40,16 @@ export type OpenPositionData = {
   positionId: number;
   priceCurrency: string;
   deprecated?: boolean;
+  loan?: {
+    id: string;
+    loanId: string;
+    stableAmount: string;
+    ovlAmount: string;
+    price: string;
+    ovlRepaid: string;
+    collateralReturned: string;
+    collateralSeized: string;
+  } | null;
 };
 
 export type PositionData = {
@@ -238,7 +248,8 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
         ),
         unrealizedPnL: '0',
         parsedFunding: '0',
-        priceCurrency: '0'
+        priceCurrency: '0',
+        loan: open.loan || null,
       };
 
       return formattedOpen;
@@ -332,6 +343,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       parsedFunding: parsedFunding,
       priceCurrency: priceCurrency,
       deprecated: deprecated,
+      loan: open.loan || null,
     };
   }
 

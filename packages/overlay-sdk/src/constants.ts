@@ -188,7 +188,7 @@ export const NETWORKS: { [chainId: number]: Network } = {
   [CHAINS.BscTestnet]: {
     MARKET_PRICES_API: "https://api.overlay.market/bsc-testnet-charts/v1/charts",
     SUBGRAPH_URL:
-      "https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-bnb-testnet/multi-factory/gn",
+      "https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-bnb-testnet/2-lbsc/gn",
     MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
     hasShiva: true,
   },

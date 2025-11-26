@@ -6324,7 +6324,7 @@ export type OpenPositionsQueryVariables = Exact<{
   skip?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
-export type OpenPositionsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', fractionUnwound: any, id: string, createdAtTimestamp: any, currentOi: any, entryPrice: any, initialCollateral: any, isLiquidated: boolean, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: string, isShutdown: boolean }, router: { __typename?: 'Router', id: string } }> } | null };
+export type OpenPositionsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', fractionUnwound: any, id: string, createdAtTimestamp: any, currentOi: any, entryPrice: any, initialCollateral: any, isLiquidated: boolean, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: string, isShutdown: boolean }, router: { __typename?: 'Router', id: string }, loan?: { __typename?: 'StableLoan', id: string, loanId: any, stableAmount: any, ovlAmount: any, price: any, ovlRepaid: any, collateralReturned: any, collateralSeized: any } | null }> } | null };
 
 export type OpenPositionsNoRouterQueryVariables = Exact<{
   account: Scalars['ID']['input'];
@@ -6332,7 +6332,7 @@ export type OpenPositionsNoRouterQueryVariables = Exact<{
   skip?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
-export type OpenPositionsNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', fractionUnwound: any, id: string, createdAtTimestamp: any, currentOi: any, entryPrice: any, initialCollateral: any, isLiquidated: boolean, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: string, isShutdown: boolean } }> } | null };
+export type OpenPositionsNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', fractionUnwound: any, id: string, createdAtTimestamp: any, currentOi: any, entryPrice: any, initialCollateral: any, isLiquidated: boolean, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: string, isShutdown: boolean }, loan?: { __typename?: 'StableLoan', id: string, loanId: any, stableAmount: any, ovlAmount: any, price: any, ovlRepaid: any, collateralReturned: any, collateralSeized: any } | null }> } | null };
 
 export type UnwindsQueryVariables = Exact<{
   account: Scalars['ID']['input'];
