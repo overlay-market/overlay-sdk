@@ -123,9 +123,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const {marketAddress} = await this._getMarketAddressAndChainId(marketId)
 
     const {oiShares, isLong} = await this.sdk.market.getOiShares(marketAddress, positionId, owner)
-    console.log(oiShares, isLong)
     const oiSharesFraction = oiShares * fraction / 10n ** 18n
-    console.log(oiSharesFraction)
 
     const priceInfo = await this.getPriceInfo(marketId, oiSharesFraction, 10n ** 18n, slippage, !isLong, decimals)
 
@@ -213,8 +211,6 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     address: Address,
     collateralType: 'OVL' | 'USDT' = 'OVL'
   ) {
-    console.error('🔵 getTradeState CALLED with collateralType:', collateralType, 'collateral:', collateral.toString())
-
     const {marketAddress, chainId} = await this._getMarketAddressAndChainId(marketId)
     const periphery = await this.getPeriphery(marketAddress)
 
@@ -231,10 +227,6 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       balance,
       currentAllowance
     } = await this._getTradeStateData(chainId, marketAddress, periphery, collateral, leverage, isLong, address, collateralType)
-
-    console.log('[SDK DEBUG] After multicall - currentAllowance:', currentAllowance.toString());
-    console.log('[SDK DEBUG] After multicall - collateral required:', collateral.toString());
-    console.log('[SDK DEBUG] After multicall - balance:', balance.toString());
 
     const liquidationPriceEstimate = this._getLiquidationPriceEstimate(liquidationPrice)
     const maxInputIncludingFees = this._getMaxInputIncludingFees(rawTradingFeeRate, balance, leverage)
@@ -262,15 +254,6 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const showBalanceNotEnoughWarning = maxInputIncludingFees && formattedMinCollateral && +maxInputIncludingFees < formattedMinCollateral ? true : false
 
     const showApprovalFlow = currentAllowance < collateral
-    console.log('[SDK DEBUG] showApprovalFlow:', showApprovalFlow, '(allowance < collateral)')
-    console.log('[SDK DEBUG] Comparison:', {
-      currentAllowance: currentAllowance.toString(),
-      collateral: collateral.toString(),
-      needsApproval: currentAllowance < collateral
-    })
-
-    // Force log to ensure we see it
-    console.error('🔴 APPROVAL CHECK:', showApprovalFlow ? 'NEEDS APPROVAL' : 'HAS APPROVAL')
 
     const isPriceImpactHigh = Number(priceInfo.priceImpactPercentage) - Number(slippage) > 0
 
@@ -294,8 +277,6 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     if (amountExceedsMaxInput) tradeState = TradeState.AmountExceedsMaxInput
     if (amountBelowMinCollateral) tradeState = TradeState.AmountBelowMinCollateral
     if (showApprovalFlow) tradeState = TradeState.NeedsApproval
-
-    console.error('🟢 FINAL TRADE STATE:', tradeState)
 
     return {
       liquidationPriceEstimate,
@@ -441,22 +422,16 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     let allowanceContract;
     let allowanceSpender;
 
-    console.log('[SDK DEBUG] collateralType:', collateralType);
-    console.log('[SDK DEBUG] collateral amount:', collateral.toString());
-
     if (collateralType === 'USDT') {
       // For USDT: check stable token allowance to LBSC
       const stableTokenAddress = await this.sdk.lbsc.getStableTokenAddress();
       const lbscAddress = await this.sdk.lbsc.getLbscAddress();
-      console.log('[SDK DEBUG] USDT mode - stableTokenAddress:', stableTokenAddress);
-      console.log('[SDK DEBUG] USDT mode - lbscAddress (spender):', lbscAddress);
       allowanceContract = { address: stableTokenAddress, abi: OVLTokenABIFunctions };
       allowanceSpender = lbscAddress;
     } else {
       // For OVL: check OVL allowance to Market or Shiva
       allowanceContract = ovlContract;
       allowanceSpender = this.core.usingShiva() ? SHIVA_ADDRESS[chainId] : marketAddress;
-      console.log('[SDK DEBUG] OVL mode - spender:', allowanceSpender);
     }
     
     const [

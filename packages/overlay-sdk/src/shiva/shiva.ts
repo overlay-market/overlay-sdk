@@ -249,49 +249,6 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     })
   }
 
-  public async populateBuildStable(props: NoCallback<ShivaBuildStableProps>) {
-    return {
-      to: this.getShivaAddress(),
-      from: props.account,
-      data: encodeFunctionData({
-        abi: ShivaABI,
-        functionName: 'buildStable',
-        args: [
-          {
-            ovlMarket: props.params.marketAddress,
-            brokerId: props.params.brokerId ?? this.core.brokerId,
-            isLong: props.params.isLong,
-            stableCollateral: props.params.stableCollateral,
-            leverage: props.params.leverage,
-            priceLimit: props.params.priceLimit,
-            minOvl: props.params.minOvl,
-          },
-        ],
-      }),
-    }
-  }
-
-  public async simulateBuildStable(props: NoCallback<ShivaBuildStableProps>) {
-    const { account, ...rest } = await this.parseBuildStableProps(props)
-    const contract = this.getShivaContract()
-
-    const txArguments = [
-      {
-        ovlMarket: rest.params.marketAddress,
-        brokerId: rest.params.brokerId ?? this.core.brokerId,
-        isLong: rest.params.isLong,
-        stableCollateral: rest.params.stableCollateral,
-        leverage: rest.params.leverage,
-        priceLimit: rest.params.priceLimit,
-        minOvl: rest.params.minOvl,
-      },
-    ] as const
-
-    return contract.simulate.buildStable(txArguments, {
-      account: account.address,
-    })
-  }
-
   /**
    * Get loan ID for a position built with stable collateral
    * @param marketAddress The market address
