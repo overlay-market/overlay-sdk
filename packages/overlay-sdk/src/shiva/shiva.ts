@@ -28,6 +28,8 @@ import {
   ShivaBuildSingleOnBehalfOfInnerProps,
   ShivaBuildSingleOnBehalfOfProps,
   ShivaBuildSingleProps,
+  ShivaBuildStableProps,
+  ShivaBuildStableInnerProps,
   ShivaCancelNonceInnerProps,
   ShivaCancelNonceProps,
   ShivaUnwindOnBehalfOfInnerProps,
@@ -214,6 +216,100 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     return contract.simulate.build(txArguments, {
       account: account.address,
     })
+  }
+
+  // Build Stable (with LBSC)
+
+  public async buildStable(props: ShivaBuildStableProps): Promise<TransactionResult<BuildResult>> {
+    this.core.useWeb3Provider()
+    const { callback, account, ...rest } = await this.parseBuildStableProps(props)
+
+    const contract = this.getShivaContract()
+
+    const txArguments = [
+      {
+        ovlMarket: rest.params.marketAddress,
+        brokerId: rest.params.brokerId ?? this.core.brokerId,
+        isLong: rest.params.isLong,
+        stableCollateral: rest.params.stableCollateral,
+        leverage: rest.params.leverage,
+        priceLimit: rest.params.priceLimit,
+        minOvl: rest.params.minOvl,
+      },
+    ] as const
+
+    return this.core.performTransaction({
+      ...rest,
+      account,
+      callback,
+      getGasLimit: (options: TransactionOptions) =>
+        contract.estimateGas.buildStable(txArguments, options),
+      sendTransaction: (options: TransactionOptions) => contract.write.buildStable(txArguments, options),
+      decodeResult: async (receipt) => this.submitParse(receipt),
+    })
+  }
+
+  public async populateBuildStable(props: NoCallback<ShivaBuildStableProps>) {
+    return {
+      to: this.getShivaAddress(),
+      from: props.account,
+      data: encodeFunctionData({
+        abi: ShivaABI,
+        functionName: 'buildStable',
+        args: [
+          {
+            ovlMarket: props.params.marketAddress,
+            brokerId: props.params.brokerId ?? this.core.brokerId,
+            isLong: props.params.isLong,
+            stableCollateral: props.params.stableCollateral,
+            leverage: props.params.leverage,
+            priceLimit: props.params.priceLimit,
+            minOvl: props.params.minOvl,
+          },
+        ],
+      }),
+    }
+  }
+
+  public async simulateBuildStable(props: NoCallback<ShivaBuildStableProps>) {
+    const { account, ...rest } = await this.parseBuildStableProps(props)
+    const contract = this.getShivaContract()
+
+    const txArguments = [
+      {
+        ovlMarket: rest.params.marketAddress,
+        brokerId: rest.params.brokerId ?? this.core.brokerId,
+        isLong: rest.params.isLong,
+        stableCollateral: rest.params.stableCollateral,
+        leverage: rest.params.leverage,
+        priceLimit: rest.params.priceLimit,
+        minOvl: rest.params.minOvl,
+      },
+    ] as const
+
+    return contract.simulate.buildStable(txArguments, {
+      account: account.address,
+    })
+  }
+
+  /**
+   * Get loan ID for a position built with stable collateral
+   * @param marketAddress The market address
+   * @param positionId The position ID
+   * @returns The loan ID (0 if not an LBSC position)
+   */
+  public async getLoanId(marketAddress: `0x${string}`, positionId: bigint): Promise<bigint> {
+    const contract = this.getShivaContract()
+    return contract.read.loanIds([marketAddress, positionId])
+  }
+
+  /**
+   * Get the LBSC contract address from Shiva
+   * @returns The LBSC contract address
+   */
+  public async getLbscAddress(): Promise<`0x${string}`> {
+    const contract = this.getShivaContract()
+    return contract.read.lbsc()
   }
 
   // Unwind
@@ -756,6 +852,16 @@ export class OverlaySDKShiva extends OverlaySDKModule {
   private async parseBuildSingleProps(
     props: ShivaBuildSingleProps
   ): Promise<ShivaBuildSingleInnerProps> {
+    return {
+      ...props,
+      account: await this.core.useAccount(props.account),
+      callback: props.callback ?? NOOP,
+    }
+  }
+
+  private async parseBuildStableProps(
+    props: ShivaBuildStableProps
+  ): Promise<ShivaBuildStableInnerProps> {
     return {
       ...props,
       account: await this.core.useAccount(props.account),

@@ -3,6 +3,7 @@ import { AccountValue, CommonTransactionProps } from '../core/types'
 import {
   BuildPropsBase,
   BuildSinglePropsBase,
+  BuildStablePropsBase,
   EmergencyWithdrawPropsBase,
   UnwindPropsBase,
 } from '../common/types'
@@ -29,6 +30,16 @@ export type ShivaBuildSingleProps = CommonTransactionProps & {
 }
 
 export type ShivaBuildSingleInnerProps = ShivaBuildSingleProps & {
+  account: JsonRpcAccount
+}
+
+// Build Stable (with LBSC)
+
+export type ShivaBuildStableProps = CommonTransactionProps & {
+  params: BuildStablePropsBase
+}
+
+export type ShivaBuildStableInnerProps = ShivaBuildStableProps & {
   account: JsonRpcAccount
 }
 

@@ -42,3 +42,13 @@ export type BuildSinglePropsBase = {
   leverage: bigint
   previousPositionId: bigint
 }
+
+export type BuildStablePropsBase = {
+  marketAddress: Address
+  brokerId?: number
+  isLong: boolean
+  stableCollateral: bigint
+  leverage: bigint
+  priceLimit: bigint
+  minOvl: bigint
+}
