@@ -28,7 +28,6 @@ const ERC20ApproveABI = [
 
 export class OverlaySDKLBSC extends OverlaySDKModule {
   private lbscAddressCache: Address | null = null
-  private tokenOrderCache: { isReversed: boolean } | null = null
 
   constructor(props: OverlaySDKCommonProps) {
     super(props)
@@ -66,56 +65,6 @@ export class OverlaySDKLBSC extends OverlaySDKModule {
   }
 
   /**
-   * Detect token order in the oracle's pool to determine if price inversion is needed
-   * @returns true if tokens are reversed (token0=USDT, token1=OVL), false if correct (token0=OVL, token1=USDT)
-   */
-  private async detectTokenOrder(): Promise<boolean> {
-    if (this.tokenOrderCache !== null) {
-      return this.tokenOrderCache.isReversed
-    }
-
-    const lbscContract = await this.getLbscContract()
-
-    // Get oracle address from LBSC
-    const oracleAddress = await lbscContract.read.twapOracle()
-
-    // Get pool address from oracle
-    const poolAddress = await this.core.rpcProvider.readContract({
-      address: oracleAddress,
-      abi: [{
-        type: 'function',
-        name: 'pool',
-        inputs: [],
-        outputs: [{ name: '', type: 'address' }],
-        stateMutability: 'view',
-      }],
-      functionName: 'pool',
-    })
-
-    // Get token0 from pool
-    const token0 = await this.core.rpcProvider.readContract({
-      address: poolAddress as Address,
-      abi: [{
-        type: 'function',
-        name: 'token0',
-        inputs: [],
-        outputs: [{ name: '', type: 'address' }],
-        stateMutability: 'view',
-      }],
-      functionName: 'token0',
-    })
-
-    // Get OVL token address from LBSC
-    const ovlAddress = await lbscContract.read.ovlToken()
-
-    // If token0 is OVL, order is correct. If token0 is not OVL (it's USDT), order is reversed
-    const isReversed = token0.toLowerCase() !== ovlAddress.toLowerCase()
-
-    this.tokenOrderCache = { isReversed }
-    return isReversed
-  }
-
-  /**
    * Preview how much OVL will be borrowed for a given stable amount
    * @param stableAmount Amount of stable tokens (e.g., USDT) in wei
    * @returns Amount of OVL tokens that will be borrowed
@@ -127,27 +76,11 @@ export class OverlaySDKLBSC extends OverlaySDKModule {
 
   /**
    * Get OVL/USDT price from LBSC oracle (used for borrow calculations)
-   * Automatically detects and corrects for reversed token order in the pool
    * @returns Price of OVL in stable tokens (USDT per OVL, scaled to 1e18)
    */
   public async getOraclePrice(): Promise<bigint> {
     const contract = await this.getLbscContract()
-    const rawPrice = await contract.read.currentPrice()
-
-    // Detect if tokens are in reversed order
-    const isReversed = await this.detectTokenOrder()
-
-    if (isReversed) {
-      // Pool has token0=USDT, token1=OVL (reversed)
-      // Oracle returns OVL per USDT, but we need USDT per OVL
-      // Invert: (1e18 * 1e18) / rawPrice
-      const WAD = BigInt(10 ** 18)
-      return (WAD * WAD) / rawPrice
-    }
-
-    // Pool has correct order (token0=OVL, token1=USDT)
-    // Oracle returns USDT per OVL as expected
-    return rawPrice
+    return contract.read.currentPrice()
   }
 
   /**
