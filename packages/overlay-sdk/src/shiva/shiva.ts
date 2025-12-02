@@ -34,6 +34,8 @@ import {
   ShivaCancelNonceProps,
   ShivaUnwindOnBehalfOfInnerProps,
   ShivaUnwindOnBehalfOfProps,
+  ShivaUnwindStableInnerProps,
+  ShivaUnwindStableProps,
   SignBuildOnBehalfOfProps,
   SignBuildSingleOnBehalfOfProps,
   SignUnwindOnBehalfOfProps,
@@ -340,6 +342,97 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     ] as const
 
     return contract.simulate.unwind(txArguments, {
+      account: account.address,
+    })
+  }
+
+  // Unwind Stable (LBSC unwind + swap to stable)
+
+  public async unwindStable(props: ShivaUnwindStableProps, verified: boolean = false): Promise<TransactionResult> {
+    this.core.useWeb3Provider()
+
+    if (!verified) {
+      const { account, marketAddress, positionId } = await this.parseUnwindStableProps(props);
+      const marketPositionId = `${marketAddress.toLowerCase()}-0x${Number(positionId).toString(16)}`
+      const positionDetails = await getPositionDetails(this.core.chainId, account.address.toLowerCase(), marketPositionId) ?? null
+      invariant(positionDetails, `Position not found for ${marketPositionId}; ${account.address.toLowerCase()}; ${positionId}; marketAddress: ${marketAddress}; chainId: ${this.core.chainId}`)
+      invariant(positionDetails.router.id !== zeroAddress, 'This position is not on Shiva')
+    }
+
+    const { account, swapData, minOut, ...rest } = await this.parseUnwindStableProps(props)
+
+    const swapPayload = swapData ?? '0x'
+    invariant(swapPayload !== '0x', 'swapData is required for unwindStable until automatic swap routing is available')
+
+    const contract = this.getShivaContract()
+
+    const txArguments = [
+      {
+        ovlMarket: rest.marketAddress,
+        brokerId: rest.brokerId ?? this.core.brokerId,
+        positionId: rest.positionId,
+        fraction: rest.fraction,
+        priceLimit: rest.priceLimit,
+      },
+      swapPayload,
+      minOut,
+    ] as const
+
+    return this.core.performTransaction({
+      ...rest,
+      account,
+      getGasLimit: (options: TransactionOptions) =>
+        contract.estimateGas.unwindStable(txArguments, options),
+      sendTransaction: (options: TransactionOptions) =>
+        contract.write.unwindStable(txArguments, options),
+    })
+  }
+
+  public async populateUnwindStable(props: NoCallback<ShivaUnwindStableProps>) {
+    const swapPayload = props.swapData ?? '0x'
+    invariant(swapPayload !== '0x', 'swapData is required for populateUnwindStable until automatic swap routing is available')
+
+    return {
+      to: this.getShivaAddress(),
+      from: props.account,
+      data: encodeFunctionData({
+        abi: ShivaABI,
+        functionName: 'unwindStable',
+        args: [
+          {
+            ovlMarket: props.marketAddress,
+            brokerId: props.brokerId ?? this.core.brokerId,
+            positionId: props.positionId,
+            fraction: props.fraction,
+            priceLimit: props.priceLimit,
+          },
+          swapPayload,
+          props.minOut,
+        ],
+      }),
+    }
+  }
+
+  public async simulateUnwindStable(props: NoCallback<ShivaUnwindStableProps>) {
+    const { account, swapData, minOut, ...rest } = await this.parseUnwindStableProps(props);
+    const swapPayload = swapData ?? '0x'
+    invariant(swapPayload !== '0x', 'swapData is required for simulateUnwindStable until automatic swap routing is available')
+
+    const contract = this.getShivaContract()
+
+    const txArguments = [
+      {
+        ovlMarket: rest.marketAddress,
+        brokerId: rest.brokerId ?? this.core.brokerId,
+        positionId: rest.positionId,
+        fraction: rest.fraction,
+        priceLimit: rest.priceLimit,
+      },
+      swapPayload,
+      minOut,
+    ] as const
+
+    return contract.simulate.unwindStable(txArguments, {
       account: account.address,
     })
   }
@@ -799,6 +892,16 @@ export class OverlaySDKShiva extends OverlaySDKModule {
   }
 
   private async parseUnwindProps(props: UnwindProps): Promise<UnwindInnerProps> {
+    return {
+      ...props,
+      account: await this.core.useAccount(props.account),
+      callback: props.callback ?? NOOP,
+    }
+  }
+
+  private async parseUnwindStableProps(
+    props: ShivaUnwindStableProps
+  ): Promise<ShivaUnwindStableInnerProps> {
     return {
       ...props,
       account: await this.core.useAccount(props.account),
