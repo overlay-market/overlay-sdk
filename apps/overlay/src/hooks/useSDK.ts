@@ -8,7 +8,7 @@ export default function useSDK() {
   const sdk = new OverlaySDK({
     chainId: chainId ? chainId as CHAINS : DEFAULT_CHAINID as number,
     rpcUrls: {
-      [CHAINS.BscTestnet]: ['https://bsctestapi.terminet.io/rpc', 'https://bsc-testnet.bnbchain.org'],
+      [CHAINS.BscTestnet]: ['https://data-seed-prebsc-2-s3.bnbchain.org:8545', 'https://bsc-testnet.bnbchain.org'],
       [CHAINS.BscMainnet]: ['https://bsc-rpc.publicnode.com	'],
     },
     web3Provider: OverlaySDKCore.createWeb3Provider(chainId as CHAINS, window.ethereum),
