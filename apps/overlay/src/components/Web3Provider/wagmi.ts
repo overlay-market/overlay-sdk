@@ -1,32 +1,18 @@
-import { createClient } from 'viem'
 import { http, createConfig } from 'wagmi'
-import { arbitrum, mainnet, arbitrumSepolia, berachainTestnetbArtio, berachainBepolia, bscTestnet, bsc } from 'wagmi/chains'
+import { bscTestnet, bsc } from 'wagmi/chains'
 import { injected, metaMask, walletConnect } from 'wagmi/connectors'
 
 const projectId = <string>process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID
 
 export const wagmiConfig = createConfig({
-  chains: [mainnet, arbitrum, arbitrumSepolia, berachainTestnetbArtio, berachainBepolia, bscTestnet, bsc],
+  chains: [bscTestnet, bsc],
   connectors: [
     injected(),
     walletConnect({ projectId }),
     metaMask(),
   ],
   transports: {
-    [mainnet.id]: http(),
-    [arbitrum.id]: http(),
-    [arbitrumSepolia.id]: http(),
-    [berachainTestnetbArtio.id]: http(),
-    [berachainBepolia.id]: http(),
     [bscTestnet.id]: http(),
     [bsc.id]: http(),
   },
-  // client({ chain }) {
-  //   return createClient({
-  //     chain,
-  //     batch: { multicall: true },
-  //     pollingInterval: 12_000,
-  //     transport: http(chain.rpcUrls.default.http[0])
-  //   })
-  // },
 })

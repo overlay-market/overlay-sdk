@@ -47,13 +47,8 @@ const WalletDetails = styled(FlexColumn)`
 export const NETWORK_LABELS: {
   [chainId in SupportedChainId | number]: string;
 } = {
-  [SupportedChainId.MAINNET]: "Ethereum Mainnet",
-  [SupportedChainId.GÖRLI]: "Goerli Testnet",
-  [SupportedChainId.RINKEBY]: "Rinkeby Testnet",
-  [SupportedChainId.ARBITRUM]: "Arbitrum One",
-  [SupportedChainId.ARBITRUM_GÖRLI]: "Arbitrum Goerli Testnet",
-  [SupportedChainId.ARBITRUM_SEPOLIA]: "Arbitrum Sepolia Testnet",
-  [SupportedChainId.IMOLA]: "Movement Testnet",
+  [SupportedChainId.BSC_MAINNET]: "BSC Mainnet",
+  [SupportedChainId.BSC_TESTNET]: "BSC Testnet",
 };
 
 const providerEth = new ethers.InfuraProvider(
