@@ -83,7 +83,7 @@ const MarketsTable = () => {
 
         try {
           // replace by your own trade id
-          const positionDetails = await sdk.trade.getUnwindState(process.env.REACT_APP_MARKET_ID ?? "MrBeast Index", address, 462522, 1n ** 18n, 4)
+          const positionDetails = await sdk.trade.getUnwindState(process.env.REACT_APP_MARKET_ADDRESS ?? "MrBeast Index", address, 0, 1, 4)
           console.log(" ================= Position Details", positionDetails);
         } catch (error) {
           console.log(" ================= Position Details ERROR", error);
