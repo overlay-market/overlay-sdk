@@ -17,6 +17,7 @@ import useSDK from "../../hooks/useSDK";
 import { useMultichainContext } from "../../state/multichain/useMultichainContext";
 import { useAccount } from "../../hooks/useAccount";
 import { toWei } from "overlay-sdk/dist/common/utils/formatWei";
+import { SHIVA_ADDRESS } from "overlay-sdk/dist/constants";
 
 const MarketsTable = () => {
   const [markets, setMarkets] = useState([]);
@@ -89,6 +90,39 @@ const MarketsTable = () => {
           console.log(" ================= Position Details ERROR", error);
         }
 
+        const swapData = process.env.REACT_APP_UNWIND_STABLE_SWAP_DATA;
+        const minOut = process.env.REACT_APP_UNWIND_STABLE_MIN_OUT;
+        const unwindStablePositionId = process.env.REACT_APP_UNWIND_STABLE_POSITION_ID;
+
+        if (swapData && minOut && unwindStablePositionId && address) {
+          try {
+            const ownerForPriceLimit = SHIVA_ADDRESS[sdk.core.chainId] ?? address;
+            const priceLimit = await sdk.trade.getUnwindPrice(
+              process.env.REACT_APP_MARKET_ID ?? "MrBeast Index",
+              ownerForPriceLimit,
+              BigInt(unwindStablePositionId),
+              toWei(1),
+              1
+            );
+
+            const unwindStableTx = await sdk.shiva.populateUnwindStable({
+              account: address,
+              marketAddress: process.env.REACT_APP_MARKET_ADDRESS ?? "",
+              positionId: BigInt(unwindStablePositionId),
+              fraction: toWei(1),
+              priceLimit,
+              minOut: BigInt(minOut),
+              swapData,
+            });
+
+            console.log(" ================= Sample unwindStable TX data", unwindStableTx);
+          } catch (error) {
+            console.log(" ================= unwindStable sample ERROR", error);
+          }
+        } else {
+          console.log(" ================= Skipping unwindStable sample; set REACT_APP_UNWIND_STABLE_SWAP_DATA, REACT_APP_UNWIND_STABLE_MIN_OUT, and REACT_APP_UNWIND_STABLE_POSITION_ID to enable");
+        }
+
         activeMarkets && setMarkets(activeMarkets);
       } catch (error) {
         console.error("Error fetching markets:", error);
@@ -96,7 +130,7 @@ const MarketsTable = () => {
     };
 
     fetchData();
-  }, [contextChainID]);
+  }, [contextChainID, address, sdk.core.chainId]);
   console.log({markets})
   return (
     <>

@@ -23,11 +23,13 @@ const Shiva = () => {
   const [collateral, setCollateral] = useState(0.01)
   const [leverage, setLeverage] = useState(2)
   const [slippage, setSlippage] = useState(1)
-  const [marketAddress, setMarketAddress] = useState('')
-  const [marketName, setMarketName] = useState('')
+  const [marketAddress, setMarketAddress] = useState(process.env.REACT_APP_MARKET_ADDRESS ?? '')
+  const [marketName, setMarketName] = useState(process.env.REACT_APP_MARKET_ID ?? '')
   const [isLong, setIsLong] = useState(true)
   const [positionId, setPositionId] = useState(0n)
-  const [fraction, setFraction] = useState(0)
+  const [fraction, setFraction] = useState(1)
+  const [unwindSwapData, setUnwindSwapData] = useState(process.env.REACT_APP_UNWIND_STABLE_SWAP_DATA ?? '')
+  const [unwindMinOut, setUnwindMinOut] = useState(process.env.REACT_APP_UNWIND_STABLE_MIN_OUT ?? '')
   const [buildHash, setBuildHash] = useState('')
   const [unwindHash, setUnwindHash] = useState('')
   const [amountToApprove, setAmountToApprove] = useState(0)
@@ -115,6 +117,49 @@ const Shiva = () => {
       setUnwindHash(res.hash) // Show unwindHash
     } catch (error) {
       console.error('Error in shivaUnwind', error)
+    }
+  }
+
+  const shivaUnwindStable = async (type: TransactionType = TransactionType.Normal) => {
+    console.log("unwinds stable start")
+    try {
+      const minOutValue = unwindMinOut ? BigInt(unwindMinOut) : 0n
+      const swapDataValue = unwindSwapData ? (unwindSwapData as `0x${string}`) : undefined
+
+      let res: any
+      const unwindParams = {
+        account,
+        marketAddress: marketAddress as Address,
+        positionId: positionId,
+        fraction: toWei(fraction),
+        priceLimit: (await sdk.trade.getUnwindPrice(
+          marketName,
+          SHIVA_ADDRESS[sdk.core.chainId],
+          positionId,
+          toWei(fraction),
+          slippage
+        )) as bigint,
+        minOut: minOutValue,
+        swapData: swapDataValue,
+      }
+      
+      if (type === TransactionType.Normal) {
+        res = await sdk.shiva.unwindStable(unwindParams)
+      } else if (type === TransactionType.Populate) {
+        res = await sdk.shiva.populateUnwindStable(unwindParams)
+      } else if (type === TransactionType.Simulate) {
+        res = await sdk.shiva.simulateUnwindStable(unwindParams)
+      }
+
+      console.log('Shiva unwind stable result', res)
+
+      if (type === TransactionType.Normal && !res?.result) {
+        console.error('Shiva unwind stable not result')
+        return
+      }
+      if (res?.hash) setUnwindHash(res.hash)
+    } catch (error) {
+      console.error('Error in shivaUnwindStable', error)
     }
   }
 
@@ -605,6 +650,36 @@ const Shiva = () => {
         <button onClick={() => shivaUnwind(TransactionType.Simulate)}>Simulate Shiva Unwind</button>
         <br />
         <button onClick={() => shivaUnwind(TransactionType.Populate)}>Populate Shiva Unwind</button>
+      </div>
+      <div>
+        <label style={{ fontSize: '15px' }}>
+          Swap data (optional):
+          <textarea
+            placeholder="0x..."
+            value={unwindSwapData}
+            onChange={(e) => setUnwindSwapData(e.target.value)}
+            rows={3}
+            style={{ width: '100%' }}
+          />
+        </label>
+      </div>
+      <div>
+        <label style={{ fontSize: '15px' }}>
+          Min Out (stable):
+          <input
+            type="text"
+            placeholder="Min out in stable token units"
+            value={unwindMinOut}
+            onChange={(e) => setUnwindMinOut(e.target.value)}
+          />
+        </label>
+      </div>
+      <div>
+        <button onClick={() => shivaUnwindStable(TransactionType.Normal)}>Shiva Unwind Stable</button>
+        <br />
+        <button onClick={() => shivaUnwindStable(TransactionType.Simulate)}>Simulate Shiva Unwind Stable</button>
+        <br />
+        <button onClick={() => shivaUnwindStable(TransactionType.Populate)}>Populate Shiva Unwind Stable</button>
       </div>
       <div>
         <button onClick={() => shivaBuildSingle(TransactionType.Normal)}>Shiva Build Single</button>
