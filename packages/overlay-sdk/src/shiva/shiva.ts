@@ -570,6 +570,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
         brokerId,
       })
 
+      // if there's no ovlAmount to swap, shiva will omit the swap - but the swap payload is still needed to construct the params
       const swapAmount = ovlAmount === 0n ? 10n ** 18n : ovlAmount
 
       const params: Record<string, string | number | boolean> = {

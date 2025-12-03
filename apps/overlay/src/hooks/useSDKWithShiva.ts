@@ -12,6 +12,7 @@ export default function useSDKWithShiva() {
       [CHAINS.BscMainnet]: ['https://bsc-rpc.publicnode.com	'],
     },
     web3Provider: OverlaySDKCore.createWeb3Provider(chainId as CHAINS, window.ethereum),
+    oneInchApiKey: process.env.REACT_APP_ONE_INCH_API_KEY,
     brokerId: 7777,
     useShiva: true,
   });
