@@ -77,12 +77,24 @@ export type ShivaUnwindOnBehalfOfInnerProps = ShivaUnwindOnBehalfOfProps & {
 
 // Unwind Stable
 
-export type ShivaUnwindStableProps = CommonTransactionProps & UnwindPropsBase & {
+type ShivaUnwindStableWithMinOut = {
   minOut: bigint
-  swapData?: `0x${string}`
+  slippage?: never
 }
 
-export type ShivaUnwindStableInnerProps = ShivaUnwindStableProps & {
+type ShivaUnwindStableWithSlippage = {
+  minOut?: never
+  slippage: number
+}
+
+export type ShivaUnwindStableProps = CommonTransactionProps & UnwindPropsBase & {
+  swapData?: `0x${string}`
+} & (ShivaUnwindStableWithMinOut | ShivaUnwindStableWithSlippage)
+
+export type ShivaUnwindStableInnerProps = CommonTransactionProps & UnwindPropsBase & {
+  minOut: bigint
+  slippage?: number
+  swapData?: `0x${string}`
   account: JsonRpcAccount
 }
 

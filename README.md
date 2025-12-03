@@ -290,7 +290,7 @@ await sdk.shiva.buildStable({
 
 ### Unwinding to stable
 
-`unwindStable` closes a position and swaps OVL proceeds into a stable token. On BSC mainnet swap data is fetched automatically via 1inch (requires `oneInchApiKey`); on other chains provide `swapData`.
+`unwindStable` closes a position and swaps OVL proceeds into a stable token. Provide either an explicit `minOut` **or** a percent `slippage` value (example: `1` means accept up to 1% less). On BSC mainnet the chosen parameter is forwarded to 1inch (requires `oneInchApiKey`); on other chains provide `swapData`.
 
 ```ts
 await sdk.shiva.unwindStable({
@@ -299,10 +299,13 @@ await sdk.shiva.unwindStable({
   positionId,
   fraction: toWei('1'),
   priceLimit,
-  minOut: toWei('90'),          // minimum stable tokens to receive
+  minOut: toWei('90'),          // minimum stable tokens to receive (use instead of slippage)
+  // slippage: 1,               // optional: 1 = allow up to 1% less than the quote (use instead of minOut)
   swapData: '0x...',            // optional; required on chains without 1inch integration
 });
 ```
+
+On BSC testnet, providing `slippage` automatically sets `minOut` to `0` for the transaction payload.
 
 ### On-Behalf-Of Operations
 
