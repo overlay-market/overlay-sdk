@@ -1,5 +1,5 @@
 overrideExisting: true
-schema: https://api.studio.thegraph.com/query/77621/overlay-sepolia/version/latest
+schema: https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-bnb-testnet/3-lbsc-unwind-stable/gn
 documents: "./**/**/!(*.d).{ts,tsx}"
 generates:
   src/types.ts:
