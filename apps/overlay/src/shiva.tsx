@@ -30,6 +30,7 @@ const Shiva = () => {
   const [fraction, setFraction] = useState(1)
   const [unwindSwapData, setUnwindSwapData] = useState(process.env.REACT_APP_UNWIND_STABLE_SWAP_DATA ?? '')
   const [unwindMinOut, setUnwindMinOut] = useState(process.env.REACT_APP_UNWIND_STABLE_MIN_OUT ?? '')
+  const [unwindSlippage, setUnwindSlippage] = useState('')
   const [buildHash, setBuildHash] = useState('')
   const [unwindHash, setUnwindHash] = useState('')
   const [amountToApprove, setAmountToApprove] = useState(0)
@@ -124,11 +125,24 @@ const Shiva = () => {
   const shivaUnwindStable = async (type: TransactionType = TransactionType.Normal) => {
     console.log("unwinds stable start")
     try {
-      const minOutValue = unwindMinOut ? BigInt(unwindMinOut) : 0n
+      const hasMinOut = unwindMinOut !== ''
+      const hasSlippage = unwindSlippage !== ''
+
+      if ((hasMinOut && hasSlippage) || (!hasMinOut && !hasSlippage)) {
+        console.error('Provide either minOut or slippage for unwindStable')
+        return
+      }
+
+      const minOutValue = hasMinOut ? BigInt(unwindMinOut) : undefined
+      const slippageValue = hasSlippage ? Number(unwindSlippage) : undefined
+      if (hasSlippage && (slippageValue === undefined || Number.isNaN(slippageValue))) {
+        console.error('Invalid slippage value')
+        return
+      }
       const swapDataValue = unwindSwapData ? (unwindSwapData as `0x${string}`) : undefined
 
       let res: any
-      const unwindParams = {
+      const baseUnwindParams = {
         account,
         marketAddress: marketAddress as Address,
         positionId: positionId,
@@ -140,9 +154,12 @@ const Shiva = () => {
           toWei(fraction),
           slippage
         )) as bigint,
-        minOut: minOutValue,
         swapData: swapDataValue,
       }
+
+      const unwindParams = hasSlippage
+        ? { ...baseUnwindParams, slippage: slippageValue as number }
+        : { ...baseUnwindParams, minOut: minOutValue as bigint }
       
       if (type === TransactionType.Normal) {
         res = await sdk.shiva.unwindStable(unwindParams)
@@ -703,6 +720,18 @@ const Shiva = () => {
             onChange={(e) => setUnwindMinOut(e.target.value)}
           />
         </label>
+      </div>
+      <div>
+        <label style={{ fontSize: '15px' }}>
+          Slippage (stable unwind, %):
+          <input
+            type="number"
+            placeholder="Slippage percent"
+            value={unwindSlippage}
+            onChange={(e) => setUnwindSlippage(e.target.value)}
+          />
+        </label>
+        <div style={{ fontSize: '12px' }}>Provide either Min Out or Slippage (not both)</div>
       </div>
       <div>
         <button onClick={() => shivaUnwindStable(TransactionType.Normal)}>Shiva Unwind Stable</button>
