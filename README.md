@@ -270,6 +270,40 @@ await sdk.shiva.unwindMultiple({
 });
 ```
 
+### Building with stable collateral (LBSC)
+
+Use Shiva's LBSC path to supply a stable token and borrow OVL under the hood. Requires `useShiva: true` and LBSC availability on the chain.
+
+```ts
+await sdk.shiva.buildStable({
+  account,
+  params: {
+    marketAddress,
+    isLong: true,
+    stableCollateral: toWei('100'), // amount in stable token units
+    leverage: toWei('2'),
+    priceLimit,
+    minOvl: toWei('50'), // minimum OVL to receive from borrow
+  },
+});
+```
+
+### Unwinding to stable
+
+`unwindStable` closes a position and swaps OVL proceeds into a stable token. On BSC mainnet swap data is fetched automatically via 1inch (requires `oneInchApiKey`); on other chains provide `swapData`.
+
+```ts
+await sdk.shiva.unwindStable({
+  account,
+  marketAddress,
+  positionId,
+  fraction: toWei('1'),
+  priceLimit,
+  minOut: toWei('90'),          // minimum stable tokens to receive
+  swapData: '0x...',            // optional; required on chains without 1inch integration
+});
+```
+
 ### On-Behalf-Of Operations
 
 Shiva supports signature-based operations where one address can authorize another to perform actions on their behalf.
@@ -348,7 +382,7 @@ await sdk.shiva.emergencyWithdraw({
 ```
 
 ### Examples and Playground
-s
+
 You can find a complete playground with implemented examples in the `apps/overlay/src/shiva.tsx` file. This playground includes working implementations of all Shiva methods, including:
 
 - Building and unwinding positions
