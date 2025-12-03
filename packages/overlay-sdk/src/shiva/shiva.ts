@@ -1248,13 +1248,14 @@ export class OverlaySDKShiva extends OverlaySDKModule {
         : hasMinOut
           ? props.minOut!
           : 0n
+    const callback = 'callback' in props ? props.callback : undefined
 
     return {
       ...props,
       minOut,
       slippage: hasSlippage ? props.slippage : undefined,
       account: await this.core.useAccount(props.account),
-      callback: props.callback ?? NOOP,
+      callback: callback ?? NOOP,
     }
   }
 
