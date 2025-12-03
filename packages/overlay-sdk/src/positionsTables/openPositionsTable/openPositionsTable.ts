@@ -50,6 +50,11 @@ export type OpenPositionData = {
     collateralReturned: string;
     collateralSeized: string;
   } | null;
+  stableValues?: {
+    size: string;          // USDT collateral amount
+    unrealizedPnL: string; // USDT if negative, OVL if positive
+    funding: string;       // USDT if negative, OVL if positive
+  };
 };
 
 export type PositionData = {
@@ -175,6 +180,9 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       }
     }
 
+    // Fetch oracle price once for all positions (for stable values calculation)
+    const oraclePrice = await this.fetchOraclePrice();
+
     const transformedOpens: OpenPositionData[] = [];
     // Transform only the dataToProcess
     for (const open of dataToProcess) {
@@ -182,7 +190,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       const currentMarketAddress = open.market.id as Address;
       let positionContractData = positionsDataFromContracts[`${currentMarketAddress}-${positionId}`];
 
-      const formattedOpen = await this.formatOpenPosition(open, lowercasedMarketDetails, positionContractData ?? undefined);
+      const formattedOpen = await this.formatOpenPosition(open, lowercasedMarketDetails, positionContractData ?? undefined, oraclePrice);
       if (formattedOpen) {
         transformedOpens.push(formattedOpen);
       }
@@ -204,10 +212,100 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     };
   };
 
+  private async fetchOraclePrice(): Promise<bigint | undefined> {
+    try {
+      return await this.sdk.lbsc.getOraclePrice();
+    } catch (error) {
+      console.error('Failed to fetch oracle price:', error);
+      return undefined;
+    }
+  }
+
+  private calculateStableValue(
+    ovlValue: string | number | undefined,
+    loan: NonNullable<OpenPositionData['loan']>,
+    oraclePrice: bigint  // OVL/USDT price in wei (1e18)
+  ): string | undefined {
+    try {
+      // Return undefined if inputs are invalid
+      if (
+        ovlValue === undefined ||
+        ovlValue === "-" ||
+        !loan?.ovlAmount ||
+        !loan?.stableAmount
+      ) {
+        return undefined;
+      }
+
+      const ovlNum = typeof ovlValue === 'string' ? parseFloat(ovlValue) : ovlValue;
+
+      // For zero values, return "0"
+      if (ovlNum === 0) {
+        return "0";
+      }
+
+      // Convert ovlValue to wei (18 decimals) for precise calculations
+      const isNegative = ovlNum < 0;
+      const absOvlNum = Math.abs(ovlNum);
+      const ovlValueWei = BigInt(Math.floor(absOvlNum * 1e18));
+
+      // For POSITIVE values (gains): Use oracle price
+      // Formula: ovlValue * oraclePrice
+      if (ovlNum > 0) {
+        // Convert OVL gain to USDT using oracle price
+        // ovlValueWei is in 18 decimals, oraclePrice is in 18 decimals (USDT per OVL)
+        // Result: (ovlValueWei * oraclePrice) / 1e18
+
+        const WAD = BigInt(10 ** 18);
+        const stableValueWei = (ovlValueWei * oraclePrice) / WAD;
+
+        // Convert to decimal string
+        const decimals = 18;
+        const stableValueNum = Number(stableValueWei) / Math.pow(10, decimals);
+        const formattedValue = stableValueNum < 1
+          ? stableValueNum.toFixed(6)
+          : stableValueNum.toFixed(2);
+
+        return formattedValue;
+      }
+
+      // For NEGATIVE values (losses): Use ratio-based formula
+      // Formula: (ovlValue / loan.ovlAmount) * loan.stableAmount
+      const loanOvlAmount = BigInt(loan.ovlAmount);
+
+      // Prevent division by zero
+      if (loanOvlAmount === 0n) {
+        console.warn('loan.ovlAmount is 0, cannot calculate stable value');
+        return undefined;
+      }
+
+      const stableAmount = BigInt(loan.stableAmount);
+
+      // Calculate: (ovlValueWei * stableAmount) / loanOvlAmount
+      const stableValueWei = (ovlValueWei * stableAmount) / loanOvlAmount;
+
+      // BSC USDT has 18 decimals (both testnet and mainnet)
+      const decimals = 18;
+
+      // Convert back to decimal string
+      const stableValueNum = Number(stableValueWei) / Math.pow(10, decimals);
+      const formattedValue = stableValueNum < 1
+        ? stableValueNum.toFixed(6)
+        : stableValueNum.toFixed(2);
+
+      return isNegative ? `-${formattedValue}` : formattedValue;
+
+    } catch (error) {
+      console.error('Error calculating stable value:', error);
+      return undefined;
+    }
+  }
+
   private async formatOpenPosition(
     open: OpenPosition,
     marketDetails: Map<string, { marketName: string; currency: string; deprecated?: boolean }>,
-    positionData?: PositionData
+    positionData?: PositionData,
+    oraclePrice?: bigint  // OVL/USDT oracle price for stable values calculation
   ) {
     const positionId = BigInt(open.id.split("-")[1]);
     const marketId = open.market.id as Address;
@@ -250,6 +348,11 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
         parsedFunding: '0',
         priceCurrency: '0',
         loan: open.loan || null,
+        stableValues: open.loan ? {
+          size: open.loan.stableAmount,
+          unrealizedPnL: "0",
+          funding: "0",
+        } : undefined,
       };
 
       return formattedOpen;
@@ -327,6 +430,22 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
         : formatBigNumber(fundingPayments, 18, 2);
     })();
 
+    // Calculate stable values for LBSC positions
+    let stableValues: OpenPositionData['stableValues'] = undefined;
+    if (open.loan && oraclePrice !== undefined) {
+      const stablePnL = this.calculateStableValue(unrealizedPnL, open.loan, oraclePrice);
+      const stableFunding = this.calculateStableValue(parsedFunding, open.loan, oraclePrice);
+
+      // Only include stableValues if calculations succeeded
+      if (stablePnL !== undefined && stableFunding !== undefined) {
+        stableValues = {
+          size: open.loan.stableAmount,
+          unrealizedPnL: stablePnL,
+          funding: stableFunding,
+        };
+      }
+    }
+
     return {
       marketName: marketName,
       marketAddress: marketId,
@@ -344,6 +463,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       priceCurrency: priceCurrency,
       deprecated: deprecated,
       loan: open.loan || null,
+      stableValues: stableValues,
     };
   }
 
