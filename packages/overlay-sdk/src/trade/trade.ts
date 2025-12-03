@@ -224,12 +224,15 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       marketState,
       minCollateral,
       tradingFeeRate: rawTradingFeeRate,
-      balance,
+      ovlBalance,
+      stableBalance,
       currentAllowance
     } = await this._getTradeStateData(chainId, marketAddress, periphery, collateral, leverage, isLong, address, collateralType)
 
     const liquidationPriceEstimate = this._getLiquidationPriceEstimate(liquidationPrice)
-    const maxInputIncludingFees = this._getMaxInputIncludingFees(rawTradingFeeRate, balance, leverage)
+    // Use appropriate balance based on collateral type
+    const balanceToUse = collateralType === 'USDT' ? stableBalance : ovlBalance;
+    const maxInputIncludingFees = this._getMaxInputIncludingFees(rawTradingFeeRate, balanceToUse, leverage)
     const price = await this._getPrice(periphery, marketAddress, rawExpectedOi, isLong) as bigint
     const priceInfo = await this._getPriceInfo(slippage, isLong, price, marketState.ask, marketState.bid, 18)
     const tradingFeeRate = this._getFee(rawTradingFeeRate)
@@ -418,13 +421,21 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const stateContract = { address: periphery, abi: OverlayV1StateABIFunctions }
     const ovlContract = { address: OVL_ADDRESS[chainId], abi: OVLTokenABIFunctions }
 
+    // Always fetch stable token address for balance checking
+    let stableTokenAddress: Address;
+    try {
+      stableTokenAddress = await this.sdk.lbsc.getStableTokenAddress();
+    } catch {
+      // LBSC not available - use OVL address as fallback (won't be used for USDT trades)
+      stableTokenAddress = OVL_ADDRESS[chainId];
+    }
+
     // Get allowance contract details based on collateral type
     let allowanceContract;
     let allowanceSpender;
 
     if (collateralType === 'USDT') {
       // For USDT: check stable token allowance to LBSC
-      const stableTokenAddress = await this.sdk.lbsc.getStableTokenAddress();
       const lbscAddress = await this.sdk.lbsc.getLbscAddress();
       allowanceContract = { address: stableTokenAddress, abi: OVLTokenABIFunctions };
       allowanceSpender = lbscAddress;
@@ -444,7 +455,8 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       marketState,
       minCollateral,
       tradingFeeRate,
-      balance,
+      ovlBalance,
+      stableBalance,
       currentAllowance
     ] = await this.core.rpcProvider.multicall({
         allowFailure: false,
@@ -499,6 +511,13 @@ export class OverlaySDKTrade extends OverlaySDKModule {
             functionName: "balanceOf",
             args: [userAddress],
           },
+          // Fetch stable token balance
+          {
+            address: stableTokenAddress,
+            abi: OVLTokenABIFunctions,
+            functionName: "balanceOf",
+            args: [userAddress],
+          },
           {
             ...allowanceContract,
             functionName: "allowance",
@@ -517,7 +536,8 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       marketState,
       minCollateral,
       tradingFeeRate,
-      balance,
+      ovlBalance,
+      stableBalance,
       currentAllowance
     }
   }

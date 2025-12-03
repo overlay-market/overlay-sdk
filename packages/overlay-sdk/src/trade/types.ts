@@ -2,8 +2,8 @@ export enum TradeState {
   PositionUnderwater = "Position Underwater",
   ExceedsOICap = "Exceeds OI Cap",
   ExceedsCircuitBreakerOICap = "Exceeds Circuit Breaker OI Cap",
-  OVLBalanceBelowMinimum = "OVL Balance Below Minimum",
-  NeedsApproval = "Approve OVL",
+  OVLBalanceBelowMinimum = "Balance Below Minimum",
+  NeedsApproval = "Approve Collateral",
   Trade = "Trade",
   TradeHighPriceImpact = "Trade - High Price Impact",
   AmountExceedsMaxInput = "Amount Exceeds Max Input",
@@ -92,6 +92,7 @@ export type TradeStateOnchainData = {
   },
   minCollateral: bigint,
   tradingFeeRate: bigint,
-  balance: bigint,
+  ovlBalance: bigint,
+  stableBalance: bigint,
   currentAllowance: bigint
 }
