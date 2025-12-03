@@ -6341,7 +6341,7 @@ export type UnwindsQueryVariables = Exact<{
 }>;
 
 
-export type UnwindsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', unwinds: Array<{ __typename?: 'Unwind', fraction: any, fractionOfPosition: any, id: string, mint: any, pnl: any, price: any, size: any, timestamp: any, transferAmount: any, unwindNumber: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: any }, router: { __typename?: 'Router', id: string } } }> } | null };
+export type UnwindsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', unwinds: Array<{ __typename?: 'Unwind', fraction: any, fractionOfPosition: any, id: string, mint: any, pnl: any, price: any, size: any, timestamp: any, transferAmount: any, unwindNumber: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: any }, router: { __typename?: 'Router', id: string }, loan?: { __typename?: 'StableLoan', id: string, loanId: any, stableAmount: any, ovlAmount: any, price: any, ovlRepaid: any, collateralReturned: any, collateralSeized: any } | null } }> } | null };
 
 export type UnwindsNoRouterQueryVariables = Exact<{
   account: Scalars['ID']['input'];
@@ -6349,7 +6349,7 @@ export type UnwindsNoRouterQueryVariables = Exact<{
   skip?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
-export type UnwindsNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', unwinds: Array<{ __typename?: 'Unwind', fraction: any, fractionOfPosition: any, id: string, mint: any, pnl: any, price: any, size: any, timestamp: any, transferAmount: any, unwindNumber: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: any } } }> } | null };
+export type UnwindsNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', unwinds: Array<{ __typename?: 'Unwind', fraction: any, fractionOfPosition: any, id: string, mint: any, pnl: any, price: any, size: any, timestamp: any, transferAmount: any, unwindNumber: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: any }, loan?: { __typename?: 'StableLoan', id: string, loanId: any, stableAmount: any, ovlAmount: any, price: any, ovlRepaid: any, collateralReturned: any, collateralSeized: any } | null } }> } | null };
 
 export type ActiveMarketsQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -6363,7 +6363,7 @@ export type LiquidatedPositionsQueryVariables = Exact<{
 }>;
 
 
-export type LiquidatedPositionsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', liquidates: Array<{ __typename?: 'Liquidate', id: string, mint: any, price: any, timestamp: any, size: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, fractionUnwound: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, market: { __typename?: 'Market', feedAddress: string, id: any }, router: { __typename?: 'Router', id: string } } }> } | null };
+export type LiquidatedPositionsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', liquidates: Array<{ __typename?: 'Liquidate', id: string, mint: any, price: any, timestamp: any, size: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, fractionUnwound: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, market: { __typename?: 'Market', feedAddress: string, id: any }, router: { __typename?: 'Router', id: string }, loan?: { __typename?: 'StableLoan', id: string, loanId: any, stableAmount: any, ovlAmount: any, price: any, ovlRepaid: any, collateralReturned: any, collateralSeized: any } | null } }> } | null };
 
 export type LiquidatedPositionsNoRouterQueryVariables = Exact<{
   account: Scalars['ID']['input'];
@@ -6371,7 +6371,7 @@ export type LiquidatedPositionsNoRouterQueryVariables = Exact<{
   skip?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
-export type LiquidatedPositionsNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', liquidates: Array<{ __typename?: 'Liquidate', id: string, mint: any, price: any, timestamp: any, size: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, fractionUnwound: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, market: { __typename?: 'Market', feedAddress: string, id: any } } }> } | null };
+export type LiquidatedPositionsNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', liquidates: Array<{ __typename?: 'Liquidate', id: string, mint: any, price: any, timestamp: any, size: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, fractionUnwound: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, market: { __typename?: 'Market', feedAddress: string, id: any }, loan?: { __typename?: 'StableLoan', id: string, loanId: any, stableAmount: any, ovlAmount: any, price: any, ovlRepaid: any, collateralReturned: any, collateralSeized: any } | null } }> } | null };
 
 export type NumberOfPositionsQueryVariables = Exact<{
   account: Scalars['ID']['input'];

@@ -127,6 +127,16 @@ export const UnwindPositionsQuery = gql`
           router {
             id
           }
+          loan {
+            id
+            loanId
+            stableAmount
+            ovlAmount
+            price
+            ovlRepaid
+            collateralReturned
+            collateralSeized
+          }
         }
       }
     }
@@ -165,6 +175,16 @@ export const UnwindPositionsNoRouterQuery = gql`
           market {
             feedAddress
             id
+          }
+          loan {
+            id
+            loanId
+            stableAmount
+            ovlAmount
+            price
+            ovlRepaid
+            collateralReturned
+            collateralSeized
           }
         }
       }
@@ -230,6 +250,16 @@ export const LiquidatedPositionsQuery = gql`
           router {
             id
           }
+          loan {
+            id
+            loanId
+            stableAmount
+            ovlAmount
+            price
+            ovlRepaid
+            collateralReturned
+            collateralSeized
+          }
         }
       }
     }
@@ -262,6 +292,16 @@ export const LiquidatedPositionsNoRouterQuery = gql`
           market {
             feedAddress
             id
+          }
+          loan {
+            id
+            loanId
+            stableAmount
+            ovlAmount
+            price
+            ovlRepaid
+            collateralReturned
+            collateralSeized
           }
         }
       }

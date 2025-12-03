@@ -25,6 +25,20 @@ export type UnwindPositionData = {
   pnl: string | number | undefined;
   unwindNumber: number;
   positionId: number;
+  loan?: {
+    id: string;
+    loanId: string;
+    stableAmount: string;
+    ovlAmount: string;
+    price: string;
+    ovlRepaid: string;
+    collateralReturned: string;
+    collateralSeized: string;
+  } | null;
+  stableValues?: {
+    size: string;
+    pnl: string;
+  };
 };
 
 export class OverlaySDKUnwindPositions extends OverlaySDKModule {
@@ -34,6 +48,75 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
   constructor(props: OverlaySDKCommonProps, sdk: OverlaySDK) {
     super(props);
     this.sdk = sdk;
+  }
+
+  private async fetchOraclePrice(): Promise<bigint | undefined> {
+    try {
+      return await this.sdk.lbsc.getOraclePrice();
+    } catch (error) {
+      console.error('Failed to fetch oracle price:', error);
+      return undefined;
+    }
+  }
+
+  private calculateStableValue(
+    ovlValue: string | number | undefined,
+    loan: NonNullable<UnwindPositionData['loan']>,
+    oraclePrice: bigint
+  ): string | undefined {
+    try {
+      if (
+        ovlValue === undefined ||
+        ovlValue === "-" ||
+        !loan?.ovlAmount ||
+        !loan?.stableAmount
+      ) {
+        return undefined;
+      }
+
+      const ovlNum = typeof ovlValue === 'string' ? parseFloat(ovlValue) : ovlValue;
+
+      if (ovlNum === 0) {
+        return "0";
+      }
+
+      const isNegative = ovlNum < 0;
+      const absOvlNum = Math.abs(ovlNum);
+      const ovlValueWei = BigInt(Math.floor(absOvlNum * 1e18));
+
+      // For POSITIVE values (gains): Use oracle price
+      if (ovlNum > 0) {
+        const WAD = BigInt(10 ** 18);
+        const stableValueWei = (ovlValueWei * oraclePrice) / WAD;
+        const decimals = 18;
+        const stableValueNum = Number(stableValueWei) / Math.pow(10, decimals);
+        const formattedValue = stableValueNum < 1
+          ? stableValueNum.toFixed(6)
+          : stableValueNum.toFixed(2);
+        return formattedValue;
+      }
+
+      // For NEGATIVE values (losses): Use ratio-based formula
+      const loanOvlAmount = BigInt(loan.ovlAmount);
+      if (loanOvlAmount === 0n) {
+        console.warn('loan.ovlAmount is 0, cannot calculate stable value');
+        return undefined;
+      }
+
+      const stableAmount = BigInt(loan.stableAmount);
+      const stableValueWei = (ovlValueWei * stableAmount) / loanOvlAmount;
+      const decimals = 18;
+      const stableValueNum = Number(stableValueWei) / Math.pow(10, decimals);
+      const formattedValue = stableValueNum < 1
+        ? stableValueNum.toFixed(6)
+        : stableValueNum.toFixed(2);
+
+      return isNegative ? `-${formattedValue}` : formattedValue;
+
+    } catch (error) {
+      console.error('Error calculating stable value:', error);
+      return undefined;
+    }
   }
 
   transformUnwindPositions = async (
@@ -73,6 +156,9 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
       const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
       const lowercasedMarketDetails = marketDetails && toLowercaseKeys(marketDetails);
 
+      // Fetch oracle price once for all positions
+      const oraclePrice = await this.fetchOraclePrice();
+
       for (const unwind of rawUnwindData) {
         const marketName =
         lowercasedMarketDetails?.get(unwind.id.split("-")[0].toLowerCase())?.marketName ?? "";
@@ -90,6 +176,25 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
           Number(18)
         );
         const parsedExitPrice = formatBigNumber(unwind.price, Number(18));
+
+        const pnl = formatBigNumber(
+          unwind.pnl,
+          Number(18),
+          Math.abs(+unwind.pnl) > 10 ** +18 ? 4 : 6
+        );
+
+        // Calculate stable values for LBSC positions
+        let stableValues: UnwindPositionData['stableValues'] = undefined;
+        if (unwind.position.loan && oraclePrice) {
+          const stablePnL = this.calculateStableValue(pnl, unwind.position.loan, oraclePrice);
+          if (stablePnL !== undefined) {
+            stableValues = {
+              size: unwind.position.loan.stableAmount,
+              pnl: stablePnL,
+            };
+          }
+        }
+
         transformedUnwinds.push({
           marketName: marketName,
           size:
@@ -106,13 +211,11 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
             unwind.position.createdAtTimestamp
           ),
           parsedClosedTimestamp: formatUnixTimestampToDate(unwind.timestamp),
-          pnl: formatBigNumber(
-            unwind.pnl,
-            Number(18),
-            Math.abs(+unwind.pnl) > 10 ** +18 ? 4 : 6
-          ),
+          pnl: pnl,
           unwindNumber: Number(unwind.unwindNumber),
           positionId: Number(unwind.position.positionId),
+          loan: unwind.position.loan || null,
+          stableValues,
         });
       }
 

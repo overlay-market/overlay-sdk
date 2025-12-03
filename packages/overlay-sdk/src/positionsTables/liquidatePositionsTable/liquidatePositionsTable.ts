@@ -21,6 +21,16 @@ export type LiquidatedPositionData = {
   exitPrice: string | undefined;
   created: string | undefined;
   liquidated: string | undefined;
+  loan?: {
+    id: string;
+    loanId: string;
+    stableAmount: string;
+    ovlAmount: string;
+    price: string;
+    ovlRepaid: string;
+    collateralReturned: string;
+    collateralSeized: string;
+  } | null;
 };
 
 export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
@@ -101,9 +111,10 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
           size: parsedSize,
           position: liquidated.position.leverage + "x " + positionSide,
           entryPrice: parsedEntryPrice ? formatPriceWithCurrency(parsedEntryPrice, priceCurrency) : "-",
-          exitPrice: parsedExitPrice ? formatPriceWithCurrency(parsedExitPrice, priceCurrency) : "-", 
+          exitPrice: parsedExitPrice ? formatPriceWithCurrency(parsedExitPrice, priceCurrency) : "-",
           created: parsedCreatedTimestamp,
           liquidated: parsedClosedTimestamp,
+          loan: liquidated.position.loan || null,
         });
       }
 
