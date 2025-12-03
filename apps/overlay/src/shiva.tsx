@@ -33,6 +33,7 @@ const Shiva = () => {
   const [buildHash, setBuildHash] = useState('')
   const [unwindHash, setUnwindHash] = useState('')
   const [amountToApprove, setAmountToApprove] = useState(0)
+  const [unwindOvlAmount, setUnwindOvlAmount] = useState('')
   const [signature, setSignature] = useState('')
   const [positionIds, setPositionIds] = useState<number[]>([])
   const [nonceToCancel, setNonceToCancel] = useState(0n)
@@ -160,6 +161,32 @@ const Shiva = () => {
       if (res?.hash) setUnwindHash(res.hash)
     } catch (error) {
       console.error('Error in shivaUnwindStable', error)
+    }
+  }
+
+  const getUnwindOvlAmount = async () => {
+    if (!account) return
+    try {
+      const priceLimit = (await sdk.trade.getUnwindPrice(
+        marketName,
+        SHIVA_ADDRESS[sdk.core.chainId],
+        positionId,
+        toWei(fraction),
+        slippage
+      )) as bigint
+
+      const amount = await sdk.shiva.getUnwindOvlAmount({
+        account,
+        marketAddress: marketAddress as Address,
+        positionId,
+        fraction: toWei(fraction),
+        priceLimit,
+      })
+
+      setUnwindOvlAmount(amount.toString())
+      console.log('Unwind OVL amount', amount.toString())
+    } catch (error) {
+      console.error('Error getting unwind OVL amount', error)
     }
   }
 
@@ -650,6 +677,9 @@ const Shiva = () => {
         <button onClick={() => shivaUnwind(TransactionType.Simulate)}>Simulate Shiva Unwind</button>
         <br />
         <button onClick={() => shivaUnwind(TransactionType.Populate)}>Populate Shiva Unwind</button>
+        <br />
+        <button onClick={getUnwindOvlAmount}>Get Unwind OVL Amount</button>
+        {unwindOvlAmount && <div>Unwind OVL Amount: {unwindOvlAmount}</div>}
       </div>
       <div>
         <label style={{ fontSize: '15px' }}>

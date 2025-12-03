@@ -35,6 +35,7 @@ export type OverlaySDKCoreProps = {
   brokerId?: number;
   useShiva?: boolean;
   logMode?: LOG_MODE;
+  oneInchApiKey?: string;
 } & OverlaySDKCorePropsRpcProps;
 
 export type OverlaySDKCommonProps =
