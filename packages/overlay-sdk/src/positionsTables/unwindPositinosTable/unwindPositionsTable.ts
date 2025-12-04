@@ -6,6 +6,7 @@ import { Address } from "viem";
 import {
   formatBigNumber,
   formatUnixTimestampToDate,
+  calculateStableSize,
   toLowercaseKeys,
 } from "../../common/utils";
 import { PRICE_CURRENCY_FROM_QUOTE } from "../../constants";
@@ -115,51 +116,6 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
     }
   }
 
-  private calculateStableSize(
-    ovlValue: string | number | undefined,
-    loan: NonNullable<UnwindPositionData['loan']>,
-  ): string | undefined {
-    try {
-      if (
-        ovlValue === undefined ||
-        ovlValue === "-" ||
-        !loan?.ovlAmount ||
-        !loan?.stableAmount
-      ) {
-        return undefined;
-      }
-
-      const ovlNum = typeof ovlValue === 'string' ? parseFloat(ovlValue) : ovlValue;
-
-      if (ovlNum === 0) {
-        return "0";
-      }
-
-      const absOvlNum = Math.abs(ovlNum);
-      const ovlValueWei = BigInt(Math.floor(absOvlNum * 1e18));
-
-      const loanOvlAmount = BigInt(loan.ovlAmount);
-      if (loanOvlAmount === 0n) {
-        console.warn('loan.ovlAmount is 0, cannot calculate stable value');
-        return undefined;
-      }
-
-      const stableAmount = BigInt(loan.stableAmount);
-      const stableValueWei = (ovlValueWei * stableAmount) / loanOvlAmount;
-      const decimals = 18;
-      const stableValueNum = Number(stableValueWei) / Math.pow(10, decimals);
-      const formattedValue = stableValueNum < 1
-        ? stableValueNum.toFixed(6)
-        : stableValueNum.toFixed(2);
-
-      return formattedValue;
-
-    } catch (error) {
-      console.error('Error calculating stable value:', error);
-      return undefined;
-    }
-  }
-
   transformUnwindPositions = async (
     page = 1, 
     pageSize = 10, 
@@ -233,10 +189,13 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
         let stableValues: UnwindPositionData['stableValues'] = undefined;
         if (unwind.position.loan) {
           const stablePnL = this.calculateStableValue(pnl, unwind.position.loan, stableOut);
-          const calculateStableSize = this.calculateStableSize((+unwind.size / 10 ** 18).toFixed(6), unwind.position.loan);
+          const stableSize = calculateStableSize(
+            (+unwind.size / 10 ** 18).toFixed(6),
+            unwind.position.loan,
+          );
           if (stablePnL !== undefined) {
             stableValues = {
-              size: calculateStableSize ?? "",
+              size: stableSize ?? "",
               pnl: stablePnL,
             };
           }
