@@ -172,7 +172,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       const positionsBatch = dataToProcess.slice(i, i + 15).map((position) => ({
         marketId: position.market.id as Address,
         positionId: BigInt(position.id.split("-")[1]),
-        walletClient: (position.router.id === zeroAddress ? walletClient.toLowerCase() : SHIVA_ADDRESS[chainId].toLowerCase()) as Address
+        walletClient: (position.router?.id === zeroAddress ? walletClient.toLowerCase() : SHIVA_ADDRESS[chainId].toLowerCase()) as Address
       }));
       if (positionsBatch.length > 0) {
         // console.log(`Fetching contract data for batch of ${positionsBatch.length} positions.`);

@@ -314,7 +314,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
 
     if (!positionDetails) return { error: "Position not found", isShutdown: false, cost: 0, unwindState: UnwindState.PositionNotFound, positionId: posId, marketAddress }
 
-    const positionAccount = (positionDetails.router.id === zeroAddress ? account.toLowerCase() : SHIVA_ADDRESS[chainId].toLowerCase()) as Address
+    const positionAccount = (positionDetails.router?.id === zeroAddress ? account.toLowerCase() : SHIVA_ADDRESS[chainId].toLowerCase()) as Address
 
     if (positionDetails.market.isShutdown) {
       const cost = await this.sdk.state.getCost(periphery, marketAddress, positionAccount, positionId)
@@ -399,7 +399,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       priceLimit,
       positionId: posId,
       marketAddress,
-      useShiva: positionDetails.router.id !== zeroAddress
+      useShiva: positionDetails.router?.id !== zeroAddress
     } as UnwindStateData
   }
 
