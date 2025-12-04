@@ -312,6 +312,28 @@ export const ShivaABI = [
   },
   {
     "type": "function",
+    "name": "unwindStable",
+    "inputs": [
+      {
+        "name": "params",
+        "type": "tuple",
+        "internalType": "struct ShivaStructs.Unwind",
+        "components": [
+          { "name": "ovlMarket", "type": "address", "internalType": "contract IOverlayV1Market" },
+          { "name": "brokerId", "type": "uint32", "internalType": "uint32" },
+          { "name": "positionId", "type": "uint256", "internalType": "uint256" },
+          { "name": "fraction", "type": "uint256", "internalType": "uint256" },
+          { "name": "priceLimit", "type": "uint256", "internalType": "uint256" }
+        ]
+      },
+      { "name": "swapData", "type": "bytes", "internalType": "bytes" },
+      { "name": "minOut", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "unwind",
     "inputs": [
       {

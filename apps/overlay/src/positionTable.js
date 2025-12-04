@@ -21,7 +21,7 @@ const PositionsTable = () => {
         const transformUnwindPositions = await sdk.unwindPositions.transformUnwindPositions(1, 10, "AI Index");
         console.log("unwind positions", transformUnwindPositions);
 
-        const transformedOpenPositions = await sdk.openPositions.transformOpenPositions(1, 10, "ETH Dominance");
+        const transformedOpenPositions = await sdk.openPositions.transformOpenPositions(1, 10, process.env.REACT_APP_MARKET_ID ?? "MrBeast Index");
         console.log("open positions", transformedOpenPositions);
 
         const transformedLiquidations = await sdk.liquidatedPositions.transformLiquidatedPositions(1, 10, "ETH / SOL");

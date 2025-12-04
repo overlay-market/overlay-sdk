@@ -37,6 +37,7 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
   readonly logMode: LOG_MODE;
   readonly brokerId: number;
   readonly useShiva: boolean;
+  readonly oneInchApiKey: string | undefined;
   private factoryAddresses: Address[];
   private factoryPeripheryMap: Map<string, Address>;
 
@@ -50,6 +51,7 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
     this.rpcUrls = props.rpcUrls;
     this.logMode = props.logMode ?? "info";
     this.brokerId = props.brokerId ?? 0;
+    this.oneInchApiKey = props.oneInchApiKey;
     // if the chain has shiva, use the useShiva prop, otherwise set it to false
     this.useShiva = NETWORKS[this.chainId].hasShiva ? props.useShiva ?? false : false;
 

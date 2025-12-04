@@ -1,6 +1,9 @@
+import axios from 'axios'
 import {
   Address,
+  JsonRpcAccount,
   decodeEventLog,
+  decodeFunctionData,
   encodeFunctionData,
   getAbiItem,
   getContract,
@@ -11,11 +14,11 @@ import {
   zeroAddress,
 } from 'viem'
 import { OverlaySDKModule } from '../common/class-primitives/sdk-module'
-import { NoCallback, OverlaySDKCommonProps, TransactionOptions, TransactionResult, CommonTransactionProps } from '../core/types'
+import { AccountValue, NoCallback, OverlaySDKCommonProps, TransactionOptions, TransactionResult, CommonTransactionProps } from '../core/types'
 import { OverlaySDK } from '../sdk'
 import { ShivaABI } from './abis/Shiva'
-import { CHAINS, ERROR_CODE, invariant, NOOP, SDKError, toWei } from '../common'
-import { SHIVA_ADDRESS } from '../constants'
+import { CHAINS, ERROR_CODE, invariant, invariantArgument, NOOP, SDKError, toWei } from '../common'
+import { OVL_ADDRESS, SHIVA_ADDRESS } from '../constants'
 import {
   BUILD_SINGLE_TYPES,
   BUILD_TYPES,
@@ -34,6 +37,8 @@ import {
   ShivaCancelNonceProps,
   ShivaUnwindOnBehalfOfInnerProps,
   ShivaUnwindOnBehalfOfProps,
+  ShivaUnwindStableInnerProps,
+  ShivaUnwindStableProps,
   SignBuildOnBehalfOfProps,
   SignBuildSingleOnBehalfOfProps,
   SignUnwindOnBehalfOfProps,
@@ -43,6 +48,50 @@ import {
 import { BuildInnerProps, BuildProps, BuildResult, EmergencyWithdrawInnerProps, EmergencyWithdrawProps, UnwindInnerProps, UnwindMultipleInnerProps, UnwindMultipleProps, UnwindProps } from '../markets/types'
 import { UnwindState, UnwindStateData, UnwindStateSuccess } from '../trade'
 import { getPositionDetails } from '../subgraph'
+
+const ERC20_TRANSFER_ABI = [
+  {
+    type: 'function',
+    name: 'transfer',
+    inputs: [
+      { name: 'to', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'nonpayable',
+  },
+] as const
+
+const ONE_INCH_SWAP_ABI_VARIANTS = [
+  [
+    {
+      type: 'function',
+      name: 'swap',
+      stateMutability: 'payable',
+      inputs: [
+        { name: 'executor', type: 'address' },
+        {
+          name: 'desc',
+          type: 'tuple',
+          components: [
+            { name: 'srcToken', type: 'address' },
+            { name: 'dstToken', type: 'address' },
+            { name: 'srcReceiver', type: 'address' },
+            { name: 'dstReceiver', type: 'address' },
+            { name: 'amount', type: 'uint256' },
+            { name: 'minReturnAmount', type: 'uint256' },
+            { name: 'flags', type: 'uint256' },
+          ],
+        },
+        { name: 'data', type: 'bytes' },
+      ],
+      outputs: [
+        { name: 'returnAmount', type: 'uint256' },
+        { name: 'spentAmount', type: 'uint256' },
+      ],
+    },
+  ],
+] as const
 
 export class OverlaySDKShiva extends OverlaySDKModule {
   private sdk: OverlaySDK
@@ -342,6 +391,385 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     return contract.simulate.unwind(txArguments, {
       account: account.address,
     })
+  }
+
+  // Unwind Stable (LBSC unwind + swap to stable)
+
+  public async unwindStable(props: ShivaUnwindStableProps, verified: boolean = false): Promise<TransactionResult> {
+    this.core.useWeb3Provider()
+
+    if (!verified) {
+      const { account, marketAddress, positionId } = await this.parseUnwindStableProps(props);
+      const marketPositionId = `${marketAddress.toLowerCase()}-0x${Number(positionId).toString(16)}`
+      const positionDetails = await getPositionDetails(this.core.chainId, account.address.toLowerCase(), marketPositionId) ?? null
+      invariant(positionDetails, `Position not found for ${marketPositionId}; ${account.address.toLowerCase()}; ${positionId}; marketAddress: ${marketAddress}; chainId: ${this.core.chainId}`)
+      invariant(positionDetails.router.id !== zeroAddress, 'This position is not on Shiva')
+    }
+
+    const { account, swapData, minOut, slippage, ...rest } = await this.parseUnwindStableProps(props)
+
+    const { payload: swapPayload, minOutOverride } = await this.getUnwindStableSwapPayload({
+      account,
+      minOut,
+      slippage,
+      swapData,
+      marketAddress: rest.marketAddress,
+      positionId: rest.positionId,
+      fraction: rest.fraction,
+      priceLimit: rest.priceLimit,
+      brokerId: rest.brokerId ?? this.core.brokerId,
+    })
+
+    const finalMinOut = minOutOverride ?? minOut
+
+    const contract = this.getShivaContract()
+
+    const txArguments = [
+      {
+        ovlMarket: rest.marketAddress,
+        brokerId: rest.brokerId ?? this.core.brokerId,
+        positionId: rest.positionId,
+        fraction: rest.fraction,
+        priceLimit: rest.priceLimit,
+      },
+      swapPayload,
+      finalMinOut,
+    ] as const
+
+    return this.core.performTransaction({
+      ...rest,
+      account,
+      getGasLimit: (options: TransactionOptions) =>
+        contract.estimateGas.unwindStable(txArguments, options),
+      sendTransaction: (options: TransactionOptions) =>
+        contract.write.unwindStable(txArguments, options),
+    })
+  }
+
+  public async populateUnwindStable(props: NoCallback<ShivaUnwindStableProps>) {
+    const { account, minOut, slippage, swapData, ...rest } = await this.parseUnwindStableProps(props)
+
+    const { payload: swapPayload, minOutOverride } = await this.getUnwindStableSwapPayload({
+      account,
+      minOut,
+      slippage,
+      swapData,
+      marketAddress: rest.marketAddress,
+      positionId: rest.positionId,
+      fraction: rest.fraction,
+      priceLimit: rest.priceLimit,
+      brokerId: rest.brokerId ?? this.core.brokerId,
+    })
+
+    const finalMinOut = minOutOverride ?? minOut
+
+    return {
+      to: this.getShivaAddress(),
+      from: account.address,
+      data: encodeFunctionData({
+        abi: ShivaABI,
+        functionName: 'unwindStable',
+        args: [
+          {
+            ovlMarket: rest.marketAddress,
+            brokerId: rest.brokerId ?? this.core.brokerId,
+            positionId: rest.positionId,
+            fraction: rest.fraction,
+            priceLimit: rest.priceLimit,
+          },
+          swapPayload,
+          finalMinOut,
+        ],
+      }),
+    }
+  }
+
+  public async simulateUnwindStable(props: NoCallback<ShivaUnwindStableProps>) {
+    const { account, swapData, minOut, slippage, ...rest } = await this.parseUnwindStableProps(props);
+    const { payload: swapPayload, minOutOverride } = await this.getUnwindStableSwapPayload({
+      account,
+      minOut,
+      slippage,
+      swapData,
+      marketAddress: rest.marketAddress,
+      positionId: rest.positionId,
+      fraction: rest.fraction,
+      priceLimit: rest.priceLimit,
+      brokerId: rest.brokerId ?? this.core.brokerId,
+    })
+
+    const finalMinOut = minOutOverride ?? minOut
+
+    const contract = this.getShivaContract()
+
+    const txArguments = [
+      {
+        ovlMarket: rest.marketAddress,
+        brokerId: rest.brokerId ?? this.core.brokerId,
+        positionId: rest.positionId,
+        fraction: rest.fraction,
+        priceLimit: rest.priceLimit,
+      },
+      swapPayload,
+      finalMinOut,
+    ] as const
+
+    return contract.simulate.unwindStable(txArguments, {
+      account: account.address,
+    })
+  }
+
+  private async getUnwindStableSwapPayload({
+    minOut,
+    slippage,
+    swapData,
+    account,
+    marketAddress,
+    positionId,
+    fraction,
+    priceLimit,
+    brokerId,
+  }: {
+    minOut: bigint
+    slippage?: number
+    swapData?: `0x${string}`
+    account: JsonRpcAccount
+    marketAddress: Address
+    positionId: bigint
+    fraction: bigint
+    priceLimit: bigint
+    brokerId?: number
+  }): Promise<{ payload: `0x${string}`; minOutOverride?: bigint }> {
+    if (swapData && swapData !== '0x') {
+      return { payload: swapData }
+    }
+
+    if (this.core.chainId === CHAINS.BscTestnet) {
+      const minOutHex = minOut.toString(16).padStart(64, '0')
+      const prefix = '0x07ed23790000000000000000000000009fB7D92526Fc13bB3c0603d39E55e5C371c26Ce60000000000000000000000001A0eF183D548405705bb9B00E8b4ef3524AE090E00000000000000000000000018b702fD1b63dccbc58D30379B9365679b32618d0000000000000000000000009fB7D92526Fc13bB3c0603d39E55e5C371c26Ce60000000000000000000000009fB7D92526Fc13bB3c0603d39E55e5C371c26Ce60000000000000000000000000000000000000000000000000de0b6b3a7640000'
+      const suffix = '0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000000e90000000000000000000000000000000000000000000000cb00006800001a0020d6bdbf781A0eF183D548405705bb9B00E8b4ef3524AE090E00a0744c8c091A0eF183D548405705bb9B00E8b4ef3524AE090E90cbe4bdd538d6e9b379bff5fe72c3d67a521de5000000000000000000000000000000000000000000000000000aa87bee53800002a00000000000000000000000000000000000000000000000000000000000000001ee63c1e581c3b423339da62f48f75a1ac9a528c0c4a2e5783d1A0eF183D548405705bb9B00E8b4ef3524AE090E111111125421ca6dc452d289314280a0f8842a650000000000000000000000000000000000000000000000a13324ca'
+      return { payload: `${prefix}${minOutHex}${suffix}` as `0x${string}` }
+    }
+
+    if (this.core.chainId === CHAINS.BscMainnet) {
+      const apiKey = this.core.oneInchApiKey
+      if (!apiKey) {
+        throw new SDKError({
+          code: ERROR_CODE.INVALID_ARGUMENT,
+          message: 'oneInchApiKey is required to fetch swap data from 1inch',
+        })
+      }
+
+      const shivaAddress = this.getShivaAddress()
+      const ovlAmount = await this.getUnwindOvlAmount({
+        account,
+        marketAddress,
+        positionId,
+        fraction,
+        priceLimit,
+        brokerId,
+      })
+
+      // if there's no ovlAmount to swap, shiva will omit the swap - but the swap payload is still needed to construct the params
+      const swapAmount = ovlAmount === 0n ? 10n ** 18n : ovlAmount
+
+      const params: Record<string, string | number | boolean> = {
+        src: OVL_ADDRESS[CHAINS.BscMainnet],
+        dst: '0x55d398326f99059fF775485246999027B3197955',
+        amount: swapAmount.toString(),
+        from: shivaAddress,
+        origin: shivaAddress,
+        receiver: shivaAddress,
+        disableEstimate: true,
+        usePatching: true,
+      }
+
+      if (slippage !== undefined) {
+        params.slippage = slippage
+      } else {
+        params.minReturn = minOut.toString()
+      }
+
+      try {
+        const response = await axios.get('https://api.1inch.com/swap/v6.1/56/swap', {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+          params,
+          paramsSerializer: {
+            indexes: null,
+          },
+        })
+
+        const txData = response.data?.tx?.data as `0x${string}` | undefined
+
+        if (!txData) {
+          throw new SDKError({
+            code: ERROR_CODE.TRANSACTION_ERROR,
+            message: 'Invalid response from 1Inch: missing transaction data',
+          })
+        }
+
+        const apiMinOut = slippage !== undefined
+          ? this.decodeMinOutFromSwapPayload(txData)
+          : undefined
+
+        return {
+          payload: txData,
+          minOutOverride: apiMinOut,
+        }
+      } catch (error) {
+        if (error instanceof SDKError) {
+          throw error
+        }
+
+        throw new SDKError({
+          code: ERROR_CODE.TRANSACTION_ERROR,
+          message: 'Failed to fetch swap data from 1Inch',
+          error,
+        })
+      }
+    }
+
+    throw new SDKError({
+      code: ERROR_CODE.INVALID_ARGUMENT,
+      message: `swapData is required for unwindStable on unsupported chain ${this.core.chainId}`,
+    })
+  }
+
+  private decodeMinOutFromSwapPayload(payload: `0x${string}`): bigint | undefined {
+    for (const abi of ONE_INCH_SWAP_ABI_VARIANTS) {
+      try {
+        const decoded = decodeFunctionData({
+          abi,
+          data: payload,
+        })
+
+        if (decoded.functionName !== 'swap') continue
+
+        const desc =
+          (Array.isArray(decoded.args) && decoded.args[1]) ||
+          (decoded as any).args?.desc
+
+        const minReturn =
+          desc?.minReturnAmount ??
+          desc?.minReturn ??
+          (Array.isArray(desc) ? desc[5] : undefined)
+
+        if (minReturn !== undefined) {
+          return typeof minReturn === 'bigint' ? minReturn : BigInt(minReturn)
+        }
+      } catch {
+        // try next ABI variant
+      }
+    }
+
+    return undefined
+  }
+
+  public async getUnwindOvlAmount({
+    account,
+    marketAddress,
+    positionId,
+    fraction,
+    priceLimit,
+    brokerId,
+  }: {
+    account: AccountValue | JsonRpcAccount
+    marketAddress: Address
+    positionId: bigint
+    fraction: bigint
+    priceLimit: bigint
+    brokerId?: number
+  }): Promise<bigint> {
+    const normalizedAccount =
+      typeof account === 'object' && 'address' in account
+        ? (account as JsonRpcAccount)
+        : await this.core.useAccount(account)
+
+    const shivaAddress = this.getShivaAddress()
+
+    const unwindData = encodeFunctionData({
+      abi: ShivaABI,
+      functionName: 'unwind',
+      args: [
+        {
+          ovlMarket: marketAddress,
+          brokerId: brokerId ?? this.core.brokerId,
+          positionId,
+          fraction,
+          priceLimit,
+        },
+      ],
+    })
+
+    try {
+      const rpcClient: any = this.core.rpcProvider
+      const trace: any = await rpcClient.request?.({
+        method: 'debug_traceCall' as any,
+        params: [
+          {
+            from: normalizedAccount.address,
+            to: shivaAddress,
+            data: unwindData,
+          },
+          'latest',
+          { tracer: 'callTracer' } as any,
+        ],
+      })
+
+      const ovlToken = OVL_ADDRESS[this.core.chainId as CHAINS].toLowerCase()
+      const receiver = normalizedAccount.address.toLowerCase()
+      const amount = this.extractTransferAmountFromTrace(trace, ovlToken, receiver)
+
+      if (amount !== null) {
+        return amount
+      }
+
+      throw new Error('Transfer amount not found in unwind trace')
+    } catch (error) {
+      throw new SDKError({
+        code: ERROR_CODE.TRANSACTION_ERROR,
+        message: 'Failed to trace unwind for swap amount (ensure RPC supports debug_traceCall or provide swapData)',
+        error,
+      })
+    }
+  }
+
+  private extractTransferAmountFromTrace(
+    trace: any,
+    tokenAddress: string,
+    receiver: string
+  ): bigint | null {
+    if (!trace) return null
+
+    const to = typeof trace.to === 'string' ? trace.to.toLowerCase() : ''
+    const input = typeof trace.input === 'string' ? trace.input : ''
+
+    if (to === tokenAddress && input.startsWith('0xa9059cbb')) {
+      try {
+        const { args } = decodeFunctionData({
+          abi: ERC20_TRANSFER_ABI,
+          data: input as `0x${string}`,
+        })
+
+        const [decodedReceiver, amount] = args as readonly [Address, bigint]
+        if ((decodedReceiver as string).toLowerCase() === receiver) {
+          return amount
+        }
+      } catch {
+        // ignore decoding issues and continue searching
+      }
+    }
+
+    if (Array.isArray((trace as any).calls)) {
+      for (const call of trace.calls) {
+        const amount = this.extractTransferAmountFromTrace(call, tokenAddress, receiver)
+        if (amount !== null) return amount
+      }
+    }
+
+    return null
   }
 
   public async unwindMultiple(props: UnwindMultipleProps) {
@@ -803,6 +1231,32 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       ...props,
       account: await this.core.useAccount(props.account),
       callback: props.callback ?? NOOP,
+    }
+  }
+
+  private async parseUnwindStableProps(
+    props: ShivaUnwindStableProps | NoCallback<ShivaUnwindStableProps>
+  ): Promise<ShivaUnwindStableInnerProps> {
+    const hasMinOut = props.minOut !== undefined
+    const hasSlippage = props.slippage !== undefined
+
+    invariantArgument(!(hasMinOut && hasSlippage), 'Provide either minOut or slippage, not both')
+    invariantArgument(hasMinOut || hasSlippage, 'Either minOut or slippage is required')
+
+    const minOut =
+      hasSlippage && this.core.chainId === CHAINS.BscTestnet
+        ? 0n
+        : hasMinOut
+          ? props.minOut!
+          : 0n
+    const callback = 'callback' in props ? props.callback : undefined
+
+    return {
+      ...props,
+      minOut,
+      slippage: hasSlippage ? props.slippage : undefined,
+      account: await this.core.useAccount(props.account),
+      callback: callback ?? NOOP,
     }
   }
 

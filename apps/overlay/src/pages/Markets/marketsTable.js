@@ -17,6 +17,7 @@ import useSDK from "../../hooks/useSDK";
 import { useMultichainContext } from "../../state/multichain/useMultichainContext";
 import { useAccount } from "../../hooks/useAccount";
 import { toWei } from "overlay-sdk/dist/common/utils/formatWei";
+import { SHIVA_ADDRESS } from "overlay-sdk/dist/constants";
 
 const MarketsTable = () => {
   const [markets, setMarkets] = useState([]);
@@ -35,17 +36,17 @@ const MarketsTable = () => {
         const transformedMarketData = await sdk.markets.transformMarketsData()
         console.log(' ================= Transformed Market Data', transformedMarketData)
 
-        const ethDominance = await sdk.markets.getMarketDetails("ETH Dominance");
-        console.log("ETH Dominance", ethDominance);
+        const ethDominance = await sdk.markets.getMarketDetails(process.env.REACT_APP_MARKET_ID ?? "MrBeast Index");
+        console.log(process.env.REACT_APP_MARKET_ID ?? "MrBeast Index", ethDominance);
 
-        const ethDominanceFundingRate = await sdk.trade.getFunding("ETH Dominance");
-        console.log("ETH Dominance Funding Rate", ethDominanceFundingRate);
+        const ethDominanceFundingRate = await sdk.trade.getFunding(process.env.REACT_APP_MARKET_ID ?? "MrBeast Index");
+        console.log("Elon Musk Mood Index Funding Rate", ethDominanceFundingRate);
 
-        const ethDominanceOIBalance = await sdk.trade.getOIBalance("ETH Dominance");
-        console.log("ETH Dominance OI Balance", ethDominanceOIBalance);
+        const ethDominanceOIBalance = await sdk.trade.getOIBalance(process.env.REACT_APP_MARKET_ID ?? "MrBeast Index");
+        console.log("Elon Musk Mood Index OI Balance", ethDominanceOIBalance);
 
-        const ethDominancePrice = await sdk.trade.getPrice("ETH Dominance");
-        console.log("ETH Dominance Price", ethDominancePrice);
+        const ethDominancePrice = await sdk.trade.getPrice(process.env.REACT_APP_MARKET_ID ?? "MrBeast Index");
+        console.log("Elon Musk Mood Index Price", ethDominancePrice);
 
         const collateral = toWei("900.666") // 900
         console.log("Collateral", collateral);
@@ -54,39 +55,72 @@ const MarketsTable = () => {
         const isLong = true
         const slippage = 1 // 1
 
-        const ethDominancePriceWithParams = await sdk.trade.getPrice("ETH Dominance", collateral, leverage, isLong);
-        console.log("ETH Dominance Price with params", ethDominancePriceWithParams);
+        const ethDominancePriceWithParams = await sdk.trade.getPrice(process.env.REACT_APP_MARKET_ID ?? "MrBeast Index", collateral, leverage, isLong);
+        console.log("Elon Musk Mood Index Price with params", ethDominancePriceWithParams);
 
-        const ethDominanceBidAndAsk = await sdk.trade.getBidAndAsk("ETH Dominance", 2);
-        console.log("ETH Dominance Bid and Ask", ethDominanceBidAndAsk);
+        const ethDominanceBidAndAsk = await sdk.trade.getBidAndAsk(process.env.REACT_APP_MARKET_ID ?? "MrBeast Index", 2);
+        console.log("Elon Musk Mood Index Bid and Ask", ethDominanceBidAndAsk);
 
-        const ethDominancePriceInfo = await sdk.trade.getPriceInfo("ETH Dominance", collateral, leverage, slippage, isLong);
-        console.log("ETH Dominance Price Info", ethDominancePriceInfo);
+        const ethDominancePriceInfo = await sdk.trade.getPriceInfo(process.env.REACT_APP_MARKET_ID ?? "MrBeast Index", collateral, leverage, slippage, isLong);
+        console.log("Elon Musk Mood Index Price Info", ethDominancePriceInfo);
 
-        const ethDominanceMaxAmount = await sdk.trade.getMaxInputIncludingFees("ETH Dominance", address, leverage);
-        console.log("ETH Dominance Max Amount", ethDominanceMaxAmount);
+        const ethDominanceMaxAmount = await sdk.trade.getMaxInputIncludingFees(process.env.REACT_APP_MARKET_ID ?? "MrBeast Index", address, leverage);
+        console.log("Elon Musk Mood Index Max Amount", ethDominanceMaxAmount);
 
-        const ethDominanceFee = await sdk.trade.getFee("ETH Dominance");
-        console.log("ETH Dominance Fee", ethDominanceFee);
+        const ethDominanceFee = await sdk.trade.getFee(process.env.REACT_APP_MARKET_ID ?? "MrBeast Index");
+        console.log("Elon Musk Mood Index Fee", ethDominanceFee);
 
-        const ethDominanceLiquidationPriceEstimate = await sdk.trade.getLiquidationPriceEstimate("ETH Dominance", collateral, leverage, isLong);
-        console.log("ETH Dominance Liquidation Price Estimate", ethDominanceLiquidationPriceEstimate);
+        const ethDominanceLiquidationPriceEstimate = await sdk.trade.getLiquidationPriceEstimate(process.env.REACT_APP_MARKET_ID ?? "MrBeast Index", collateral, leverage, isLong);
+        console.log("Elon Musk Mood Index Liquidation Price Estimate", ethDominanceLiquidationPriceEstimate);
 
-        const ethDominanceOiEstimate = await sdk.trade.getOiEstimate("ETH Dominance", collateral, leverage, isLong);
-        console.log("ETH Dominance OI Estimate", ethDominanceOiEstimate);
+        const ethDominanceOiEstimate = await sdk.trade.getOiEstimate(process.env.REACT_APP_MARKET_ID ?? "MrBeast Index", collateral, leverage, isLong);
+        console.log("Elon Musk Mood Index OI Estimate", ethDominanceOiEstimate);
 
-        const ethDominanceBuildState = await sdk.trade.getTradeState("ETH Dominance", collateral, leverage, slippage, isLong, address);
-        console.log("ETH Dominance Build State", ethDominanceBuildState);
+        const ethDominanceBuildState = await sdk.trade.getTradeState(process.env.REACT_APP_MARKET_ID ?? "MrBeast Index", collateral, leverage, slippage, isLong, address);
+        console.log("Elon Musk Mood Index Build State", ethDominanceBuildState);
 
         const overviewData = await sdk.accountDetails.getOverview('1M');
         console.log(" ================= Overview Data", overviewData);
 
         try {
           // replace by your own trade id
-          const positionDetails = await sdk.trade.getUnwindState("ETH Dominance", address, 462522, 1n ** 18n, 4)
+          const positionDetails = await sdk.trade.getUnwindState(process.env.REACT_APP_MARKET_ADDRESS ?? "MrBeast Index", address, 0, 1, 4)
           console.log(" ================= Position Details", positionDetails);
         } catch (error) {
           console.log(" ================= Position Details ERROR", error);
+        }
+
+        const swapData = process.env.REACT_APP_UNWIND_STABLE_SWAP_DATA;
+        const minOut = process.env.REACT_APP_UNWIND_STABLE_MIN_OUT;
+        const unwindStablePositionId = process.env.REACT_APP_UNWIND_STABLE_POSITION_ID;
+
+        if (swapData && minOut && unwindStablePositionId && address) {
+          try {
+            const ownerForPriceLimit = SHIVA_ADDRESS[sdk.core.chainId] ?? address;
+            const priceLimit = await sdk.trade.getUnwindPrice(
+              process.env.REACT_APP_MARKET_ID ?? "MrBeast Index",
+              ownerForPriceLimit,
+              BigInt(unwindStablePositionId),
+              toWei(1),
+              1
+            );
+
+            const unwindStableTx = await sdk.shiva.populateUnwindStable({
+              account: address,
+              marketAddress: process.env.REACT_APP_MARKET_ADDRESS ?? "",
+              positionId: BigInt(unwindStablePositionId),
+              fraction: toWei(1),
+              priceLimit,
+              minOut: BigInt(minOut),
+              swapData,
+            });
+
+            console.log(" ================= Sample unwindStable TX data", unwindStableTx);
+          } catch (error) {
+            console.log(" ================= unwindStable sample ERROR", error);
+          }
+        } else {
+          console.log(" ================= Skipping unwindStable sample; set REACT_APP_UNWIND_STABLE_SWAP_DATA, REACT_APP_UNWIND_STABLE_MIN_OUT, and REACT_APP_UNWIND_STABLE_POSITION_ID to enable");
         }
 
         activeMarkets && setMarkets(activeMarkets);
@@ -96,7 +130,7 @@ const MarketsTable = () => {
     };
 
     fetchData();
-  }, [contextChainID]);
+  }, [contextChainID, address, sdk.core.chainId]);
   console.log({markets})
   return (
     <>
