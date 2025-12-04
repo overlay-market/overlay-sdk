@@ -193,9 +193,9 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
             (+unwind.size / 10 ** 18).toFixed(6),
             unwind.position.loan,
           );
-          if (stablePnL !== undefined) {
+          if (stablePnL !== undefined && stableSize !== undefined) {
             stableValues = {
-              size: stableSize ?? "",
+              size: stableSize,
               pnl: stablePnL,
             };
           }
