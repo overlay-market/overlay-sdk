@@ -1,6 +1,7 @@
 import { OverlaySDK } from "../../sdk";
 import { OpenPositionsQuery } from "../../types";
 import {
+  calculateStableSize,
   formatBigNumber,
   formatUnixTimestampToDate,
   toLowercaseKeys,
@@ -172,7 +173,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       const positionsBatch = dataToProcess.slice(i, i + 15).map((position) => ({
         marketId: position.market.id as Address,
         positionId: BigInt(position.id.split("-")[1]),
-        walletClient: (position.router.id === zeroAddress ? walletClient.toLowerCase() : SHIVA_ADDRESS[chainId].toLowerCase()) as Address
+        walletClient: (position.router?.id === zeroAddress ? walletClient.toLowerCase() : SHIVA_ADDRESS[chainId].toLowerCase()) as Address
       }));
       if (positionsBatch.length > 0) {
         // console.log(`Fetching contract data for batch of ${positionsBatch.length} positions.`);
@@ -435,11 +436,15 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     if (open.loan && oraclePrice !== undefined) {
       const stablePnL = this.calculateStableValue(unrealizedPnL, open.loan, oraclePrice);
       const stableFunding = this.calculateStableValue(parsedFunding, open.loan, oraclePrice);
+      const stableSize = parsedValue ? calculateStableSize(
+        parsedValue,
+        open.loan,
+      ) : ""
 
       // Only include stableValues if calculations succeeded
-      if (stablePnL !== undefined && stableFunding !== undefined) {
+      if (stablePnL !== undefined && stableFunding !== undefined && stableSize !== undefined) {
         stableValues = {
-          size: open.loan.stableAmount,
+          size: stableSize,
           unrealizedPnL: stablePnL,
           funding: stableFunding,
         };

@@ -109,6 +109,7 @@ export const UnwindPositionsQuery = gql`
         size
         timestamp
         transferAmount
+        stableOut
         unwindNumber
         position {
           createdAtTimestamp
@@ -373,6 +374,7 @@ query queryPosition($account: ID!, $marketPositionId: ID!) {
         price
         unwindNumber
         transferAmount
+        stableOut
         pnl
         size
       }

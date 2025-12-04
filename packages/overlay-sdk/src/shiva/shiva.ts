@@ -328,7 +328,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       const marketPositionId = `${marketAddress.toLowerCase()}-0x${Number(positionId).toString(16)}`
       const positionDetails = await getPositionDetails(this.core.chainId, account.address.toLowerCase(), marketPositionId) ?? null
       invariant(positionDetails, `Position not found for ${marketPositionId}; ${account.address.toLowerCase()}; ${positionId}; marketAddress: ${marketAddress}; chainId: ${this.core.chainId}`)
-      invariant(positionDetails.router.id !== zeroAddress, 'This position is not on Shiva')
+      invariant(positionDetails.router?.id !== zeroAddress, 'This position is not on Shiva')
     }
 
     const { account, ...rest } = await this.parseUnwindProps(props)
@@ -403,7 +403,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       const marketPositionId = `${marketAddress.toLowerCase()}-0x${Number(positionId).toString(16)}`
       const positionDetails = await getPositionDetails(this.core.chainId, account.address.toLowerCase(), marketPositionId) ?? null
       invariant(positionDetails, `Position not found for ${marketPositionId}; ${account.address.toLowerCase()}; ${positionId}; marketAddress: ${marketAddress}; chainId: ${this.core.chainId}`)
-      invariant(positionDetails.router.id !== zeroAddress, 'This position is not on Shiva')
+      invariant(positionDetails.router?.id !== zeroAddress, 'This position is not on Shiva')
     }
 
     const { account, swapData, minOut, slippage, ...rest } = await this.parseUnwindStableProps(props)

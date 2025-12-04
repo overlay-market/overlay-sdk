@@ -12,13 +12,14 @@ import useSDK from "./hooks/useSDK";
 
 const PositionsTable = () => {
   const [positions, setPositions] = useState([]);
+  console.log({positions})
   const [openPositions, setOpenPositions] = useState([]);
   const sdk = useSDK();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const transformUnwindPositions = await sdk.unwindPositions.transformUnwindPositions(1, 10, "AI Index");
+        const transformUnwindPositions = await sdk.unwindPositions.transformUnwindPositions(1, 10, process.env.REACT_APP_MARKET_ID ?? "MrBeast Index");
         console.log("unwind positions", transformUnwindPositions);
 
         const transformedOpenPositions = await sdk.openPositions.transformOpenPositions(1, 10, process.env.REACT_APP_MARKET_ID ?? "MrBeast Index");
