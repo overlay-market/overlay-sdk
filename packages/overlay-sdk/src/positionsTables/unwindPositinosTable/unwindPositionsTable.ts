@@ -23,6 +23,7 @@ export type UnwindPositionData = {
   size: string | undefined;
   exitPrice: string | undefined;
   pnl: string | number | undefined;
+  stableOut?: string | number | undefined;
   unwindNumber: number;
   positionId: number;
   loan?: {
@@ -60,13 +61,12 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
   }
 
   private calculateStableValue(
-    ovlValue: string | number | undefined,
+    ovlValue: string | number,
     loan: NonNullable<UnwindPositionData['loan']>,
-    oraclePrice: bigint
+    stableOut?: string | number,
   ): string | undefined {
     try {
       if (
-        ovlValue === undefined ||
         ovlValue === "-" ||
         !loan?.ovlAmount ||
         !loan?.stableAmount
@@ -86,14 +86,10 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
 
       // For POSITIVE values (gains): Use oracle price
       if (ovlNum > 0) {
-        const WAD = BigInt(10 ** 18);
-        const stableValueWei = (ovlValueWei * oraclePrice) / WAD;
-        const decimals = 18;
-        const stableValueNum = Number(stableValueWei) / Math.pow(10, decimals);
-        const formattedValue = stableValueNum < 1
-          ? stableValueNum.toFixed(6)
-          : stableValueNum.toFixed(2);
-        return formattedValue;
+        if (stableOut) return stableOut.toString();
+
+        console.warn('stableOut is 0, cannot calculate stable value');
+        return undefined;
       }
 
       // For NEGATIVE values (losses): Use ratio-based formula
@@ -201,9 +197,6 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
       const marketDetails = await getMarketsDetailsByChainId(chainId as CHAINS);
       const lowercasedMarketDetails = marketDetails && toLowercaseKeys(marketDetails);
 
-      // Fetch oracle price once for all positions
-      const oraclePrice = await this.fetchOraclePrice();
-
       for (const unwind of rawUnwindData) {
         const marketName =
         lowercasedMarketDetails?.get(unwind.id.split("-")[0].toLowerCase())?.marketName ?? "";
@@ -228,13 +221,22 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
           Math.abs(+unwind.pnl) > 10 ** +18 ? 4 : 6
         );
 
+        const stableOut = unwind.stableOut 
+          ? formatBigNumber(
+              unwind.stableOut,
+              Number(18),
+              Math.abs(+unwind.pnl) > 10 ** +18 ? 4 : 6
+            )
+          : undefined
+
         // Calculate stable values for LBSC positions
         let stableValues: UnwindPositionData['stableValues'] = undefined;
-        if (unwind.position.loan && oraclePrice) {
-          const stablePnL = this.calculateStableValue(pnl, unwind.position.loan, oraclePrice);
+        if (unwind.position.loan) {
+          const stablePnL = this.calculateStableValue(pnl, unwind.position.loan, stableOut);
+          const calculateStableSize = this.calculateStableSize((+unwind.size / 10 ** 18).toFixed(6), unwind.position.loan);
           if (stablePnL !== undefined) {
             stableValues = {
-              size: unwind.position.loan.stableAmount,
+              size: calculateStableSize ?? "",
               pnl: stablePnL,
             };
           }
@@ -257,6 +259,7 @@ export class OverlaySDKUnwindPositions extends OverlaySDKModule {
           ),
           parsedClosedTimestamp: formatUnixTimestampToDate(unwind.timestamp),
           pnl: pnl,
+          stableOut: stableOut,
           unwindNumber: Number(unwind.unwindNumber),
           positionId: Number(unwind.position.positionId),
           loan: unwind.position.loan || null,
