@@ -6573,11 +6573,6 @@ export enum _SubgraphErrorPolicy_ {
   Deny = 'deny'
 }
 
-export type ActiveMarketsQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type ActiveMarketsQuery = { __typename?: 'Query', markets: Array<{ __typename?: 'Market', id: any, feedAddress: string, k: any, lmbda: any, delta: any, capPayoff: any, capNotional: any, capLeverage: any, circuitBreakerWindow: any, circuitBreakerMintTarget: any, maintenanceMarginFraction: any, maintenanceMarginBurnRate: any, liquidationFeeRate: any, tradingFeeRate: any, minCollateral: any, priceDriftUpperLimit: any, averageBlockTime: any, isShutdown: boolean, factory: { __typename?: 'Factory', id: any } }> };
-
 export type OpenPositionsQueryVariables = Exact<{
   account: Scalars['ID']['input'];
   first?: InputMaybe<Scalars['Int']['input']>;
@@ -6613,6 +6608,11 @@ export type UnwindsNoRouterQueryVariables = Exact<{
 
 
 export type UnwindsNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', unwinds: Array<{ __typename?: 'Unwind', fraction: any, fractionOfPosition: any, id: string, mint: any, pnl: any, price: any, size: any, timestamp: any, transferAmount: any, unwindNumber: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: any }, loan?: { __typename?: 'StableLoan', id: string, loanId: any, stableAmount: any, ovlAmount: any, price: any, ovlRepaid: any, collateralReturned: any, collateralSeized: any } | null } }> } | null };
+
+export type ActiveMarketsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ActiveMarketsQuery = { __typename?: 'Query', markets: Array<{ __typename?: 'Market', id: any, feedAddress: string, k: any, lmbda: any, delta: any, capPayoff: any, capNotional: any, capLeverage: any, circuitBreakerWindow: any, circuitBreakerMintTarget: any, maintenanceMarginFraction: any, maintenanceMarginBurnRate: any, liquidationFeeRate: any, tradingFeeRate: any, minCollateral: any, priceDriftUpperLimit: any, averageBlockTime: any, isShutdown: boolean, factory: { __typename?: 'Factory', id: any } }> };
 
 export type LiquidatedPositionsQueryVariables = Exact<{
   account: Scalars['ID']['input'];

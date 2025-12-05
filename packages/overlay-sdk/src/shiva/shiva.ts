@@ -519,6 +519,54 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     })
   }
 
+  /**
+   * Gets USDT quote for unwinding a stable position
+   * Returns both the minimum guaranteed output (after slippage) and expected output (before slippage)
+   */
+  public async getUnwindStableQuote(props: NoCallback<ShivaUnwindStableProps>): Promise<{
+    minOut: bigint;
+    expectedOut: bigint;
+  }> {
+    const { account, swapData, minOut, slippage, ...rest} = await this.parseUnwindStableProps(props);
+
+    // Get swap payload which includes dstAmount (expected) and minOut from 1inch
+    const { payload: swapPayload, minOutOverride, dstAmount } = await this.getUnwindStableSwapPayload({
+      account,
+      minOut,
+      slippage,
+      swapData,
+      marketAddress: rest.marketAddress,
+      positionId: rest.positionId,
+      fraction: rest.fraction,
+      priceLimit: rest.priceLimit,
+      brokerId: rest.brokerId ?? this.core.brokerId,
+    });
+
+    // Use the minOut from 1inch API response, or fallback to provided minOut
+    const finalMinOut = minOutOverride ?? minOut;
+
+    // Use dstAmount from 1inch API as expectedOut if available
+    // Otherwise, calculate it from minOut and slippage
+    let expectedOut: bigint;
+
+    if (dstAmount) {
+      // dstAmount from 1inch is the expected output (before slippage protection)
+      expectedOut = dstAmount;
+    } else {
+      // Fallback: Calculate expected output from minOut and slippage
+      // Formula: expectedOut = minOut / (1 - slippage)
+      const slippageDecimal = slippage ?? 1; // default 1% if not provided
+      const slippageFactor = BigInt(Math.floor((1 - slippageDecimal / 100) * 1e18));
+      const WAD = BigInt(1e18);
+      expectedOut = (finalMinOut * WAD) / slippageFactor;
+    }
+
+    return {
+      minOut: finalMinOut,
+      expectedOut,
+    };
+  }
+
   private async getUnwindStableSwapPayload({
     minOut,
     slippage,
@@ -539,7 +587,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     fraction: bigint
     priceLimit: bigint
     brokerId?: number
-  }): Promise<{ payload: `0x${string}`; minOutOverride?: bigint }> {
+  }): Promise<{ payload: `0x${string}`; minOutOverride?: bigint; dstAmount?: bigint }> {
     if (swapData && swapData !== '0x') {
       return { payload: swapData }
     }
@@ -602,6 +650,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
         })
 
         const txData = response.data?.tx?.data as `0x${string}` | undefined
+        const dstAmount = response.data?.dstAmount ? BigInt(response.data.dstAmount) : undefined
 
         if (!txData) {
           throw new SDKError({
@@ -617,6 +666,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
         return {
           payload: txData,
           minOutOverride: apiMinOut,
+          dstAmount,
         }
       } catch (error) {
         if (error instanceof SDKError) {
