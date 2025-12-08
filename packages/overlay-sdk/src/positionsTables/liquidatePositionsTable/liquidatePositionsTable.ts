@@ -12,6 +12,7 @@ import { invariant } from "../../common/index.js";
 import { paginate } from "../../common/utils/paginate.js";
 import { formatPriceWithCurrency } from "../../common/utils/formatPriceWithCurrency.js";
 import { toLowercaseKeys } from "../../common/utils/toLowercaseKeys.js";
+import { calculateStableSize } from "../../common/utils/calculateStableSize.js";
 
 export type LiquidatedPositionData = {
   marketName: string | undefined;
@@ -31,6 +32,9 @@ export type LiquidatedPositionData = {
     collateralReturned: string;
     collateralSeized: string;
   } | null;
+  stableValues?: {
+    size: string;
+  };
 };
 
 export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
@@ -105,7 +109,21 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
         const parsedClosedTimestamp = formatUnixTimestampToDate(
           liquidated.timestamp
         );
-  
+
+        // Calculate stable values for LBSC positions
+        let stableValues: LiquidatedPositionData['stableValues'] = undefined;
+        if (liquidated.position.loan) {
+          const stableSize = calculateStableSize(
+            parsedSize,
+            liquidated.position.loan,
+          );
+          if (stableSize !== undefined) {
+            stableValues = {
+              size: stableSize,
+            };
+          }
+        }
+
         transformedLiquidated.push({
           marketName: marketName,
           size: parsedSize,
@@ -115,6 +133,7 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
           created: parsedCreatedTimestamp,
           liquidated: parsedClosedTimestamp,
           loan: liquidated.position.loan || null,
+          stableValues,
         });
       }
 
