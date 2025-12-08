@@ -58,6 +58,16 @@ export type UnwindStateSuccess = {
   positionId: number;
   marketAddress: string;
   useShiva: boolean;
+  stableValues?: {
+    value: string;
+    debt: string;
+    cost: string;
+    currentCollateral: string;
+    currentNotional: string;
+    initialCollateral: string;
+    initialNotional: string;
+    maintenanceMargin: string;
+  };
 }
 
 export type UnwindStateError = {

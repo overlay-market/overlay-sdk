@@ -5,7 +5,7 @@ import { OVL_ADDRESS, SHIVA_ADDRESS } from "../constants";
 import { OverlaySDKCommonProps } from "../core/types";
 import { OverlaySDK } from "../sdk";
 import { formatBigNumber, formatFundingRateToDaily } from "../common/utils";
-import { TradeState, TradeStateOnchainData, UnwindState, UnwindStateData } from "./types";
+import { TradeState, TradeStateOnchainData, UnwindState, UnwindStateData, UnwindStateSuccess } from "./types";
 import { getPositionDetails } from "../subgraph";
 import { OverlayV1StateABI } from "../markets/abis/OverlayV1State";
 import { OverlayV1Market2ABI } from "../markets/abis/OverlayV1Market2";
@@ -375,6 +375,38 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       ? (estimatedPrice * (base - slippageFactor)) / base
       : (estimatedPrice * (base + slippageFactor)) / base;
 
+    // Calculate stable values for LBSC positions
+    let stableValues: UnwindStateSuccess['stableValues'] = undefined;
+    if ((positionDetails as any).loan) {
+      try {
+        const oraclePrice = await this.sdk.lbsc.getOraclePrice();
+
+        // Helper function to convert OVL to USDT using oracle price
+        const convertToStable = (ovlValue: bigint | string): string => {
+          const WAD = 10n ** 18n;
+          const ovlBigInt = typeof ovlValue === 'string' ? BigInt(ovlValue) : ovlValue;
+          const stableValueWei = (ovlBigInt * oraclePrice) / WAD;
+          const stableValueNum = Number(stableValueWei) / 1e18;
+          return stableValueNum < 1
+            ? stableValueNum.toFixed(6)
+            : stableValueNum.toFixed(2);
+        };
+
+        stableValues = {
+          value: convertToStable(positionValue),
+          debt: convertToStable(debt),
+          cost: convertToStable(cost),
+          currentCollateral: convertToStable(collateral),
+          currentNotional: convertToStable(notional),
+          initialCollateral: convertToStable(positionDetails.initialCollateral),
+          initialNotional: convertToStable(positionDetails.initialNotional),
+          maintenanceMargin: convertToStable(maintenanceMargin),
+        };
+      } catch (error) {
+        console.error('Failed to calculate stable values for unwind state:', error);
+      }
+    }
+
     return {
       pnl: formatBigNumber(pnl, 18, 2),
       side: info.isLong ? "Long" : "Short",
@@ -399,7 +431,8 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       priceLimit,
       positionId: posId,
       marketAddress,
-      useShiva: positionDetails.router?.id !== zeroAddress
+      useShiva: positionDetails.router?.id !== zeroAddress,
+      stableValues,
     } as UnwindStateData
   }
 
