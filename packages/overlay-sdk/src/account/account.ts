@@ -62,19 +62,58 @@ export class OverlaySDKAccountDetails extends OverlaySDKModule {
 
     const dataByPeriod = this.getDataByPeriod(mergedRows, interval)
 
+    // Fetch oracle price to convert OVL positions to USDT
+    let oraclePrice: bigint | undefined;
+    try {
+      oraclePrice = await this.sdk.lbsc.getOraclePrice();
+    } catch (error) {
+      console.error('Failed to fetch oracle price for overview:', error);
+    }
+
     let totalValueLocked = 0
     let unrealizedPnL = 0
 
     openPositions.forEach((position) => {
-      totalValueLocked += position.size ? parseFloat(position.size as string) : 0
-      unrealizedPnL += position.unrealizedPnL ? parseFloat(position.unrealizedPnL as string) : 0
+      if (position.stableValues) {
+        // LBSC position - already in USDT
+        totalValueLocked += position.stableValues.size ? parseFloat(position.stableValues.size) : 0;
+        unrealizedPnL += position.stableValues.unrealizedPnL ? parseFloat(position.stableValues.unrealizedPnL) : 0;
+      } else if (oraclePrice) {
+        // Regular OVL position - convert to USDT using oracle price
+        const sizeOvl = position.size ? parseFloat(position.size as string) : 0;
+        const pnlOvl = position.unrealizedPnL ? parseFloat(position.unrealizedPnL as string) : 0;
+
+        // Convert: (OVL value * oracle price) / 1e18
+        const WAD = 1e18;
+        const sizeUsdt = (sizeOvl * Number(oraclePrice)) / WAD;
+        const pnlUsdt = (pnlOvl * Number(oraclePrice)) / WAD;
+
+        totalValueLocked += sizeUsdt;
+        unrealizedPnL += pnlUsdt;
+      }
+    })
+
+    // Calculate realized PnL separately for USDT and OVL
+    let realizedPnlUsdt = 0;
+    let realizedPnlOvl = 0;
+
+    unwindPositions.forEach((unwind: any) => {
+      // If unwind has stableOut, it's LBSC position - use USDT value
+      if (unwind.stableOut && unwind.stableOut !== '0') {
+        realizedPnlUsdt += parseInt(unwind.stableOut) / 1e18;
+      } else if (unwind.pnl) {
+        // Regular position - use OVL value
+        realizedPnlOvl += parseInt(unwind.pnl) / 1e18;
+      }
     })
 
     const overviewData: OverviewData = {
       numberOfOpenPositions: Number(numberOfPositions?.account?.numberOfOpenPositions ?? 0),
       realizedPnl: numberOfPositions?.account?.realizedPnl ? formatBigNumber(numberOfPositions.account.realizedPnl, 18, 6) : '0',
+      realizedPnlUsdt: realizedPnlUsdt.toFixed(2),
+      realizedPnlOvl: realizedPnlOvl.toFixed(2),
       totalValueLocked: totalValueLocked.toFixed(2),
-      unrealizedPnL: unrealizedPnL.toFixed(6),
+      unrealizedPnL: unrealizedPnL.toFixed(2),
       lockedPlusUnrealized: (totalValueLocked + unrealizedPnL).toFixed(2),
       dataByPeriod,
     };
