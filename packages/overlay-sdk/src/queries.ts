@@ -340,6 +340,11 @@ query queryPosition($account: ID!, $marketPositionId: ID!) {
       router {
         id
       }
+      loan {
+        id
+        ovlAmount
+        stableAmount
+      }
       initialOi
       initialDebt
       initialCollateral
@@ -397,6 +402,11 @@ query queryPositionNoRouter($account: ID!, $marketPositionId: ID!) {
         id
         feedAddress
         isShutdown
+      }
+      loan {
+        id
+        ovlAmount
+        stableAmount
       }
       initialOi
       initialDebt
