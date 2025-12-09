@@ -162,6 +162,7 @@ export const UnwindPositionsNoRouterQuery = gql`
         size
         timestamp
         transferAmount
+        stableOut
         unwindNumber
         position {
           createdAtTimestamp
@@ -442,6 +443,7 @@ query queryPositionNoRouter($account: ID!, $marketPositionId: ID!) {
         price
         unwindNumber
         transferAmount
+        stableOut
         pnl
         size
       }
