@@ -41,6 +41,7 @@ export type OpenPositionData = {
   positionId: number;
   priceCurrency: string;
   deprecated?: boolean;
+  initialCollateral: string | number | undefined;
   loan?: {
     id: string;
     loanId: string;
@@ -55,6 +56,7 @@ export type OpenPositionData = {
     size: string;          // USDT collateral amount
     unrealizedPnL: string; // USDT if negative, OVL if positive
     funding: string;       // USDT if negative, OVL if positive
+    initialCollateral: string; // USDT initial collateral
   };
 };
 
@@ -348,11 +350,13 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
         unrealizedPnL: '0',
         parsedFunding: '0',
         priceCurrency: '0',
+        initialCollateral: formatBigNumber(open.initialCollateral, 18, 18),
         loan: open.loan || null,
         stableValues: open.loan ? {
           size: open.loan.stableAmount,
           unrealizedPnL: "0",
           funding: "0",
+          initialCollateral: open.loan.stableAmount,
         } : undefined,
       };
 
@@ -441,12 +445,19 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
         open.loan,
       ) : ""
 
+      // Initial collateral for LBSC is already in USDT (loan.stableAmount)
+      const formattedInitial = formatBigNumber(open.loan.stableAmount, 18, 18);
+      const stableInitialCollateral = formattedInitial !== undefined
+        ? (typeof formattedInitial === 'number' ? formattedInitial.toFixed(18) : formattedInitial)
+        : undefined;
+
       // Only include stableValues if calculations succeeded
-      if (stablePnL !== undefined && stableFunding !== undefined && stableSize !== undefined) {
+      if (stablePnL !== undefined && stableFunding !== undefined && stableSize !== undefined && stableInitialCollateral !== undefined) {
         stableValues = {
           size: stableSize,
           unrealizedPnL: stablePnL,
           funding: stableFunding,
+          initialCollateral: stableInitialCollateral,
         };
       }
     }
@@ -467,6 +478,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       parsedFunding: parsedFunding,
       priceCurrency: priceCurrency,
       deprecated: deprecated,
+      initialCollateral: formatBigNumber(open.initialCollateral, 18, 18),
       loan: open.loan || null,
       stableValues: stableValues,
     };
