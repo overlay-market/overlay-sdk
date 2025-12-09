@@ -380,6 +380,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     if ((positionDetails as any).loan) {
       try {
         const oraclePrice = await this.sdk.lbsc.getOraclePrice();
+        const loan = (positionDetails as any).loan;
 
         // Helper function to convert OVL to USDT using oracle price
         const convertToStable = (ovlValue: bigint | string): string => {
@@ -392,14 +393,21 @@ export class OverlaySDKTrade extends OverlaySDKModule {
             : stableValueNum.toFixed(2);
         };
 
+        // Use native USDT values from loan.stableAmount instead of converting from OVL
+        const stableAmount = Number(loan.stableAmount) / 1e18;
+        const lev = Number(positionDetails.leverage);
+        const initialNotionalNative = stableAmount * lev;
+        const debtNative = initialNotionalNative - stableAmount;
+
+        const formatNative = (value: number): string => {
+          return Math.abs(value) < 1 ? value.toFixed(6) : value.toFixed(2);
+        };
+
         stableValues = {
           value: convertToStable(positionValue),
-          debt: convertToStable(debt),
-          cost: convertToStable(cost),
-          currentCollateral: convertToStable(collateral),
-          currentNotional: convertToStable(notional),
-          initialCollateral: convertToStable(positionDetails.initialCollateral),
-          initialNotional: convertToStable(positionDetails.initialNotional),
+          debt: formatNative(debtNative),
+          initialCollateral: formatNative(stableAmount),
+          initialNotional: formatNative(initialNotionalNative),
           maintenanceMargin: convertToStable(maintenanceMargin),
         };
       } catch (error) {

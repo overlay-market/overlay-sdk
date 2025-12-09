@@ -61,9 +61,6 @@ export type UnwindStateSuccess = {
   stableValues?: {
     value: string;
     debt: string;
-    cost: string;
-    currentCollateral: string;
-    currentNotional: string;
     initialCollateral: string;
     initialNotional: string;
     maintenanceMargin: string;
