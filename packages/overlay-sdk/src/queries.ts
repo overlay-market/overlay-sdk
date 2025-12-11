@@ -318,6 +318,8 @@ export const NumberOfPositionsQuery = gql`
       numberOfOpenPositions
       numberOfUnwinds
       realizedPnl
+      realizedPnlOvl
+      realizedPnlStables
     }
   }
 `;

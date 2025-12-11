@@ -33,6 +33,8 @@ export type Account = {
   planckCatBalance: Scalars['BigInt']['output'];
   positions: Array<Position>;
   realizedPnl: Scalars['BigInt']['output'];
+  realizedPnlOvl: Scalars['BigInt']['output'];
+  realizedPnlStables: Scalars['BigInt']['output'];
   referralPositions: Array<ReferralPosition>;
   stakingPositions: Array<StakingPosition>;
   tokens: Array<TokenPosition>;
@@ -191,6 +193,22 @@ export type Account_Filter = {
   planckCatBalance_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
   positions_?: InputMaybe<Position_Filter>;
   realizedPnl?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlOvl?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlOvl_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlOvl_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlOvl_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  realizedPnlOvl_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlOvl_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlOvl_not?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlOvl_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  realizedPnlStables?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlStables_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlStables_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlStables_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  realizedPnlStables_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlStables_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlStables_not?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlStables_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
   realizedPnl_gt?: InputMaybe<Scalars['BigInt']['input']>;
   realizedPnl_gte?: InputMaybe<Scalars['BigInt']['input']>;
   realizedPnl_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
@@ -218,6 +236,8 @@ export enum Account_OrderBy {
   PlanckCatBalance = 'planckCatBalance',
   Positions = 'positions',
   RealizedPnl = 'realizedPnl',
+  RealizedPnlOvl = 'realizedPnlOvl',
+  RealizedPnlStables = 'realizedPnlStables',
   ReferralPositions = 'referralPositions',
   StakingPositions = 'stakingPositions',
   Tokens = 'tokens',
@@ -588,6 +608,8 @@ export enum Build_OrderBy {
   OwnerOvlVolumeTraded = 'owner__ovlVolumeTraded',
   OwnerPlanckCatBalance = 'owner__planckCatBalance',
   OwnerRealizedPnl = 'owner__realizedPnl',
+  OwnerRealizedPnlOvl = 'owner__realizedPnlOvl',
+  OwnerRealizedPnlStables = 'owner__realizedPnlStables',
   Position = 'position',
   PositionCreatedAtBlockNumber = 'position__createdAtBlockNumber',
   PositionCreatedAtTimestamp = 'position__createdAtTimestamp',
@@ -823,6 +845,8 @@ export enum Erc721Nft_OrderBy {
   OwnerOvlVolumeTraded = 'owner__ovlVolumeTraded',
   OwnerPlanckCatBalance = 'owner__planckCatBalance',
   OwnerRealizedPnl = 'owner__realizedPnl',
+  OwnerRealizedPnlOvl = 'owner__realizedPnlOvl',
+  OwnerRealizedPnlStables = 'owner__realizedPnlStables',
   TokenId = 'tokenId',
   TokenUri = 'tokenUri'
 }
@@ -1026,6 +1050,8 @@ export enum Erc721Transfer_OrderBy {
   FromOvlVolumeTraded = 'from__ovlVolumeTraded',
   FromPlanckCatBalance = 'from__planckCatBalance',
   FromRealizedPnl = 'from__realizedPnl',
+  FromRealizedPnlOvl = 'from__realizedPnlOvl',
+  FromRealizedPnlStables = 'from__realizedPnlStables',
   Id = 'id',
   Nft = 'nft',
   NftId = 'nft__id',
@@ -1039,6 +1065,8 @@ export enum Erc721Transfer_OrderBy {
   ToOvlVolumeTraded = 'to__ovlVolumeTraded',
   ToPlanckCatBalance = 'to__planckCatBalance',
   ToRealizedPnl = 'to__realizedPnl',
+  ToRealizedPnlOvl = 'to__realizedPnlOvl',
+  ToRealizedPnlStables = 'to__realizedPnlStables',
   Transaction = 'transaction',
   TransactionBlockNumber = 'transaction__blockNumber',
   TransactionGasLimit = 'transaction__gasLimit',
@@ -1153,6 +1181,8 @@ export enum Erc1155TokenBalance_OrderBy {
   OwnerOvlVolumeTraded = 'owner__ovlVolumeTraded',
   OwnerPlanckCatBalance = 'owner__planckCatBalance',
   OwnerRealizedPnl = 'owner__realizedPnl',
+  OwnerRealizedPnlOvl = 'owner__realizedPnlOvl',
+  OwnerRealizedPnlStables = 'owner__realizedPnlStables',
   Token = 'token',
   TokenAddress = 'token__address',
   TokenId = 'token__id',
@@ -1381,6 +1411,8 @@ export enum Erc1155Transfer_OrderBy {
   FromOvlVolumeTraded = 'from__ovlVolumeTraded',
   FromPlanckCatBalance = 'from__planckCatBalance',
   FromRealizedPnl = 'from__realizedPnl',
+  FromRealizedPnlOvl = 'from__realizedPnlOvl',
+  FromRealizedPnlStables = 'from__realizedPnlStables',
   Id = 'id',
   To = 'to',
   ToId = 'to__id',
@@ -1390,6 +1422,8 @@ export enum Erc1155Transfer_OrderBy {
   ToOvlVolumeTraded = 'to__ovlVolumeTraded',
   ToPlanckCatBalance = 'to__planckCatBalance',
   ToRealizedPnl = 'to__realizedPnl',
+  ToRealizedPnlOvl = 'to__realizedPnlOvl',
+  ToRealizedPnlStables = 'to__realizedPnlStables',
   Token = 'token',
   TokenAddress = 'token__address',
   TokenId = 'token__id',
@@ -1760,6 +1794,8 @@ export enum Liquidate_OrderBy {
   OwnerOvlVolumeTraded = 'owner__ovlVolumeTraded',
   OwnerPlanckCatBalance = 'owner__planckCatBalance',
   OwnerRealizedPnl = 'owner__realizedPnl',
+  OwnerRealizedPnlOvl = 'owner__realizedPnlOvl',
+  OwnerRealizedPnlStables = 'owner__realizedPnlStables',
   Position = 'position',
   PositionCreatedAtBlockNumber = 'position__createdAtBlockNumber',
   PositionCreatedAtTimestamp = 'position__createdAtTimestamp',
@@ -1787,6 +1823,8 @@ export enum Liquidate_OrderBy {
   SenderOvlVolumeTraded = 'sender__ovlVolumeTraded',
   SenderPlanckCatBalance = 'sender__planckCatBalance',
   SenderRealizedPnl = 'sender__realizedPnl',
+  SenderRealizedPnlOvl = 'sender__realizedPnlOvl',
+  SenderRealizedPnlStables = 'sender__realizedPnlStables',
   Size = 'size',
   Timestamp = 'timestamp',
   Transaction = 'transaction',
@@ -2956,6 +2994,8 @@ export enum Position_OrderBy {
   OwnerOvlVolumeTraded = 'owner__ovlVolumeTraded',
   OwnerPlanckCatBalance = 'owner__planckCatBalance',
   OwnerRealizedPnl = 'owner__realizedPnl',
+  OwnerRealizedPnlOvl = 'owner__realizedPnlOvl',
+  OwnerRealizedPnlStables = 'owner__realizedPnlStables',
   PositionId = 'positionId',
   Router = 'router',
   RouterId = 'router__id',
@@ -3826,6 +3866,8 @@ export enum ReferralPosition_OrderBy {
   AffiliatedToOvlVolumeTraded = 'affiliatedTo__ovlVolumeTraded',
   AffiliatedToPlanckCatBalance = 'affiliatedTo__planckCatBalance',
   AffiliatedToRealizedPnl = 'affiliatedTo__realizedPnl',
+  AffiliatedToRealizedPnlOvl = 'affiliatedTo__realizedPnlOvl',
+  AffiliatedToRealizedPnlStables = 'affiliatedTo__realizedPnlStables',
   Id = 'id',
   Owner = 'owner',
   OwnerId = 'owner__id',
@@ -3835,6 +3877,8 @@ export enum ReferralPosition_OrderBy {
   OwnerOvlVolumeTraded = 'owner__ovlVolumeTraded',
   OwnerPlanckCatBalance = 'owner__planckCatBalance',
   OwnerRealizedPnl = 'owner__realizedPnl',
+  OwnerRealizedPnlOvl = 'owner__realizedPnlOvl',
+  OwnerRealizedPnlStables = 'owner__realizedPnlStables',
   ReferralProgram = 'referralProgram',
   ReferralProgramCreatedAtBlockNumber = 'referralProgram__createdAtBlockNumber',
   ReferralProgramCreatedAtTimestamp = 'referralProgram__createdAtTimestamp',
@@ -4237,8 +4281,18 @@ export type StableLoan = {
   loanId: Scalars['BigInt']['output'];
   ovlAmount: Scalars['BigInt']['output'];
   ovlRepaid: Scalars['BigInt']['output'];
+  positions: Array<Position>;
   price: Scalars['BigInt']['output'];
   stableAmount: Scalars['BigInt']['output'];
+};
+
+
+export type StableLoanPositionsArgs = {
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Position_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  where?: InputMaybe<Position_Filter>;
 };
 
 export type StableLoan_Filter = {
@@ -4315,6 +4369,7 @@ export type StableLoan_Filter = {
   ovlRepaid_lte?: InputMaybe<Scalars['BigInt']['input']>;
   ovlRepaid_not?: InputMaybe<Scalars['BigInt']['input']>;
   ovlRepaid_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  positions_?: InputMaybe<Position_Filter>;
   price?: InputMaybe<Scalars['BigInt']['input']>;
   price_gt?: InputMaybe<Scalars['BigInt']['input']>;
   price_gte?: InputMaybe<Scalars['BigInt']['input']>;
@@ -4342,12 +4397,15 @@ export enum StableLoan_OrderBy {
   BorrowerOvlVolumeTraded = 'borrower__ovlVolumeTraded',
   BorrowerPlanckCatBalance = 'borrower__planckCatBalance',
   BorrowerRealizedPnl = 'borrower__realizedPnl',
+  BorrowerRealizedPnlOvl = 'borrower__realizedPnlOvl',
+  BorrowerRealizedPnlStables = 'borrower__realizedPnlStables',
   CollateralReturned = 'collateralReturned',
   CollateralSeized = 'collateralSeized',
   Id = 'id',
   LoanId = 'loanId',
   OvlAmount = 'ovlAmount',
   OvlRepaid = 'ovlRepaid',
+  Positions = 'positions',
   Price = 'price',
   StableAmount = 'stableAmount'
 }
@@ -4503,6 +4561,8 @@ export enum StakingPosition_OrderBy {
   OwnerOvlVolumeTraded = 'owner__ovlVolumeTraded',
   OwnerPlanckCatBalance = 'owner__planckCatBalance',
   OwnerRealizedPnl = 'owner__realizedPnl',
+  OwnerRealizedPnlOvl = 'owner__realizedPnlOvl',
+  OwnerRealizedPnlStables = 'owner__realizedPnlStables',
   Pool = 'pool',
   PoolId = 'pool__id',
   PoolRewardRatioDenominator = 'pool__rewardRatioDenominator',
@@ -5426,6 +5486,8 @@ export enum TokenPosition_OrderBy {
   OwnerOvlVolumeTraded = 'owner__ovlVolumeTraded',
   OwnerPlanckCatBalance = 'owner__planckCatBalance',
   OwnerRealizedPnl = 'owner__realizedPnl',
+  OwnerRealizedPnlOvl = 'owner__realizedPnlOvl',
+  OwnerRealizedPnlStables = 'owner__realizedPnlStables',
   Token = 'token',
   TokenId = 'token__id',
   TokenName = 'token__name',
@@ -5978,6 +6040,8 @@ export enum TradingMiningEpochVolume_OrderBy {
   TraderOvlVolumeTraded = 'trader__ovlVolumeTraded',
   TraderPlanckCatBalance = 'trader__planckCatBalance',
   TraderRealizedPnl = 'trader__realizedPnl',
+  TraderRealizedPnlOvl = 'trader__realizedPnlOvl',
+  TraderRealizedPnlStables = 'trader__realizedPnlStables',
   Volume = 'volume'
 }
 
@@ -6499,6 +6563,8 @@ export enum Unwind_OrderBy {
   OwnerOvlVolumeTraded = 'owner__ovlVolumeTraded',
   OwnerPlanckCatBalance = 'owner__planckCatBalance',
   OwnerRealizedPnl = 'owner__realizedPnl',
+  OwnerRealizedPnlOvl = 'owner__realizedPnlOvl',
+  OwnerRealizedPnlStables = 'owner__realizedPnlStables',
   Pnl = 'pnl',
   Position = 'position',
   PositionCreatedAtBlockNumber = 'position__createdAtBlockNumber',
@@ -6607,7 +6673,7 @@ export type UnwindsNoRouterQueryVariables = Exact<{
 }>;
 
 
-export type UnwindsNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', unwinds: Array<{ __typename?: 'Unwind', fraction: any, fractionOfPosition: any, id: string, mint: any, pnl: any, price: any, size: any, timestamp: any, transferAmount: any, unwindNumber: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: any }, loan?: { __typename?: 'StableLoan', id: string, loanId: any, stableAmount: any, ovlAmount: any, price: any, ovlRepaid: any, collateralReturned: any, collateralSeized: any } | null } }> } | null };
+export type UnwindsNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', unwinds: Array<{ __typename?: 'Unwind', fraction: any, fractionOfPosition: any, id: string, mint: any, pnl: any, price: any, size: any, timestamp: any, transferAmount: any, stableOut?: any | null, unwindNumber: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: any }, loan?: { __typename?: 'StableLoan', id: string, loanId: any, stableAmount: any, ovlAmount: any, price: any, ovlRepaid: any, collateralReturned: any, collateralSeized: any } | null } }> } | null };
 
 export type ActiveMarketsQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -6637,7 +6703,7 @@ export type NumberOfPositionsQueryVariables = Exact<{
 }>;
 
 
-export type NumberOfPositionsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', numberOfLiquidatedPositions: any, numberOfOpenPositions: any, numberOfUnwinds: any, realizedPnl: any } | null };
+export type NumberOfPositionsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', numberOfLiquidatedPositions: any, numberOfOpenPositions: any, numberOfUnwinds: any, realizedPnl: any, realizedPnlOvl: any, realizedPnlStables: any } | null };
 
 export type QueryPositionQueryVariables = Exact<{
   account: Scalars['ID']['input'];
@@ -6645,7 +6711,7 @@ export type QueryPositionQueryVariables = Exact<{
 }>;
 
 
-export type QueryPositionQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', id: string, positionId: string, initialOi: any, initialDebt: any, initialCollateral: any, initialNotional: any, leverage: any, isLong: boolean, entryPrice: any, isLiquidated: boolean, currentOi: any, currentDebt: any, mint: any, createdAtTimestamp: any, createdAtBlockNumber: any, numberOfUniwnds: any, fractionUnwound: any, market: { __typename?: 'Market', id: any, feedAddress: string, isShutdown: boolean }, router?: { __typename?: 'Router', id: any } | null, builds: Array<{ __typename?: 'Build', id: string, price: any, timestamp: any }>, liquidates: Array<{ __typename?: 'Liquidate', id: string, mint: any, price: any, timestamp: any }>, unwinds: Array<{ __typename?: 'Unwind', fraction: any, id: string, mint: any, timestamp: any, price: any, unwindNumber: any, transferAmount: any, stableOut?: any | null, pnl: any, size: any }> }> } | null };
+export type QueryPositionQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', id: string, positionId: string, initialOi: any, initialDebt: any, initialCollateral: any, initialNotional: any, leverage: any, isLong: boolean, entryPrice: any, isLiquidated: boolean, currentOi: any, currentDebt: any, mint: any, createdAtTimestamp: any, createdAtBlockNumber: any, numberOfUniwnds: any, fractionUnwound: any, market: { __typename?: 'Market', id: any, feedAddress: string, isShutdown: boolean }, router?: { __typename?: 'Router', id: any } | null, loan?: { __typename?: 'StableLoan', id: string, ovlAmount: any, stableAmount: any } | null, builds: Array<{ __typename?: 'Build', id: string, price: any, timestamp: any }>, liquidates: Array<{ __typename?: 'Liquidate', id: string, mint: any, price: any, timestamp: any }>, unwinds: Array<{ __typename?: 'Unwind', fraction: any, id: string, mint: any, timestamp: any, price: any, unwindNumber: any, transferAmount: any, stableOut?: any | null, pnl: any, size: any }> }> } | null };
 
 export type QueryPositionNoRouterQueryVariables = Exact<{
   account: Scalars['ID']['input'];
@@ -6653,7 +6719,7 @@ export type QueryPositionNoRouterQueryVariables = Exact<{
 }>;
 
 
-export type QueryPositionNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', id: string, positionId: string, initialOi: any, initialDebt: any, initialCollateral: any, initialNotional: any, leverage: any, isLong: boolean, entryPrice: any, isLiquidated: boolean, currentOi: any, currentDebt: any, mint: any, createdAtTimestamp: any, createdAtBlockNumber: any, numberOfUniwnds: any, fractionUnwound: any, market: { __typename?: 'Market', id: any, feedAddress: string, isShutdown: boolean }, builds: Array<{ __typename?: 'Build', id: string, price: any, timestamp: any }>, liquidates: Array<{ __typename?: 'Liquidate', id: string, mint: any, price: any, timestamp: any }>, unwinds: Array<{ __typename?: 'Unwind', fraction: any, id: string, mint: any, timestamp: any, price: any, unwindNumber: any, transferAmount: any, pnl: any, size: any }> }> } | null };
+export type QueryPositionNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', id: string, positionId: string, initialOi: any, initialDebt: any, initialCollateral: any, initialNotional: any, leverage: any, isLong: boolean, entryPrice: any, isLiquidated: boolean, currentOi: any, currentDebt: any, mint: any, createdAtTimestamp: any, createdAtBlockNumber: any, numberOfUniwnds: any, fractionUnwound: any, market: { __typename?: 'Market', id: any, feedAddress: string, isShutdown: boolean }, loan?: { __typename?: 'StableLoan', id: string, ovlAmount: any, stableAmount: any } | null, builds: Array<{ __typename?: 'Build', id: string, price: any, timestamp: any }>, liquidates: Array<{ __typename?: 'Liquidate', id: string, mint: any, price: any, timestamp: any }>, unwinds: Array<{ __typename?: 'Unwind', fraction: any, id: string, mint: any, timestamp: any, price: any, unwindNumber: any, transferAmount: any, stableOut?: any | null, pnl: any, size: any }> }> } | null };
 
 export type TotalSupplyHistoryQueryVariables = Exact<{
   since: Scalars['Int']['input'];

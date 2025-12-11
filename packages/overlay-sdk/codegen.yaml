@@ -1,5 +1,5 @@
 overrideExisting: true
-schema: https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-bnb-testnet/3-lbsc-unwind-stable/gn
+schema: https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-bnb-testnet/4-stable-pnl/gn
 documents: "src/**/**/!(*.d).{ts,tsx}"
 generates:
   src/types.ts:
