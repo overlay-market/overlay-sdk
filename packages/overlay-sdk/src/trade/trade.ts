@@ -260,17 +260,33 @@ export class OverlaySDKTrade extends OverlaySDKModule {
 
     const isPriceImpactHigh = Number(priceInfo.priceImpactPercentage) - Number(slippage) > 0
 
-    const amountExceedsMaxInput = 
-      Number(formatBigNumber(collateral, 18, 18)) > maxInputIncludingFees
-    
-    const amountBelowMinCollateral = 
-      Number(formatBigNumber(collateral, 18, 18)) < formattedMinCollateral  
+    // Fee calculation: User input = initial collateral for both OVL and USDT
+    // Total cost = initial collateral + fees
+    const leverageNum = Number(formatBigNumber(leverage, 18, 18))
+    let initialCollateral: number
+    let buildFee: number
+    let totalCost: number
 
-    // determine estimated collateral
-    const preAdjustedOi = Number(formatBigNumber(collateral, 18, 18)) * Number(formatBigNumber(leverage, 18, 18))
-    const calculatedBuildFee = Number(preAdjustedOi) * tradingFeeRate / 100
-    const estimatedCollateral = Number(formatBigNumber(collateral, 18, 18)) + calculatedBuildFee
-    
+    // User input is always the desired initial collateral
+    initialCollateral = Number(formatBigNumber(collateral, 18, 18))
+
+    if (collateralType === 'USDT') {
+      // For USDT (LBSC): Calculate total USDT needed to achieve desired initial collateral
+      // When we send totalCost to LBSC, it will split into initialCollateral + fees
+      const feeMultiplier = 1 + (leverageNum * tradingFeeRate / 100)
+      totalCost = initialCollateral * feeMultiplier
+      buildFee = totalCost - initialCollateral
+    } else {
+      // For OVL: Simple addition of collateral + fees
+      const notional = initialCollateral * leverageNum
+      buildFee = notional * tradingFeeRate / 100
+      totalCost = initialCollateral + buildFee
+    }
+
+    const amountExceedsMaxInput = totalCost > maxInputIncludingFees
+
+    const amountBelowMinCollateral = initialCollateral < formattedMinCollateral
+
     let tradeState: TradeState = TradeState.Trade
     if (showUnderwaterFlow) tradeState = TradeState.PositionUnderwater
     if (exceedOiCap) tradeState = TradeState.ExceedsOICap
@@ -288,7 +304,9 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       priceInfo,
       tradeState,
       tradingFeeRate,
-      estimatedCollateral
+      initialCollateral,
+      buildFee,
+      totalCost
     }
   }
 
@@ -393,11 +411,19 @@ export class OverlaySDKTrade extends OverlaySDKModule {
             : stableValueNum.toFixed(2);
         };
 
-        // Use native USDT values from loan.stableAmount instead of converting from OVL
-        const stableAmount = Number(loan.stableAmount) / 1e18;
+        // Calculate initial collateral in USDT using the loan ratio
+        // initialCollateralUSDT = initialCollateralOVL × (stableAmount / ovlAmount)
+        const initialCollateralOVL = BigInt(positionDetails.initialCollateral);
+        const stableAmount = BigInt(loan.stableAmount);
+        const ovlAmount = BigInt(loan.ovlAmount);
+
+        // Calculate: (initialCollateralOVL * stableAmount) / ovlAmount
+        const initialCollateralUSDTWei = (initialCollateralOVL * stableAmount) / ovlAmount;
+        const actualInitialCollateral = Number(initialCollateralUSDTWei) / 1e18;
+
         const lev = Number(positionDetails.leverage);
-        const initialNotionalNative = stableAmount * lev;
-        const debtNative = initialNotionalNative - stableAmount;
+        const initialNotionalNative = actualInitialCollateral * lev;
+        const debtNative = initialNotionalNative - actualInitialCollateral;
 
         const formatNative = (value: number): string => {
           return Math.abs(value) < 1 ? value.toFixed(6) : value.toFixed(2);
@@ -406,7 +432,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
         stableValues = {
           value: convertToStable(positionValue),
           debt: formatNative(debtNative),
-          initialCollateral: formatNative(stableAmount),
+          initialCollateral: formatNative(actualInitialCollateral),
           initialNotional: formatNative(initialNotionalNative),
           maintenanceMargin: convertToStable(maintenanceMargin),
         };

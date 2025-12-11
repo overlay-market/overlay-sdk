@@ -445,10 +445,18 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
         open.loan,
       ) : ""
 
-      // Initial collateral for LBSC is already in USDT (loan.stableAmount)
-      const formattedInitial = formatBigNumber(open.loan.stableAmount, 18, 18);
-      const stableInitialCollateral = formattedInitial !== undefined
-        ? (typeof formattedInitial === 'number' ? formattedInitial.toFixed(18) : formattedInitial)
+      // Calculate initial collateral in USDT using the loan ratio
+      // initialCollateralUSDT = initialCollateralOVL × (stableAmount / ovlAmount)
+      const initialCollateralOVL = BigInt(open.initialCollateral);
+      const stableAmount = BigInt(open.loan.stableAmount);
+      const ovlAmount = BigInt(open.loan.ovlAmount);
+
+      // Calculate: (initialCollateralOVL * stableAmount) / ovlAmount
+      const initialCollateralUSDTWei = (initialCollateralOVL * stableAmount) / ovlAmount;
+      const actualInitialCollateral = Number(initialCollateralUSDTWei) / 1e18;
+
+      const stableInitialCollateral = actualInitialCollateral !== undefined
+        ? actualInitialCollateral.toFixed(18)
         : undefined;
 
       // Only include stableValues if calculations succeeded

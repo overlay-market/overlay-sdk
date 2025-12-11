@@ -30,7 +30,9 @@ export type TradeStateData = {
   };
   tradeState: TradeState;
   tradingFeeRate: number;
-  estimatedCollateral: number;
+  initialCollateral: number;
+  buildFee: number;
+  totalCost: number;
 }
 
 export type UnwindStateSuccess = {
