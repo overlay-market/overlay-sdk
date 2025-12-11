@@ -93,19 +93,13 @@ export class OverlaySDKAccountDetails extends OverlaySDKModule {
       }
     })
 
-    // Calculate realized PnL separately for USDT and OVL
-    let realizedPnlUsdt = 0;
-    let realizedPnlOvl = 0;
-
-    unwindPositions.forEach((unwind: any) => {
-      // If unwind has stableOut, it's LBSC position - use USDT value
-      if (unwind.stableOut && unwind.stableOut !== '0') {
-        realizedPnlUsdt += parseInt(unwind.stableOut) / 1e18;
-      } else if (unwind.pnl) {
-        // Regular position - use OVL value
-        realizedPnlOvl += parseInt(unwind.pnl) / 1e18;
-      }
-    })
+    // Use pre-calculated values from subgraph
+    const realizedPnlUsdt = numberOfPositions?.account?.realizedPnlStables
+      ? parseFloat(String(formatBigNumber(BigInt(numberOfPositions.account.realizedPnlStables), 18, 6)))
+      : 0;
+    const realizedPnlOvl = numberOfPositions?.account?.realizedPnlOvl
+      ? parseFloat(String(formatBigNumber(BigInt(numberOfPositions.account.realizedPnlOvl), 18, 6)))
+      : 0;
 
     const overviewData: OverviewData = {
       numberOfOpenPositions: Number(numberOfPositions?.account?.numberOfOpenPositions ?? 0),
