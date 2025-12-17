@@ -144,7 +144,7 @@ export const NETWORKS: { [chainId: number]: Network } = {
   [CHAINS.BscMainnet]: {
     MARKET_PRICES_API: "https://api.overlay.market/bsc-mainnet-charts/v1/charts",
     SUBGRAPH_URL:
-      "", // TODO restore bsc mainnet subraph with stable unwind support
+      "https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-bsc/prod-lbsc/gn",
     MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
     hasShiva: true,
   },
