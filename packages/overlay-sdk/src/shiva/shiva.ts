@@ -778,7 +778,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     const loanId = await this.getLoanId(marketAddress, positionId)
     const lbscContract = await this.sdk.lbsc.getLbscContract()
     const loan = await lbscContract.read.loans([loanId])
-    const debt = BigInt(loan[2])  // Third element is debt amount
+    const debt = BigInt(loan[4])  // Fifth element is debt amount
 
     // 6. Calculate OVL after repaying loan
     const ovlAfterLoan = netValue - debt
