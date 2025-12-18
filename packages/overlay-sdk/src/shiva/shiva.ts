@@ -602,11 +602,11 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     }
 
     if (this.core.chainId === CHAINS.BscMainnet) {
-      const apiKey = this.core.oneInchApiKey
-      if (!apiKey) {
+      const baseUrl = this.core.oneInchApiBaseUrl
+      if (!baseUrl) {
         throw new SDKError({
           code: ERROR_CODE.INVALID_ARGUMENT,
-          message: 'oneInchApiKey is required to fetch swap data from 1inch',
+          message: 'oneInchApiBaseUrl is required to fetch swap data from 1inch',
         })
       }
 
@@ -641,10 +641,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       }
 
       try {
-        const response = await axios.get('https://api.1inch.com/swap/v6.1/56/swap', {
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-          },
+        const response = await axios.get(`${baseUrl}/swap/v6.1/56/swap`, {
           params,
           paramsSerializer: {
             indexes: null,
