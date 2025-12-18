@@ -770,12 +770,26 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       peripheryContract.read.tradingFee([marketAddress, shivaAddress, positionId]),
     ])
 
-    // 4. Calculate Net Value and scale by fraction (fraction is WAD i.e. 1e18 = 100%)
+    // 4. Calculate Net Value
     const netValue = BigInt(value as any) - BigInt(tradingFee as any)
     const ONE_WAD = 10n ** 18n
-    const amount = (netValue * fraction) / ONE_WAD
 
-    return amount
+    // 5. Get LBSC loan details (this function is only called for LBSC positions)
+    const loanId = await this.getLoanId(marketAddress, positionId)
+    const lbscContract = await this.sdk.lbsc.getLbscContract()
+    const loan = await lbscContract.read.loans([loanId])
+    const debt = BigInt(loan[2])  // Third element is debt amount
+
+    // 6. Calculate OVL after repaying loan
+    const ovlAfterLoan = netValue - debt
+
+    // If position is negative (loss), return 0
+    if (ovlAfterLoan <= 0n) {
+      return 0n
+    }
+
+    // If position is positive (profit), return amount after loan repayment
+    return (ovlAfterLoan * fraction) / ONE_WAD
   }
 
   public async unwindMultiple(props: UnwindMultipleProps) {
