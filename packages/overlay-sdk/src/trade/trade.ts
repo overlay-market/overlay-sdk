@@ -161,11 +161,13 @@ export class OverlaySDKTrade extends OverlaySDKModule {
 
   private _getMaxInputIncludingFees(tradingFeeRate: bigint, balance: bigint, leverage: bigint, decimals: number = 18) {
     const tradingFeeRateParsed = formatBigNumber(tradingFeeRate, 18, 6, true) as number
-    const balanceParsed = formatBigNumber(balance, 18, 18, true) as number
+    const balanceParsed = formatBigNumber(balance, decimals, 18, true) as number
+    const leverageParsed = formatBigNumber(leverage, 18, 18, true) as number
 
-    const returnValue = balanceParsed/(1+tradingFeeRateParsed * (formatBigNumber(leverage, 18, 18, true) as number))
-  
-    return Math.trunc(returnValue * Math.pow(10, decimals)) / Math.pow(10, decimals)
+    const returnValue = balanceParsed/(1+tradingFeeRateParsed * leverageParsed)
+
+    const result = Math.trunc(returnValue * Math.pow(10, decimals)) / Math.pow(10, decimals)
+    return result
   }
 
   public async getFee(marketId: string) {
@@ -283,7 +285,9 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       totalCost = initialCollateral + buildFee
     }
 
-    const amountExceedsMaxInput = totalCost > maxInputIncludingFees
+    // Compare user INPUT to max allowed INPUT (not total cost)
+    // maxInputIncludingFees is the max amount user can ENTER, not the max total cost
+    const amountExceedsMaxInput = initialCollateral > maxInputIncludingFees
 
     const amountBelowMinCollateral = initialCollateral < formattedMinCollateral
 
