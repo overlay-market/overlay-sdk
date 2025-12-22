@@ -18,7 +18,9 @@ import { AccountValue, NoCallback, OverlaySDKCommonProps, TransactionOptions, Tr
 import { OverlaySDK } from '../sdk'
 import { ShivaABI } from './abis/Shiva'
 import { CHAINS, ERROR_CODE, invariant, invariantArgument, NOOP, SDKError, toWei } from '../common'
-import { OVL_ADDRESS, SHIVA_ADDRESS } from '../constants'
+import { OverlayV1StateABI } from '../markets/abis/OverlayV1State'
+import { OverlayV1MarketABI } from '../markets/abis/OverlayV1Market'
+import { OVL_ADDRESS, SHIVA_ADDRESS, V1_FACTORY_PERIPHERY } from '../constants'
 import {
   BUILD_SINGLE_TYPES,
   BUILD_TYPES,
@@ -139,18 +141,18 @@ export class OverlaySDKShiva extends OverlaySDKModule {
   public async populateApproveShiva(props: NoCallback<ShivaApproveProps>) {
     const { account, amount } = props
     const address = this.getShivaAddress()
-    
+
     return await this.sdk.ovl.populateApprove({
       account,
       amount,
       to: address,
     })
   }
-  
+
   public async simulateApproveShiva(props: NoCallback<ShivaApproveProps>) {
     const { account, amount } = props
     const address = this.getShivaAddress()
-    
+
     return await this.sdk.ovl.simulateApprove({
       account,
       amount,
@@ -377,7 +379,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
   public async simulateUnwind(props: NoCallback<UnwindProps>) {
     const { account, ...rest } = await this.parseUnwindProps(props);
     const contract = this.getShivaContract()
-    
+
     const txArguments = [
       {
         ovlMarket: rest.marketAddress,
@@ -527,7 +529,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     minOut: bigint;
     expectedOut: bigint;
   }> {
-    const { account, swapData, minOut, slippage, ...rest} = await this.parseUnwindStableProps(props);
+    const { account, swapData, minOut, slippage, ...rest } = await this.parseUnwindStableProps(props);
 
     // Get swap payload which includes dstAmount (expected) and minOut from 1inch
     const { payload: swapPayload, minOutOverride, dstAmount } = await this.getUnwindStableSwapPayload({
@@ -600,11 +602,11 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     }
 
     if (this.core.chainId === CHAINS.BscMainnet) {
-      const apiKey = this.core.oneInchApiKey
-      if (!apiKey) {
+      const baseUrl = this.core.oneInchApiBaseUrl
+      if (!baseUrl) {
         throw new SDKError({
           code: ERROR_CODE.INVALID_ARGUMENT,
-          message: 'oneInchApiKey is required to fetch swap data from 1inch',
+          message: 'oneInchApiBaseUrl is required to fetch swap data from 1inch',
         })
       }
 
@@ -639,10 +641,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       }
 
       try {
-        const response = await axios.get('https://api.1inch.com/swap/v6.1/56/swap', {
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-          },
+        const response = await axios.get(`${baseUrl}/swap/v6.1/56/swap`, {
           params,
           paramsSerializer: {
             indexes: null,
@@ -732,94 +731,65 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     priceLimit: bigint
     brokerId?: number
   }): Promise<bigint> {
-    const normalizedAccount =
-      typeof account === 'object' && 'address' in account
-        ? (account as JsonRpcAccount)
-        : await this.core.useAccount(account)
-
     const shivaAddress = this.getShivaAddress()
 
-    const unwindData = encodeFunctionData({
-      abi: ShivaABI,
-      functionName: 'unwind',
-      args: [
-        {
-          ovlMarket: marketAddress,
-          brokerId: brokerId ?? this.core.brokerId,
-          positionId,
-          fraction,
-          priceLimit,
-        },
-      ],
+    // 1. Get Factory from Market
+    const marketContract = getContract({
+      address: marketAddress,
+      abi: OverlayV1MarketABI,
+      client: {
+        public: this.core.rpcProvider,
+      },
+    })
+    const factory = await marketContract.read.factory()
+
+    // 2. Get Periphery (State) contract from Factory
+    const peripheryConfig = V1_FACTORY_PERIPHERY[this.core.chainId].find(
+      (config) => config.factory.toLowerCase() === factory.toLowerCase()
+    )
+
+    if (!peripheryConfig) {
+      throw new SDKError({
+        code: ERROR_CODE.INVALID_ARGUMENT,
+        message: `No periphery contract found for factory ${factory} on chain ${this.core.chainId}`,
+      })
+    }
+
+    // 3. Get Position Value & Trading Fee from Periphery
+    const rpcClient = this.core.rpcProvider
+    const peripheryContract = getContract({
+      address: peripheryConfig.periphery,
+      abi: OverlayV1StateABI,
+      client: {
+        public: rpcClient,
+      },
     })
 
-    try {
-      const rpcClient: any = this.core.rpcProvider
-      const trace: any = await rpcClient.request?.({
-        method: 'debug_traceCall' as any,
-        params: [
-          {
-            from: normalizedAccount.address,
-            to: shivaAddress,
-            data: unwindData,
-          },
-          'latest',
-          { tracer: 'callTracer' } as any,
-        ],
-      })
+    const [value, tradingFee] = await Promise.all([
+      peripheryContract.read.value([marketAddress, shivaAddress, positionId]),
+      peripheryContract.read.tradingFee([marketAddress, shivaAddress, positionId]),
+    ])
 
-      const ovlToken = OVL_ADDRESS[this.core.chainId as CHAINS].toLowerCase()
-      const receiver = normalizedAccount.address.toLowerCase()
-      const amount = this.extractTransferAmountFromTrace(trace, ovlToken, receiver)
+    // 4. Calculate Net Value
+    const netValue = BigInt(value as any) - BigInt(tradingFee as any)
+    const ONE_WAD = 10n ** 18n
 
-      if (amount !== null) {
-        return amount
-      }
+    // 5. Get LBSC loan details (this function is only called for LBSC positions)
+    const loanId = await this.getLoanId(marketAddress, positionId)
+    const lbscContract = await this.sdk.lbsc.getLbscContract()
+    const loan = await lbscContract.read.loans([loanId])
+    const debt = BigInt(loan[4])  // Fifth element is debt amount
 
-      throw new Error('Transfer amount not found in unwind trace')
-    } catch (error) {
-      throw new SDKError({
-        code: ERROR_CODE.TRANSACTION_ERROR,
-        message: 'Failed to trace unwind for swap amount (ensure RPC supports debug_traceCall or provide swapData)',
-        error,
-      })
-    }
-  }
+    // 6. Calculate OVL after repaying loan
+    const ovlAfterLoan = netValue - debt
 
-  private extractTransferAmountFromTrace(
-    trace: any,
-    tokenAddress: string,
-    receiver: string
-  ): bigint | null {
-    if (!trace) return null
-
-    const to = typeof trace.to === 'string' ? trace.to.toLowerCase() : ''
-    const input = typeof trace.input === 'string' ? trace.input : ''
-
-    if (to === tokenAddress && input.startsWith('0xa9059cbb')) {
-      try {
-        const { args } = decodeFunctionData({
-          abi: ERC20_TRANSFER_ABI,
-          data: input as `0x${string}`,
-        })
-
-        const [decodedReceiver, amount] = args as readonly [Address, bigint]
-        if ((decodedReceiver as string).toLowerCase() === receiver) {
-          return amount
-        }
-      } catch {
-        // ignore decoding issues and continue searching
-      }
+    // If position is negative (loss), return 0
+    if (ovlAfterLoan <= 0n) {
+      return 0n
     }
 
-    if (Array.isArray((trace as any).calls)) {
-      for (const call of trace.calls) {
-        const amount = this.extractTransferAmountFromTrace(call, tokenAddress, receiver)
-        if (amount !== null) return amount
-      }
-    }
-
-    return null
+    // If position is positive (profit), return amount after loan repayment
+    return (ovlAfterLoan * fraction) / ONE_WAD
   }
 
   public async unwindMultiple(props: UnwindMultipleProps) {
@@ -878,7 +848,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       const unwindCall = unwindState.useShiva ? this.buildUnwindCall(props, unwindState) : this.sdk.market.buildUnwindCall(props, unwindState);
       transactions.push(unwindCall);
     }
-  
+
     const results = await Promise.allSettled(transactions);
 
     return results;
@@ -908,10 +878,10 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       account,
       callback,
       getGasLimit: (options: TransactionOptions) =>
-          contract.estimateGas.unwind(txArguments, options),
-        sendTransaction: (options: TransactionOptions) =>
-          contract.write.unwind(txArguments, options),
-      })
+        contract.estimateGas.unwind(txArguments, options),
+      sendTransaction: (options: TransactionOptions) =>
+        contract.write.unwind(txArguments, options),
+    })
   }
 
   // Build Single
@@ -1021,7 +991,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
         args: [props.marketAddress, props.positionId, props.owner],
       }),
     }
-  } 
+  }
 
   public async simulateEmergencyWithdraw(props: NoCallback<EmergencyWithdrawProps>) {
     const { account, ...rest } = await this.parseEmergencyWithdrawProps(props);
@@ -1109,7 +1079,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       account: account.address,
     })
   }
-  
+
   // Unwind On Behalf Of
 
   public async unwindOnBehalfOf(props: ShivaUnwindOnBehalfOfProps): Promise<TransactionResult> {
@@ -1425,11 +1395,11 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
     let result = BigInt(0);
     for (const num of array) {
-        result = (result << BigInt(8)) + BigInt(num);
+      result = (result << BigInt(8)) + BigInt(num);
     }
-    
+
     return result;
-}
+  }
 
   public async signBuildOnBehalfOf(
     props: SignBuildOnBehalfOfProps
@@ -1447,7 +1417,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
     const web3Provider = this.core.useWeb3Provider()
     const account = await this.core.useAccount(accountProp)
-    
+
     const domain = await this.getDomain()
     const brokerId = props.brokerId ?? this.core.brokerId
 

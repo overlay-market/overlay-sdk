@@ -21,13 +21,13 @@ export type CustomRPCs = {
 
 type OverlaySDKCorePropsRpcProps =
   | {
-      rpcUrls: CustomRPCs;
-      rpcProvider?: undefined;
-    }
+    rpcUrls: CustomRPCs;
+    rpcProvider?: undefined;
+  }
   | {
-      rpcUrls?: undefined;
-      rpcProvider: PublicClient;
-    };
+    rpcUrls?: undefined;
+    rpcProvider: PublicClient;
+  };
 
 export type OverlaySDKCoreProps = {
   chainId: (typeof SUPPORTED_CHAINS)[number];
@@ -35,13 +35,13 @@ export type OverlaySDKCoreProps = {
   brokerId?: number;
   useShiva?: boolean;
   logMode?: LOG_MODE;
-  oneInchApiKey?: string;
+  oneInchApiBaseUrl?: string;
 } & OverlaySDKCorePropsRpcProps;
 
 export type OverlaySDKCommonProps =
   | {
-      core: OverlaySDKCore;
-    }
+    core: OverlaySDKCore;
+  }
   | ({ core?: undefined } & OverlaySDKCoreProps);
 
 
@@ -66,9 +66,9 @@ export type TransactionCallbackProps =
   | { stage: TransactionCallbackStage.SIGN; payload?: bigint }
   | { stage: TransactionCallbackStage.RECEIPT; payload: Hash }
   | {
-      stage: TransactionCallbackStage.CONFIRMATION;
-      payload: TransactionReceipt;
-    }
+    stage: TransactionCallbackStage.CONFIRMATION;
+    payload: TransactionReceipt;
+  }
   | { stage: TransactionCallbackStage.DONE; payload: bigint }
   | { stage: TransactionCallbackStage.MULTISIG_DONE; payload?: undefined }
   | { stage: TransactionCallbackStage.ERROR; payload: SDKError };
@@ -114,8 +114,8 @@ export type PerformTransactionDecodeResult<TDecodedResult> = (
 
 type PerformTransactionOptionsDecodePartial<TDecodedResult> =
   TDecodedResult extends undefined
-    ? { decodeResult?: undefined }
-    : { decodeResult: PerformTransactionDecodeResult<TDecodedResult> };
+  ? { decodeResult?: undefined }
+  : { decodeResult: PerformTransactionDecodeResult<TDecodedResult> };
 
 export type PerformTransactionOptions<TDecodedResult> =
   CommonTransactionProps & {

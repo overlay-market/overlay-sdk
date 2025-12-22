@@ -290,7 +290,7 @@ await sdk.shiva.buildStable({
 
 ### Unwinding to stable
 
-`unwindStable` closes a position and swaps OVL proceeds into a stable token. Provide either an explicit `minOut` **or** a percent `slippage` value (example: `1` means accept up to 1% less). On BSC mainnet the chosen parameter is forwarded to 1inch (requires `oneInchApiKey`); on other chains provide `swapData`.
+`unwindStable` closes a position and swaps OVL proceeds into a stable token. Provide either an explicit `minOut` **or** a percent `slippage` value (example: `1` means accept up to 1% less). On BSC mainnet the chosen parameter is forwarded to 1inch (requires `oneInchApiBaseUrl`); on other chains provide `swapData`.
 
 ```ts
 await sdk.shiva.unwindStable({
