@@ -1,6 +1,9 @@
+import axios from 'axios'
 import {
   Address,
+  JsonRpcAccount,
   decodeEventLog,
+  decodeFunctionData,
   encodeFunctionData,
   getAbiItem,
   getContract,
@@ -11,11 +14,13 @@ import {
   zeroAddress,
 } from 'viem'
 import { OverlaySDKModule } from '../common/class-primitives/sdk-module'
-import { NoCallback, OverlaySDKCommonProps, TransactionOptions, TransactionResult, CommonTransactionProps } from '../core/types'
+import { AccountValue, NoCallback, OverlaySDKCommonProps, TransactionOptions, TransactionResult, CommonTransactionProps } from '../core/types'
 import { OverlaySDK } from '../sdk'
 import { ShivaABI } from './abis/Shiva'
-import { CHAINS, ERROR_CODE, invariant, NOOP, SDKError, toWei } from '../common'
-import { SHIVA_ADDRESS } from '../constants'
+import { CHAINS, ERROR_CODE, invariant, invariantArgument, NOOP, SDKError, toWei } from '../common'
+import { OverlayV1StateABI } from '../markets/abis/OverlayV1State'
+import { OverlayV1MarketABI } from '../markets/abis/OverlayV1Market'
+import { OVL_ADDRESS, SHIVA_ADDRESS, V1_FACTORY_PERIPHERY } from '../constants'
 import {
   BUILD_SINGLE_TYPES,
   BUILD_TYPES,
@@ -28,10 +33,14 @@ import {
   ShivaBuildSingleOnBehalfOfInnerProps,
   ShivaBuildSingleOnBehalfOfProps,
   ShivaBuildSingleProps,
+  ShivaBuildStableProps,
+  ShivaBuildStableInnerProps,
   ShivaCancelNonceInnerProps,
   ShivaCancelNonceProps,
   ShivaUnwindOnBehalfOfInnerProps,
   ShivaUnwindOnBehalfOfProps,
+  ShivaUnwindStableInnerProps,
+  ShivaUnwindStableProps,
   SignBuildOnBehalfOfProps,
   SignBuildSingleOnBehalfOfProps,
   SignUnwindOnBehalfOfProps,
@@ -41,6 +50,50 @@ import {
 import { BuildInnerProps, BuildProps, BuildResult, EmergencyWithdrawInnerProps, EmergencyWithdrawProps, UnwindInnerProps, UnwindMultipleInnerProps, UnwindMultipleProps, UnwindProps } from '../markets/types'
 import { UnwindState, UnwindStateData, UnwindStateSuccess } from '../trade'
 import { getPositionDetails } from '../subgraph'
+
+const ERC20_TRANSFER_ABI = [
+  {
+    type: 'function',
+    name: 'transfer',
+    inputs: [
+      { name: 'to', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'nonpayable',
+  },
+] as const
+
+const ONE_INCH_SWAP_ABI_VARIANTS = [
+  [
+    {
+      type: 'function',
+      name: 'swap',
+      stateMutability: 'payable',
+      inputs: [
+        { name: 'executor', type: 'address' },
+        {
+          name: 'desc',
+          type: 'tuple',
+          components: [
+            { name: 'srcToken', type: 'address' },
+            { name: 'dstToken', type: 'address' },
+            { name: 'srcReceiver', type: 'address' },
+            { name: 'dstReceiver', type: 'address' },
+            { name: 'amount', type: 'uint256' },
+            { name: 'minReturnAmount', type: 'uint256' },
+            { name: 'flags', type: 'uint256' },
+          ],
+        },
+        { name: 'data', type: 'bytes' },
+      ],
+      outputs: [
+        { name: 'returnAmount', type: 'uint256' },
+        { name: 'spentAmount', type: 'uint256' },
+      ],
+    },
+  ],
+] as const
 
 export class OverlaySDKShiva extends OverlaySDKModule {
   private sdk: OverlaySDK
@@ -88,18 +141,18 @@ export class OverlaySDKShiva extends OverlaySDKModule {
   public async populateApproveShiva(props: NoCallback<ShivaApproveProps>) {
     const { account, amount } = props
     const address = this.getShivaAddress()
-    
+
     return await this.sdk.ovl.populateApprove({
       account,
       amount,
       to: address,
     })
   }
-  
+
   public async simulateApproveShiva(props: NoCallback<ShivaApproveProps>) {
     const { account, amount } = props
     const address = this.getShivaAddress()
-    
+
     return await this.sdk.ovl.simulateApprove({
       account,
       amount,
@@ -216,6 +269,57 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     })
   }
 
+  // Build Stable (with LBSC)
+
+  public async buildStable(props: ShivaBuildStableProps): Promise<TransactionResult<BuildResult>> {
+    this.core.useWeb3Provider()
+    const { callback, account, ...rest } = await this.parseBuildStableProps(props)
+
+    const contract = this.getShivaContract()
+
+    const txArguments = [
+      {
+        ovlMarket: rest.params.marketAddress,
+        brokerId: rest.params.brokerId ?? this.core.brokerId,
+        isLong: rest.params.isLong,
+        stableCollateral: rest.params.stableCollateral,
+        leverage: rest.params.leverage,
+        priceLimit: rest.params.priceLimit,
+        minOvl: rest.params.minOvl,
+      },
+    ] as const
+
+    return this.core.performTransaction({
+      ...rest,
+      account,
+      callback,
+      getGasLimit: (options: TransactionOptions) =>
+        contract.estimateGas.buildStable(txArguments, options),
+      sendTransaction: (options: TransactionOptions) => contract.write.buildStable(txArguments, options),
+      decodeResult: async (receipt) => this.submitParse(receipt),
+    })
+  }
+
+  /**
+   * Get loan ID for a position built with stable collateral
+   * @param marketAddress The market address
+   * @param positionId The position ID
+   * @returns The loan ID (0 if not an LBSC position)
+   */
+  public async getLoanId(marketAddress: `0x${string}`, positionId: bigint): Promise<bigint> {
+    const contract = this.getShivaContract()
+    return contract.read.loanIds([marketAddress, positionId])
+  }
+
+  /**
+   * Get the LBSC contract address from Shiva
+   * @returns The LBSC contract address
+   */
+  public async getLbscAddress(): Promise<`0x${string}`> {
+    const contract = this.getShivaContract()
+    return contract.read.lbsc()
+  }
+
   // Unwind
 
   public async unwind(props: UnwindProps, verified: boolean = false): Promise<TransactionResult> {
@@ -226,7 +330,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       const marketPositionId = `${marketAddress.toLowerCase()}-0x${Number(positionId).toString(16)}`
       const positionDetails = await getPositionDetails(this.core.chainId, account.address.toLowerCase(), marketPositionId) ?? null
       invariant(positionDetails, `Position not found for ${marketPositionId}; ${account.address.toLowerCase()}; ${positionId}; marketAddress: ${marketAddress}; chainId: ${this.core.chainId}`)
-      invariant(positionDetails.router.id !== zeroAddress, 'This position is not on Shiva')
+      invariant(positionDetails.router?.id !== zeroAddress, 'This position is not on Shiva')
     }
 
     const { account, ...rest } = await this.parseUnwindProps(props)
@@ -275,7 +379,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
   public async simulateUnwind(props: NoCallback<UnwindProps>) {
     const { account, ...rest } = await this.parseUnwindProps(props);
     const contract = this.getShivaContract()
-    
+
     const txArguments = [
       {
         ovlMarket: rest.marketAddress,
@@ -289,6 +393,403 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     return contract.simulate.unwind(txArguments, {
       account: account.address,
     })
+  }
+
+  // Unwind Stable (LBSC unwind + swap to stable)
+
+  public async unwindStable(props: ShivaUnwindStableProps, verified: boolean = false): Promise<TransactionResult> {
+    this.core.useWeb3Provider()
+
+    if (!verified) {
+      const { account, marketAddress, positionId } = await this.parseUnwindStableProps(props);
+      const marketPositionId = `${marketAddress.toLowerCase()}-0x${Number(positionId).toString(16)}`
+      const positionDetails = await getPositionDetails(this.core.chainId, account.address.toLowerCase(), marketPositionId) ?? null
+      invariant(positionDetails, `Position not found for ${marketPositionId}; ${account.address.toLowerCase()}; ${positionId}; marketAddress: ${marketAddress}; chainId: ${this.core.chainId}`)
+      invariant(positionDetails.router?.id !== zeroAddress, 'This position is not on Shiva')
+    }
+
+    const { account, swapData, minOut, slippage, ...rest } = await this.parseUnwindStableProps(props)
+
+    const { payload: swapPayload, minOutOverride } = await this.getUnwindStableSwapPayload({
+      account,
+      minOut,
+      slippage,
+      swapData,
+      marketAddress: rest.marketAddress,
+      positionId: rest.positionId,
+      fraction: rest.fraction,
+      priceLimit: rest.priceLimit,
+      brokerId: rest.brokerId ?? this.core.brokerId,
+    })
+
+    const finalMinOut = minOutOverride ?? minOut
+
+    const contract = this.getShivaContract()
+
+    const txArguments = [
+      {
+        ovlMarket: rest.marketAddress,
+        brokerId: rest.brokerId ?? this.core.brokerId,
+        positionId: rest.positionId,
+        fraction: rest.fraction,
+        priceLimit: rest.priceLimit,
+      },
+      swapPayload,
+      finalMinOut,
+    ] as const
+
+    return this.core.performTransaction({
+      ...rest,
+      account,
+      getGasLimit: (options: TransactionOptions) =>
+        contract.estimateGas.unwindStable(txArguments, options),
+      sendTransaction: (options: TransactionOptions) =>
+        contract.write.unwindStable(txArguments, options),
+    })
+  }
+
+  public async populateUnwindStable(props: NoCallback<ShivaUnwindStableProps>) {
+    const { account, minOut, slippage, swapData, ...rest } = await this.parseUnwindStableProps(props)
+
+    const { payload: swapPayload, minOutOverride } = await this.getUnwindStableSwapPayload({
+      account,
+      minOut,
+      slippage,
+      swapData,
+      marketAddress: rest.marketAddress,
+      positionId: rest.positionId,
+      fraction: rest.fraction,
+      priceLimit: rest.priceLimit,
+      brokerId: rest.brokerId ?? this.core.brokerId,
+    })
+
+    const finalMinOut = minOutOverride ?? minOut
+
+    return {
+      to: this.getShivaAddress(),
+      from: account.address,
+      data: encodeFunctionData({
+        abi: ShivaABI,
+        functionName: 'unwindStable',
+        args: [
+          {
+            ovlMarket: rest.marketAddress,
+            brokerId: rest.brokerId ?? this.core.brokerId,
+            positionId: rest.positionId,
+            fraction: rest.fraction,
+            priceLimit: rest.priceLimit,
+          },
+          swapPayload,
+          finalMinOut,
+        ],
+      }),
+    }
+  }
+
+  public async simulateUnwindStable(props: NoCallback<ShivaUnwindStableProps>) {
+    const { account, swapData, minOut, slippage, ...rest } = await this.parseUnwindStableProps(props);
+    const { payload: swapPayload, minOutOverride } = await this.getUnwindStableSwapPayload({
+      account,
+      minOut,
+      slippage,
+      swapData,
+      marketAddress: rest.marketAddress,
+      positionId: rest.positionId,
+      fraction: rest.fraction,
+      priceLimit: rest.priceLimit,
+      brokerId: rest.brokerId ?? this.core.brokerId,
+    })
+
+    const finalMinOut = minOutOverride ?? minOut
+
+    const contract = this.getShivaContract()
+
+    const txArguments = [
+      {
+        ovlMarket: rest.marketAddress,
+        brokerId: rest.brokerId ?? this.core.brokerId,
+        positionId: rest.positionId,
+        fraction: rest.fraction,
+        priceLimit: rest.priceLimit,
+      },
+      swapPayload,
+      finalMinOut,
+    ] as const
+
+    return contract.simulate.unwindStable(txArguments, {
+      account: account.address,
+    })
+  }
+
+  /**
+   * Gets USDT quote for unwinding a stable position
+   * Returns both the minimum guaranteed output (after slippage) and expected output (before slippage)
+   */
+  public async getUnwindStableQuote(props: NoCallback<ShivaUnwindStableProps>): Promise<{
+    minOut: bigint;
+    expectedOut: bigint;
+  }> {
+    const { account, swapData, minOut, slippage, ...rest } = await this.parseUnwindStableProps(props);
+
+    // Get swap payload which includes dstAmount (expected) and minOut from 1inch
+    const { payload: swapPayload, minOutOverride, dstAmount } = await this.getUnwindStableSwapPayload({
+      account,
+      minOut,
+      slippage,
+      swapData,
+      marketAddress: rest.marketAddress,
+      positionId: rest.positionId,
+      fraction: rest.fraction,
+      priceLimit: rest.priceLimit,
+      brokerId: rest.brokerId ?? this.core.brokerId,
+    });
+
+    // Use the minOut from 1inch API response, or fallback to provided minOut
+    const finalMinOut = minOutOverride ?? minOut;
+
+    // Use dstAmount from 1inch API as expectedOut if available
+    // Otherwise, calculate it from minOut and slippage
+    let expectedOut: bigint;
+
+    if (dstAmount) {
+      // dstAmount from 1inch is the expected output (before slippage protection)
+      expectedOut = dstAmount;
+    } else {
+      // Fallback: Calculate expected output from minOut and slippage
+      // Formula: expectedOut = minOut / (1 - slippage)
+      const slippageDecimal = slippage ?? 1; // default 1% if not provided
+      const slippageFactor = BigInt(Math.floor((1 - slippageDecimal / 100) * 1e18));
+      const WAD = BigInt(1e18);
+      expectedOut = (finalMinOut * WAD) / slippageFactor;
+    }
+
+    return {
+      minOut: finalMinOut,
+      expectedOut,
+    };
+  }
+
+  private async getUnwindStableSwapPayload({
+    minOut,
+    slippage,
+    swapData,
+    account,
+    marketAddress,
+    positionId,
+    fraction,
+    priceLimit,
+    brokerId,
+  }: {
+    minOut: bigint
+    slippage?: number
+    swapData?: `0x${string}`
+    account: JsonRpcAccount
+    marketAddress: Address
+    positionId: bigint
+    fraction: bigint
+    priceLimit: bigint
+    brokerId?: number
+  }): Promise<{ payload: `0x${string}`; minOutOverride?: bigint; dstAmount?: bigint }> {
+    if (swapData && swapData !== '0x') {
+      return { payload: swapData }
+    }
+
+    if (this.core.chainId === CHAINS.BscTestnet) {
+      const minOutHex = minOut.toString(16).padStart(64, '0')
+      const prefix = '0x07ed23790000000000000000000000009fB7D92526Fc13bB3c0603d39E55e5C371c26Ce60000000000000000000000001A0eF183D548405705bb9B00E8b4ef3524AE090E00000000000000000000000018b702fD1b63dccbc58D30379B9365679b32618d0000000000000000000000009fB7D92526Fc13bB3c0603d39E55e5C371c26Ce60000000000000000000000009fB7D92526Fc13bB3c0603d39E55e5C371c26Ce60000000000000000000000000000000000000000000000000de0b6b3a7640000'
+      const suffix = '0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000000e90000000000000000000000000000000000000000000000cb00006800001a0020d6bdbf781A0eF183D548405705bb9B00E8b4ef3524AE090E00a0744c8c091A0eF183D548405705bb9B00E8b4ef3524AE090E90cbe4bdd538d6e9b379bff5fe72c3d67a521de5000000000000000000000000000000000000000000000000000aa87bee53800002a00000000000000000000000000000000000000000000000000000000000000001ee63c1e581c3b423339da62f48f75a1ac9a528c0c4a2e5783d1A0eF183D548405705bb9B00E8b4ef3524AE090E111111125421ca6dc452d289314280a0f8842a650000000000000000000000000000000000000000000000a13324ca'
+      return { payload: `${prefix}${minOutHex}${suffix}` as `0x${string}` }
+    }
+
+    if (this.core.chainId === CHAINS.BscMainnet) {
+      const baseUrl = this.core.oneInchApiBaseUrl
+      if (!baseUrl) {
+        throw new SDKError({
+          code: ERROR_CODE.INVALID_ARGUMENT,
+          message: 'oneInchApiBaseUrl is required to fetch swap data from 1inch',
+        })
+      }
+
+      const shivaAddress = this.getShivaAddress()
+      const ovlAmount = await this.getUnwindOvlAmount({
+        account,
+        marketAddress,
+        positionId,
+        fraction,
+        priceLimit,
+        brokerId,
+      })
+
+      // if there's no ovlAmount to swap, shiva will omit the swap - but the swap payload is still needed to construct the params
+      const swapAmount = ovlAmount === 0n ? 10n ** 18n : ovlAmount
+
+      const params: Record<string, string | number | boolean> = {
+        src: OVL_ADDRESS[CHAINS.BscMainnet],
+        dst: '0x55d398326f99059fF775485246999027B3197955',
+        amount: swapAmount.toString(),
+        from: shivaAddress,
+        origin: shivaAddress,
+        receiver: shivaAddress,
+        disableEstimate: true,
+        usePatching: true,
+      }
+
+      if (slippage !== undefined) {
+        params.slippage = slippage
+      } else {
+        params.minReturn = minOut.toString()
+      }
+
+      try {
+        const response = await axios.get(`${baseUrl}/swap/v6.1/56/swap`, {
+          params,
+          paramsSerializer: {
+            indexes: null,
+          },
+        })
+
+        const txData = response.data?.tx?.data as `0x${string}` | undefined
+        const dstAmount = response.data?.dstAmount ? BigInt(response.data.dstAmount) : undefined
+
+        if (!txData) {
+          throw new SDKError({
+            code: ERROR_CODE.TRANSACTION_ERROR,
+            message: 'Invalid response from 1Inch: missing transaction data',
+          })
+        }
+
+        const apiMinOut = slippage !== undefined
+          ? this.decodeMinOutFromSwapPayload(txData)
+          : undefined
+
+        return {
+          payload: txData,
+          minOutOverride: apiMinOut,
+          dstAmount,
+        }
+      } catch (error) {
+        if (error instanceof SDKError) {
+          throw error
+        }
+
+        throw new SDKError({
+          code: ERROR_CODE.TRANSACTION_ERROR,
+          message: 'Failed to fetch swap data from 1Inch',
+          error,
+        })
+      }
+    }
+
+    throw new SDKError({
+      code: ERROR_CODE.INVALID_ARGUMENT,
+      message: `swapData is required for unwindStable on unsupported chain ${this.core.chainId}`,
+    })
+  }
+
+  private decodeMinOutFromSwapPayload(payload: `0x${string}`): bigint | undefined {
+    for (const abi of ONE_INCH_SWAP_ABI_VARIANTS) {
+      try {
+        const decoded = decodeFunctionData({
+          abi,
+          data: payload,
+        })
+
+        if (decoded.functionName !== 'swap') continue
+
+        const desc =
+          (Array.isArray(decoded.args) && decoded.args[1]) ||
+          (decoded as any).args?.desc
+
+        const minReturn =
+          desc?.minReturnAmount ??
+          desc?.minReturn ??
+          (Array.isArray(desc) ? desc[5] : undefined)
+
+        if (minReturn !== undefined) {
+          return typeof minReturn === 'bigint' ? minReturn : BigInt(minReturn)
+        }
+      } catch {
+        // try next ABI variant
+      }
+    }
+
+    return undefined
+  }
+
+  public async getUnwindOvlAmount({
+    account,
+    marketAddress,
+    positionId,
+    fraction,
+    priceLimit,
+    brokerId,
+  }: {
+    account: AccountValue | JsonRpcAccount
+    marketAddress: Address
+    positionId: bigint
+    fraction: bigint
+    priceLimit: bigint
+    brokerId?: number
+  }): Promise<bigint> {
+    const shivaAddress = this.getShivaAddress()
+
+    // 1. Get Factory from Market
+    const marketContract = getContract({
+      address: marketAddress,
+      abi: OverlayV1MarketABI,
+      client: {
+        public: this.core.rpcProvider,
+      },
+    })
+    const factory = await marketContract.read.factory()
+
+    // 2. Get Periphery (State) contract from Factory
+    const peripheryConfig = V1_FACTORY_PERIPHERY[this.core.chainId].find(
+      (config) => config.factory.toLowerCase() === factory.toLowerCase()
+    )
+
+    if (!peripheryConfig) {
+      throw new SDKError({
+        code: ERROR_CODE.INVALID_ARGUMENT,
+        message: `No periphery contract found for factory ${factory} on chain ${this.core.chainId}`,
+      })
+    }
+
+    // 3. Get Position Value & Trading Fee from Periphery
+    const rpcClient = this.core.rpcProvider
+    const peripheryContract = getContract({
+      address: peripheryConfig.periphery,
+      abi: OverlayV1StateABI,
+      client: {
+        public: rpcClient,
+      },
+    })
+
+    const [value, tradingFee] = await Promise.all([
+      peripheryContract.read.value([marketAddress, shivaAddress, positionId]),
+      peripheryContract.read.tradingFee([marketAddress, shivaAddress, positionId]),
+    ])
+
+    // 4. Calculate Net Value
+    const netValue = BigInt(value as any) - BigInt(tradingFee as any)
+    const ONE_WAD = 10n ** 18n
+
+    // 5. Get LBSC loan details (this function is only called for LBSC positions)
+    const loanId = await this.getLoanId(marketAddress, positionId)
+    const lbscContract = await this.sdk.lbsc.getLbscContract()
+    const loan = await lbscContract.read.loans([loanId])
+    const debt = BigInt(loan[4])  // Fifth element is debt amount
+
+    // 6. Calculate OVL after repaying loan
+    const ovlAfterLoan = netValue - debt
+
+    // If position is negative (loss), return 0
+    if (ovlAfterLoan <= 0n) {
+      return 0n
+    }
+
+    // If position is positive (profit), return amount after loan repayment
+    return (ovlAfterLoan * fraction) / ONE_WAD
   }
 
   public async unwindMultiple(props: UnwindMultipleProps) {
@@ -347,7 +848,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       const unwindCall = unwindState.useShiva ? this.buildUnwindCall(props, unwindState) : this.sdk.market.buildUnwindCall(props, unwindState);
       transactions.push(unwindCall);
     }
-  
+
     const results = await Promise.allSettled(transactions);
 
     return results;
@@ -377,10 +878,10 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       account,
       callback,
       getGasLimit: (options: TransactionOptions) =>
-          contract.estimateGas.unwind(txArguments, options),
-        sendTransaction: (options: TransactionOptions) =>
-          contract.write.unwind(txArguments, options),
-      })
+        contract.estimateGas.unwind(txArguments, options),
+      sendTransaction: (options: TransactionOptions) =>
+        contract.write.unwind(txArguments, options),
+    })
   }
 
   // Build Single
@@ -490,7 +991,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
         args: [props.marketAddress, props.positionId, props.owner],
       }),
     }
-  } 
+  }
 
   public async simulateEmergencyWithdraw(props: NoCallback<EmergencyWithdrawProps>) {
     const { account, ...rest } = await this.parseEmergencyWithdrawProps(props);
@@ -578,7 +1079,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
       account: account.address,
     })
   }
-  
+
   // Unwind On Behalf Of
 
   public async unwindOnBehalfOf(props: ShivaUnwindOnBehalfOfProps): Promise<TransactionResult> {
@@ -753,9 +1254,45 @@ export class OverlaySDKShiva extends OverlaySDKModule {
     }
   }
 
+  private async parseUnwindStableProps(
+    props: ShivaUnwindStableProps | NoCallback<ShivaUnwindStableProps>
+  ): Promise<ShivaUnwindStableInnerProps> {
+    const hasMinOut = props.minOut !== undefined
+    const hasSlippage = props.slippage !== undefined
+
+    invariantArgument(!(hasMinOut && hasSlippage), 'Provide either minOut or slippage, not both')
+    invariantArgument(hasMinOut || hasSlippage, 'Either minOut or slippage is required')
+
+    const minOut =
+      hasSlippage && this.core.chainId === CHAINS.BscTestnet
+        ? 0n
+        : hasMinOut
+          ? props.minOut!
+          : 0n
+    const callback = 'callback' in props ? props.callback : undefined
+
+    return {
+      ...props,
+      minOut,
+      slippage: hasSlippage ? props.slippage : undefined,
+      account: await this.core.useAccount(props.account),
+      callback: callback ?? NOOP,
+    }
+  }
+
   private async parseBuildSingleProps(
     props: ShivaBuildSingleProps
   ): Promise<ShivaBuildSingleInnerProps> {
+    return {
+      ...props,
+      account: await this.core.useAccount(props.account),
+      callback: props.callback ?? NOOP,
+    }
+  }
+
+  private async parseBuildStableProps(
+    props: ShivaBuildStableProps
+  ): Promise<ShivaBuildStableInnerProps> {
     return {
       ...props,
       account: await this.core.useAccount(props.account),
@@ -858,11 +1395,11 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
     let result = BigInt(0);
     for (const num of array) {
-        result = (result << BigInt(8)) + BigInt(num);
+      result = (result << BigInt(8)) + BigInt(num);
     }
-    
+
     return result;
-}
+  }
 
   public async signBuildOnBehalfOf(
     props: SignBuildOnBehalfOfProps
@@ -880,7 +1417,7 @@ export class OverlaySDKShiva extends OverlaySDKModule {
 
     const web3Provider = this.core.useWeb3Provider()
     const account = await this.core.useAccount(accountProp)
-    
+
     const domain = await this.getDomain()
     const brokerId = props.brokerId ?? this.core.brokerId
 

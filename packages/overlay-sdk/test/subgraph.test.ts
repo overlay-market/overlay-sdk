@@ -22,6 +22,20 @@ vi.mock('graphql-request', () => ({
     ),
 }));
 
+vi.mock('@src/constants.js', async () => {
+  const actual = await vi.importActual('@src/constants.js');
+  return {
+    ...actual,
+    NETWORKS: {
+      ...((actual as any).NETWORKS),
+      97: {
+        ...((actual as any).NETWORKS[97]),
+        hasShiva: false,
+      },
+    },
+  };
+});
+
 const { request } = await import('graphql-request');
 const mockedRequest = request as unknown as ReturnType<typeof vi.fn>;
 let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
@@ -29,7 +43,7 @@ let consoleLogSpy: ReturnType<typeof vi.spyOn>;
 
 describe('subgraph helpers', () => {
   const chainWithRouter = CHAINS.BscMainnet;
-  const chainWithoutRouter = CHAINS.ArbitrumSepolia;
+  const chainWithoutRouter = CHAINS.BscTestnet;
 
   beforeEach(() => {
     mockedRequest.mockReset();

@@ -62,19 +62,52 @@ export class OverlaySDKAccountDetails extends OverlaySDKModule {
 
     const dataByPeriod = this.getDataByPeriod(mergedRows, interval)
 
+    // Fetch oracle price to convert OVL positions to USDT
+    let oraclePrice: bigint | undefined;
+    try {
+      oraclePrice = await this.sdk.lbsc.getOraclePrice();
+    } catch (error) {
+      console.error('Failed to fetch oracle price for overview:', error);
+    }
+
     let totalValueLocked = 0
     let unrealizedPnL = 0
 
     openPositions.forEach((position) => {
-      totalValueLocked += position.size ? parseFloat(position.size as string) : 0
-      unrealizedPnL += position.unrealizedPnL ? parseFloat(position.unrealizedPnL as string) : 0
+      if (position.stableValues) {
+        // LBSC position - already in USDT, use Initial Collateral
+        totalValueLocked += position.stableValues.initialCollateral ? parseFloat(position.stableValues.initialCollateral) : 0;
+        unrealizedPnL += position.stableValues.unrealizedPnL ? parseFloat(position.stableValues.unrealizedPnL) : 0;
+      } else if (oraclePrice) {
+        // Regular OVL position - convert Initial Collateral to USDT using oracle price
+        const initialCollateralOvl = position.initialCollateral ? parseFloat(position.initialCollateral as string) : 0;
+        const pnlOvl = position.unrealizedPnL ? parseFloat(position.unrealizedPnL as string) : 0;
+
+        // Convert: (OVL value * oracle price) / 1e18
+        const WAD = 1e18;
+        const initialCollateralUsdt = (initialCollateralOvl * Number(oraclePrice)) / WAD;
+        const pnlUsdt = (pnlOvl * Number(oraclePrice)) / WAD;
+
+        totalValueLocked += initialCollateralUsdt;
+        unrealizedPnL += pnlUsdt;
+      }
     })
+
+    // Use pre-calculated values from subgraph
+    const realizedPnlUsdt = numberOfPositions?.account?.realizedPnlStables
+      ? parseFloat(String(formatBigNumber(BigInt(numberOfPositions.account.realizedPnlStables), 18, 6)))
+      : 0;
+    const realizedPnlOvl = numberOfPositions?.account?.realizedPnlOvl
+      ? parseFloat(String(formatBigNumber(BigInt(numberOfPositions.account.realizedPnlOvl), 18, 6)))
+      : 0;
 
     const overviewData: OverviewData = {
       numberOfOpenPositions: Number(numberOfPositions?.account?.numberOfOpenPositions ?? 0),
       realizedPnl: numberOfPositions?.account?.realizedPnl ? formatBigNumber(numberOfPositions.account.realizedPnl, 18, 6) : '0',
+      realizedPnlUsdt: realizedPnlUsdt.toFixed(2),
+      realizedPnlOvl: realizedPnlOvl.toFixed(2),
       totalValueLocked: totalValueLocked.toFixed(2),
-      unrealizedPnL: unrealizedPnL.toFixed(6),
+      unrealizedPnL: unrealizedPnL.toFixed(2),
       lockedPlusUnrealized: (totalValueLocked + unrealizedPnL).toFixed(2),
       dataByPeriod,
     };
@@ -88,7 +121,7 @@ export class OverlaySDKAccountDetails extends OverlaySDKModule {
   }
 
   private getDataByPeriod = (
-    mergedRows: {timestamp: string; pnl?: string; size?: string; type: string}[], 
+    mergedRows: {timestamp: string; pnl?: string; size?: string; stableOut?: string; position?: any; type: string}[],
     selectedInterval: IntervalType
   ) => {
     const dataByPeriod: {[key: string]: {realizedPnl: number; date: Date}} = {}
@@ -97,7 +130,7 @@ export class OverlaySDKAccountDetails extends OverlaySDKModule {
       let cumulativeRealizedPnl = 0
       let currentDate = moment.unix(parseInt(mergedRows[0].timestamp)) // minDate
 
-      mergedRows.forEach((row: {timestamp: string; pnl?: string; size?: string; type: string}) => {
+      mergedRows.forEach((row: {timestamp: string; pnl?: string; size?: string; stableOut?: string; position?: any; type: string}) => {
         const date = moment.unix(parseInt(row.timestamp))
 
         // Add missing dates
@@ -123,11 +156,15 @@ export class OverlaySDKAccountDetails extends OverlaySDKModule {
           }
         }
 
-        if (row.type === 'unwind') {
-          cumulativeRealizedPnl += parseInt(row?.pnl ?? '0') / 10 ** 18
-        } else if (row.type === 'liquidate') {
+        // Only process LBSC positions (those with stableOut for unwinds or loan for liquidations)
+        if (row.type === 'unwind' && row.stableOut && row.stableOut !== '0') {
+          // LBSC unwind - use stableOut (USDT value)
+          cumulativeRealizedPnl += parseInt(row.stableOut) / 10 ** 18
+        } else if (row.type === 'liquidate' && row.position?.loan) {
+          // LBSC liquidation - subtract size as loss
           cumulativeRealizedPnl -= parseInt(row?.size ?? '0') / 10 ** 18
         }
+        // Skip OVL-only positions (unwinds without stableOut, liquidations without loan)
 
         dataByPeriod[periodKey].realizedPnl = cumulativeRealizedPnl
       })

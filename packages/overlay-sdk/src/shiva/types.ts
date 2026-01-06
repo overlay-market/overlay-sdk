@@ -3,6 +3,7 @@ import { AccountValue, CommonTransactionProps } from '../core/types'
 import {
   BuildPropsBase,
   BuildSinglePropsBase,
+  BuildStablePropsBase,
   EmergencyWithdrawPropsBase,
   UnwindPropsBase,
 } from '../common/types'
@@ -29,6 +30,16 @@ export type ShivaBuildSingleProps = CommonTransactionProps & {
 }
 
 export type ShivaBuildSingleInnerProps = ShivaBuildSingleProps & {
+  account: JsonRpcAccount
+}
+
+// Build Stable (with LBSC)
+
+export type ShivaBuildStableProps = CommonTransactionProps & {
+  params: BuildStablePropsBase
+}
+
+export type ShivaBuildStableInnerProps = ShivaBuildStableProps & {
   account: JsonRpcAccount
 }
 
@@ -61,6 +72,29 @@ export type ShivaUnwindOnBehalfOfProps = CommonTransactionProps & {
 }
 
 export type ShivaUnwindOnBehalfOfInnerProps = ShivaUnwindOnBehalfOfProps & {
+  account: JsonRpcAccount
+}
+
+// Unwind Stable
+
+type ShivaUnwindStableWithMinOut = {
+  minOut: bigint
+  slippage?: never
+}
+
+type ShivaUnwindStableWithSlippage = {
+  minOut?: never
+  slippage: number
+}
+
+export type ShivaUnwindStableProps = CommonTransactionProps & UnwindPropsBase & {
+  swapData?: `0x${string}`
+} & (ShivaUnwindStableWithMinOut | ShivaUnwindStableWithSlippage)
+
+export type ShivaUnwindStableInnerProps = CommonTransactionProps & UnwindPropsBase & {
+  minOut: bigint
+  slippage?: number
+  swapData?: `0x${string}`
   account: JsonRpcAccount
 }
 

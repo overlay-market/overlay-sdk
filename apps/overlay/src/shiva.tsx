@@ -23,14 +23,18 @@ const Shiva = () => {
   const [collateral, setCollateral] = useState(0.01)
   const [leverage, setLeverage] = useState(2)
   const [slippage, setSlippage] = useState(1)
-  const [marketAddress, setMarketAddress] = useState('')
-  const [marketName, setMarketName] = useState('')
+  const [marketAddress, setMarketAddress] = useState(process.env.REACT_APP_MARKET_ADDRESS ?? '')
+  const [marketName, setMarketName] = useState(process.env.REACT_APP_MARKET_ID ?? '')
   const [isLong, setIsLong] = useState(true)
   const [positionId, setPositionId] = useState(0n)
-  const [fraction, setFraction] = useState(0)
+  const [fraction, setFraction] = useState(1)
+  const [unwindSwapData, setUnwindSwapData] = useState(process.env.REACT_APP_UNWIND_STABLE_SWAP_DATA ?? '')
+  const [unwindMinOut, setUnwindMinOut] = useState(process.env.REACT_APP_UNWIND_STABLE_MIN_OUT ?? '')
+  const [unwindSlippage, setUnwindSlippage] = useState('')
   const [buildHash, setBuildHash] = useState('')
   const [unwindHash, setUnwindHash] = useState('')
   const [amountToApprove, setAmountToApprove] = useState(0)
+  const [unwindOvlAmount, setUnwindOvlAmount] = useState('')
   const [signature, setSignature] = useState('')
   const [positionIds, setPositionIds] = useState<number[]>([])
   const [nonceToCancel, setNonceToCancel] = useState(0n)
@@ -115,6 +119,91 @@ const Shiva = () => {
       setUnwindHash(res.hash) // Show unwindHash
     } catch (error) {
       console.error('Error in shivaUnwind', error)
+    }
+  }
+
+  const shivaUnwindStable = async (type: TransactionType = TransactionType.Normal) => {
+    console.log("unwinds stable start")
+    try {
+      const hasMinOut = unwindMinOut !== ''
+      const hasSlippage = unwindSlippage !== ''
+
+      if ((hasMinOut && hasSlippage) || (!hasMinOut && !hasSlippage)) {
+        console.error('Provide either minOut or slippage for unwindStable')
+        return
+      }
+
+      const minOutValue = hasMinOut ? BigInt(unwindMinOut) : undefined
+      const slippageValue = hasSlippage ? Number(unwindSlippage) : undefined
+      if (hasSlippage && (slippageValue === undefined || Number.isNaN(slippageValue))) {
+        console.error('Invalid slippage value')
+        return
+      }
+      const swapDataValue = unwindSwapData ? (unwindSwapData as `0x${string}`) : undefined
+
+      let res: any
+      const baseUnwindParams = {
+        account,
+        marketAddress: marketAddress as Address,
+        positionId: positionId,
+        fraction: toWei(fraction),
+        priceLimit: (await sdk.trade.getUnwindPrice(
+          marketName,
+          SHIVA_ADDRESS[sdk.core.chainId],
+          positionId,
+          toWei(fraction),
+          slippage
+        )) as bigint,
+        swapData: swapDataValue,
+      }
+
+      const unwindParams = hasSlippage
+        ? { ...baseUnwindParams, slippage: slippageValue as number }
+        : { ...baseUnwindParams, minOut: minOutValue as bigint }
+      
+      if (type === TransactionType.Normal) {
+        res = await sdk.shiva.unwindStable(unwindParams)
+      } else if (type === TransactionType.Populate) {
+        res = await sdk.shiva.populateUnwindStable(unwindParams)
+      } else if (type === TransactionType.Simulate) {
+        res = await sdk.shiva.simulateUnwindStable(unwindParams)
+      }
+
+      console.log('Shiva unwind stable result', res)
+
+      if (type === TransactionType.Normal && !res?.result) {
+        console.error('Shiva unwind stable not result')
+        return
+      }
+      if (res?.hash) setUnwindHash(res.hash)
+    } catch (error) {
+      console.error('Error in shivaUnwindStable', error)
+    }
+  }
+
+  const getUnwindOvlAmount = async () => {
+    if (!account) return
+    try {
+      const priceLimit = (await sdk.trade.getUnwindPrice(
+        marketName,
+        SHIVA_ADDRESS[sdk.core.chainId],
+        positionId,
+        toWei(fraction),
+        slippage
+      )) as bigint
+
+      const amount = await sdk.shiva.getUnwindOvlAmount({
+        account,
+        marketAddress: marketAddress as Address,
+        positionId,
+        fraction: toWei(fraction),
+        priceLimit,
+      })
+
+      setUnwindOvlAmount(amount.toString())
+      console.log('Unwind OVL amount', amount.toString())
+    } catch (error) {
+      console.error('Error getting unwind OVL amount', error)
     }
   }
 
@@ -605,6 +694,51 @@ const Shiva = () => {
         <button onClick={() => shivaUnwind(TransactionType.Simulate)}>Simulate Shiva Unwind</button>
         <br />
         <button onClick={() => shivaUnwind(TransactionType.Populate)}>Populate Shiva Unwind</button>
+        <br />
+        <button onClick={getUnwindOvlAmount}>Get Unwind OVL Amount</button>
+        {unwindOvlAmount && <div>Unwind OVL Amount: {unwindOvlAmount}</div>}
+      </div>
+      <div>
+        <label style={{ fontSize: '15px' }}>
+          Swap data (optional):
+          <textarea
+            placeholder="0x..."
+            value={unwindSwapData}
+            onChange={(e) => setUnwindSwapData(e.target.value)}
+            rows={3}
+            style={{ width: '100%' }}
+          />
+        </label>
+      </div>
+      <div>
+        <label style={{ fontSize: '15px' }}>
+          Min Out (stable):
+          <input
+            type="text"
+            placeholder="Min out in stable token units"
+            value={unwindMinOut}
+            onChange={(e) => setUnwindMinOut(e.target.value)}
+          />
+        </label>
+      </div>
+      <div>
+        <label style={{ fontSize: '15px' }}>
+          Slippage (stable unwind, %):
+          <input
+            type="number"
+            placeholder="Slippage percent"
+            value={unwindSlippage}
+            onChange={(e) => setUnwindSlippage(e.target.value)}
+          />
+        </label>
+        <div style={{ fontSize: '12px' }}>Provide either Min Out or Slippage (not both)</div>
+      </div>
+      <div>
+        <button onClick={() => shivaUnwindStable(TransactionType.Normal)}>Shiva Unwind Stable</button>
+        <br />
+        <button onClick={() => shivaUnwindStable(TransactionType.Simulate)}>Simulate Shiva Unwind Stable</button>
+        <br />
+        <button onClick={() => shivaUnwindStable(TransactionType.Populate)}>Populate Shiva Unwind Stable</button>
       </div>
       <div>
         <button onClick={() => shivaBuildSingle(TransactionType.Normal)}>Shiva Build Single</button>

@@ -33,6 +33,8 @@ export type Account = {
   planckCatBalance: Scalars['BigInt']['output'];
   positions: Array<Position>;
   realizedPnl: Scalars['BigInt']['output'];
+  realizedPnlOvl: Scalars['BigInt']['output'];
+  realizedPnlStables: Scalars['BigInt']['output'];
   referralPositions: Array<ReferralPosition>;
   stakingPositions: Array<StakingPosition>;
   tokens: Array<TokenPosition>;
@@ -191,6 +193,22 @@ export type Account_Filter = {
   planckCatBalance_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
   positions_?: InputMaybe<Position_Filter>;
   realizedPnl?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlOvl?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlOvl_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlOvl_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlOvl_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  realizedPnlOvl_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlOvl_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlOvl_not?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlOvl_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  realizedPnlStables?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlStables_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlStables_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlStables_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  realizedPnlStables_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlStables_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlStables_not?: InputMaybe<Scalars['BigInt']['input']>;
+  realizedPnlStables_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
   realizedPnl_gt?: InputMaybe<Scalars['BigInt']['input']>;
   realizedPnl_gte?: InputMaybe<Scalars['BigInt']['input']>;
   realizedPnl_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
@@ -218,6 +236,8 @@ export enum Account_OrderBy {
   PlanckCatBalance = 'planckCatBalance',
   Positions = 'positions',
   RealizedPnl = 'realizedPnl',
+  RealizedPnlOvl = 'realizedPnlOvl',
+  RealizedPnlStables = 'realizedPnlStables',
   ReferralPositions = 'referralPositions',
   StakingPositions = 'stakingPositions',
   Tokens = 'tokens',
@@ -588,6 +608,8 @@ export enum Build_OrderBy {
   OwnerOvlVolumeTraded = 'owner__ovlVolumeTraded',
   OwnerPlanckCatBalance = 'owner__planckCatBalance',
   OwnerRealizedPnl = 'owner__realizedPnl',
+  OwnerRealizedPnlOvl = 'owner__realizedPnlOvl',
+  OwnerRealizedPnlStables = 'owner__realizedPnlStables',
   Position = 'position',
   PositionCreatedAtBlockNumber = 'position__createdAtBlockNumber',
   PositionCreatedAtTimestamp = 'position__createdAtTimestamp',
@@ -823,6 +845,8 @@ export enum Erc721Nft_OrderBy {
   OwnerOvlVolumeTraded = 'owner__ovlVolumeTraded',
   OwnerPlanckCatBalance = 'owner__planckCatBalance',
   OwnerRealizedPnl = 'owner__realizedPnl',
+  OwnerRealizedPnlOvl = 'owner__realizedPnlOvl',
+  OwnerRealizedPnlStables = 'owner__realizedPnlStables',
   TokenId = 'tokenId',
   TokenUri = 'tokenUri'
 }
@@ -1026,6 +1050,8 @@ export enum Erc721Transfer_OrderBy {
   FromOvlVolumeTraded = 'from__ovlVolumeTraded',
   FromPlanckCatBalance = 'from__planckCatBalance',
   FromRealizedPnl = 'from__realizedPnl',
+  FromRealizedPnlOvl = 'from__realizedPnlOvl',
+  FromRealizedPnlStables = 'from__realizedPnlStables',
   Id = 'id',
   Nft = 'nft',
   NftId = 'nft__id',
@@ -1039,6 +1065,8 @@ export enum Erc721Transfer_OrderBy {
   ToOvlVolumeTraded = 'to__ovlVolumeTraded',
   ToPlanckCatBalance = 'to__planckCatBalance',
   ToRealizedPnl = 'to__realizedPnl',
+  ToRealizedPnlOvl = 'to__realizedPnlOvl',
+  ToRealizedPnlStables = 'to__realizedPnlStables',
   Transaction = 'transaction',
   TransactionBlockNumber = 'transaction__blockNumber',
   TransactionGasLimit = 'transaction__gasLimit',
@@ -1153,6 +1181,8 @@ export enum Erc1155TokenBalance_OrderBy {
   OwnerOvlVolumeTraded = 'owner__ovlVolumeTraded',
   OwnerPlanckCatBalance = 'owner__planckCatBalance',
   OwnerRealizedPnl = 'owner__realizedPnl',
+  OwnerRealizedPnlOvl = 'owner__realizedPnlOvl',
+  OwnerRealizedPnlStables = 'owner__realizedPnlStables',
   Token = 'token',
   TokenAddress = 'token__address',
   TokenId = 'token__id',
@@ -1381,6 +1411,8 @@ export enum Erc1155Transfer_OrderBy {
   FromOvlVolumeTraded = 'from__ovlVolumeTraded',
   FromPlanckCatBalance = 'from__planckCatBalance',
   FromRealizedPnl = 'from__realizedPnl',
+  FromRealizedPnlOvl = 'from__realizedPnlOvl',
+  FromRealizedPnlStables = 'from__realizedPnlStables',
   Id = 'id',
   To = 'to',
   ToId = 'to__id',
@@ -1390,6 +1422,8 @@ export enum Erc1155Transfer_OrderBy {
   ToOvlVolumeTraded = 'to__ovlVolumeTraded',
   ToPlanckCatBalance = 'to__planckCatBalance',
   ToRealizedPnl = 'to__realizedPnl',
+  ToRealizedPnlOvl = 'to__realizedPnlOvl',
+  ToRealizedPnlStables = 'to__realizedPnlStables',
   Token = 'token',
   TokenAddress = 'token__address',
   TokenId = 'token__id',
@@ -1411,7 +1445,9 @@ export type Factory = {
   id: Scalars['Bytes']['output'];
   marketCount: Scalars['BigInt']['output'];
   markets: Array<Market>;
+  ovl: Scalars['Bytes']['output'];
   owner: Scalars['ID']['output'];
+  stateAddress: Scalars['String']['output'];
   totalFeesOVL: Scalars['BigDecimal']['output'];
   totalValueLockedOVL: Scalars['BigDecimal']['output'];
   totalVolumeOVL: Scalars['BigDecimal']['output'];
@@ -1459,6 +1495,16 @@ export type Factory_Filter = {
   marketCount_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
   markets_?: InputMaybe<Market_Filter>;
   or?: InputMaybe<Array<InputMaybe<Factory_Filter>>>;
+  ovl?: InputMaybe<Scalars['Bytes']['input']>;
+  ovl_contains?: InputMaybe<Scalars['Bytes']['input']>;
+  ovl_gt?: InputMaybe<Scalars['Bytes']['input']>;
+  ovl_gte?: InputMaybe<Scalars['Bytes']['input']>;
+  ovl_in?: InputMaybe<Array<Scalars['Bytes']['input']>>;
+  ovl_lt?: InputMaybe<Scalars['Bytes']['input']>;
+  ovl_lte?: InputMaybe<Scalars['Bytes']['input']>;
+  ovl_not?: InputMaybe<Scalars['Bytes']['input']>;
+  ovl_not_contains?: InputMaybe<Scalars['Bytes']['input']>;
+  ovl_not_in?: InputMaybe<Array<Scalars['Bytes']['input']>>;
   owner?: InputMaybe<Scalars['ID']['input']>;
   owner_gt?: InputMaybe<Scalars['ID']['input']>;
   owner_gte?: InputMaybe<Scalars['ID']['input']>;
@@ -1467,6 +1513,26 @@ export type Factory_Filter = {
   owner_lte?: InputMaybe<Scalars['ID']['input']>;
   owner_not?: InputMaybe<Scalars['ID']['input']>;
   owner_not_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  stateAddress?: InputMaybe<Scalars['String']['input']>;
+  stateAddress_contains?: InputMaybe<Scalars['String']['input']>;
+  stateAddress_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  stateAddress_ends_with?: InputMaybe<Scalars['String']['input']>;
+  stateAddress_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  stateAddress_gt?: InputMaybe<Scalars['String']['input']>;
+  stateAddress_gte?: InputMaybe<Scalars['String']['input']>;
+  stateAddress_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  stateAddress_lt?: InputMaybe<Scalars['String']['input']>;
+  stateAddress_lte?: InputMaybe<Scalars['String']['input']>;
+  stateAddress_not?: InputMaybe<Scalars['String']['input']>;
+  stateAddress_not_contains?: InputMaybe<Scalars['String']['input']>;
+  stateAddress_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  stateAddress_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  stateAddress_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  stateAddress_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  stateAddress_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  stateAddress_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  stateAddress_starts_with?: InputMaybe<Scalars['String']['input']>;
+  stateAddress_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
   totalFeesOVL?: InputMaybe<Scalars['BigDecimal']['input']>;
   totalFeesOVL_gt?: InputMaybe<Scalars['BigDecimal']['input']>;
   totalFeesOVL_gte?: InputMaybe<Scalars['BigDecimal']['input']>;
@@ -1506,7 +1572,9 @@ export enum Factory_OrderBy {
   Id = 'id',
   MarketCount = 'marketCount',
   Markets = 'markets',
+  Ovl = 'ovl',
   Owner = 'owner',
+  StateAddress = 'stateAddress',
   TotalFeesOvl = 'totalFeesOVL',
   TotalValueLockedOvl = 'totalValueLockedOVL',
   TotalVolumeOvl = 'totalVolumeOVL',
@@ -1726,6 +1794,8 @@ export enum Liquidate_OrderBy {
   OwnerOvlVolumeTraded = 'owner__ovlVolumeTraded',
   OwnerPlanckCatBalance = 'owner__planckCatBalance',
   OwnerRealizedPnl = 'owner__realizedPnl',
+  OwnerRealizedPnlOvl = 'owner__realizedPnlOvl',
+  OwnerRealizedPnlStables = 'owner__realizedPnlStables',
   Position = 'position',
   PositionCreatedAtBlockNumber = 'position__createdAtBlockNumber',
   PositionCreatedAtTimestamp = 'position__createdAtTimestamp',
@@ -1753,6 +1823,8 @@ export enum Liquidate_OrderBy {
   SenderOvlVolumeTraded = 'sender__ovlVolumeTraded',
   SenderPlanckCatBalance = 'sender__planckCatBalance',
   SenderRealizedPnl = 'sender__realizedPnl',
+  SenderRealizedPnlOvl = 'sender__realizedPnlOvl',
+  SenderRealizedPnlStables = 'sender__realizedPnlStables',
   Size = 'size',
   Timestamp = 'timestamp',
   Transaction = 'transaction',
@@ -2509,7 +2581,9 @@ export enum Market_OrderBy {
   FactoryFeeRecipient = 'factory__feeRecipient',
   FactoryId = 'factory__id',
   FactoryMarketCount = 'factory__marketCount',
+  FactoryOvl = 'factory__ovl',
   FactoryOwner = 'factory__owner',
+  FactoryStateAddress = 'factory__stateAddress',
   FactoryTotalFeesOvl = 'factory__totalFeesOVL',
   FactoryTotalValueLockedOvl = 'factory__totalValueLockedOVL',
   FactoryTotalVolumeOvl = 'factory__totalVolumeOVL',
@@ -2578,6 +2652,7 @@ export type Position = {
   isLong: Scalars['Boolean']['output'];
   leverage: Scalars['BigDecimal']['output'];
   liquidates: Array<Liquidate>;
+  loan?: Maybe<StableLoan>;
   market: Market;
   mint: Scalars['BigInt']['output'];
   numberOfUniwnds: Scalars['BigInt']['output'];
@@ -2724,6 +2799,27 @@ export type Position_Filter = {
   leverage_not?: InputMaybe<Scalars['BigDecimal']['input']>;
   leverage_not_in?: InputMaybe<Array<Scalars['BigDecimal']['input']>>;
   liquidates_?: InputMaybe<Liquidate_Filter>;
+  loan?: InputMaybe<Scalars['String']['input']>;
+  loan_?: InputMaybe<StableLoan_Filter>;
+  loan_contains?: InputMaybe<Scalars['String']['input']>;
+  loan_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  loan_ends_with?: InputMaybe<Scalars['String']['input']>;
+  loan_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  loan_gt?: InputMaybe<Scalars['String']['input']>;
+  loan_gte?: InputMaybe<Scalars['String']['input']>;
+  loan_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  loan_lt?: InputMaybe<Scalars['String']['input']>;
+  loan_lte?: InputMaybe<Scalars['String']['input']>;
+  loan_not?: InputMaybe<Scalars['String']['input']>;
+  loan_not_contains?: InputMaybe<Scalars['String']['input']>;
+  loan_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  loan_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  loan_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  loan_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  loan_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  loan_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  loan_starts_with?: InputMaybe<Scalars['String']['input']>;
+  loan_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
   market?: InputMaybe<Scalars['String']['input']>;
   market_?: InputMaybe<Market_Filter>;
   market_contains?: InputMaybe<Scalars['String']['input']>;
@@ -2844,6 +2940,15 @@ export enum Position_OrderBy {
   IsLong = 'isLong',
   Leverage = 'leverage',
   Liquidates = 'liquidates',
+  Loan = 'loan',
+  LoanCollateralReturned = 'loan__collateralReturned',
+  LoanCollateralSeized = 'loan__collateralSeized',
+  LoanId = 'loan__id',
+  LoanLoanId = 'loan__loanId',
+  LoanOvlAmount = 'loan__ovlAmount',
+  LoanOvlRepaid = 'loan__ovlRepaid',
+  LoanPrice = 'loan__price',
+  LoanStableAmount = 'loan__stableAmount',
   Market = 'market',
   MarketAverageBlockTime = 'market__averageBlockTime',
   MarketCapLeverage = 'market__capLeverage',
@@ -2889,9 +2994,12 @@ export enum Position_OrderBy {
   OwnerOvlVolumeTraded = 'owner__ovlVolumeTraded',
   OwnerPlanckCatBalance = 'owner__planckCatBalance',
   OwnerRealizedPnl = 'owner__realizedPnl',
+  OwnerRealizedPnlOvl = 'owner__realizedPnlOvl',
+  OwnerRealizedPnlStables = 'owner__realizedPnlStables',
   PositionId = 'positionId',
   Router = 'router',
   RouterId = 'router__id',
+  RouterLbsc = 'router__lbsc',
   Unwinds = 'unwinds'
 }
 
@@ -2943,6 +3051,8 @@ export type Query = {
   routerParams?: Maybe<RouterParams>;
   routerParams_collection: Array<RouterParams>;
   routers: Array<Router>;
+  stableLoan?: Maybe<StableLoan>;
+  stableLoans: Array<StableLoan>;
   staking?: Maybe<Staking>;
   stakingPosition?: Maybe<StakingPosition>;
   stakingPositions: Array<StakingPosition>;
@@ -3371,6 +3481,24 @@ export type QueryRoutersArgs = {
 };
 
 
+export type QueryStableLoanArgs = {
+  block?: InputMaybe<Block_Height>;
+  id: Scalars['ID']['input'];
+  subgraphError?: _SubgraphErrorPolicy_;
+};
+
+
+export type QueryStableLoansArgs = {
+  block?: InputMaybe<Block_Height>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<StableLoan_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  subgraphError?: _SubgraphErrorPolicy_;
+  where?: InputMaybe<StableLoan_Filter>;
+};
+
+
 export type QueryStakingArgs = {
   block?: InputMaybe<Block_Height>;
   id: Scalars['ID']['input'];
@@ -3738,6 +3866,8 @@ export enum ReferralPosition_OrderBy {
   AffiliatedToOvlVolumeTraded = 'affiliatedTo__ovlVolumeTraded',
   AffiliatedToPlanckCatBalance = 'affiliatedTo__planckCatBalance',
   AffiliatedToRealizedPnl = 'affiliatedTo__realizedPnl',
+  AffiliatedToRealizedPnlOvl = 'affiliatedTo__realizedPnlOvl',
+  AffiliatedToRealizedPnlStables = 'affiliatedTo__realizedPnlStables',
   Id = 'id',
   Owner = 'owner',
   OwnerId = 'owner__id',
@@ -3747,6 +3877,8 @@ export enum ReferralPosition_OrderBy {
   OwnerOvlVolumeTraded = 'owner__ovlVolumeTraded',
   OwnerPlanckCatBalance = 'owner__planckCatBalance',
   OwnerRealizedPnl = 'owner__realizedPnl',
+  OwnerRealizedPnlOvl = 'owner__realizedPnlOvl',
+  OwnerRealizedPnlStables = 'owner__realizedPnlStables',
   ReferralProgram = 'referralProgram',
   ReferralProgramCreatedAtBlockNumber = 'referralProgram__createdAtBlockNumber',
   ReferralProgramCreatedAtTimestamp = 'referralProgram__createdAtTimestamp',
@@ -4004,6 +4136,7 @@ export enum RewardsClaimed_OrderBy {
 export type Router = {
   __typename?: 'Router';
   id: Scalars['Bytes']['output'];
+  lbsc?: Maybe<Scalars['Bytes']['output']>;
 };
 
 export type RouterParams = {
@@ -4098,6 +4231,7 @@ export enum RouterParams_OrderBy {
   Performer = 'performer',
   Router = 'router',
   RouterId = 'router__id',
+  RouterLbsc = 'router__lbsc',
   Transaction = 'transaction',
   TransactionBlockNumber = 'transaction__blockNumber',
   TransactionGasLimit = 'transaction__gasLimit',
@@ -4120,11 +4254,160 @@ export type Router_Filter = {
   id_not?: InputMaybe<Scalars['Bytes']['input']>;
   id_not_contains?: InputMaybe<Scalars['Bytes']['input']>;
   id_not_in?: InputMaybe<Array<Scalars['Bytes']['input']>>;
+  lbsc?: InputMaybe<Scalars['Bytes']['input']>;
+  lbsc_contains?: InputMaybe<Scalars['Bytes']['input']>;
+  lbsc_gt?: InputMaybe<Scalars['Bytes']['input']>;
+  lbsc_gte?: InputMaybe<Scalars['Bytes']['input']>;
+  lbsc_in?: InputMaybe<Array<Scalars['Bytes']['input']>>;
+  lbsc_lt?: InputMaybe<Scalars['Bytes']['input']>;
+  lbsc_lte?: InputMaybe<Scalars['Bytes']['input']>;
+  lbsc_not?: InputMaybe<Scalars['Bytes']['input']>;
+  lbsc_not_contains?: InputMaybe<Scalars['Bytes']['input']>;
+  lbsc_not_in?: InputMaybe<Array<Scalars['Bytes']['input']>>;
   or?: InputMaybe<Array<InputMaybe<Router_Filter>>>;
 };
 
 export enum Router_OrderBy {
-  Id = 'id'
+  Id = 'id',
+  Lbsc = 'lbsc'
+}
+
+export type StableLoan = {
+  __typename?: 'StableLoan';
+  borrower: Account;
+  collateralReturned: Scalars['BigInt']['output'];
+  collateralSeized: Scalars['BigInt']['output'];
+  id: Scalars['ID']['output'];
+  loanId: Scalars['BigInt']['output'];
+  ovlAmount: Scalars['BigInt']['output'];
+  ovlRepaid: Scalars['BigInt']['output'];
+  positions: Array<Position>;
+  price: Scalars['BigInt']['output'];
+  stableAmount: Scalars['BigInt']['output'];
+};
+
+
+export type StableLoanPositionsArgs = {
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<Position_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  where?: InputMaybe<Position_Filter>;
+};
+
+export type StableLoan_Filter = {
+  /** Filter for the block changed event. */
+  _change_block?: InputMaybe<BlockChangedFilter>;
+  and?: InputMaybe<Array<InputMaybe<StableLoan_Filter>>>;
+  borrower?: InputMaybe<Scalars['String']['input']>;
+  borrower_?: InputMaybe<Account_Filter>;
+  borrower_contains?: InputMaybe<Scalars['String']['input']>;
+  borrower_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  borrower_ends_with?: InputMaybe<Scalars['String']['input']>;
+  borrower_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  borrower_gt?: InputMaybe<Scalars['String']['input']>;
+  borrower_gte?: InputMaybe<Scalars['String']['input']>;
+  borrower_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  borrower_lt?: InputMaybe<Scalars['String']['input']>;
+  borrower_lte?: InputMaybe<Scalars['String']['input']>;
+  borrower_not?: InputMaybe<Scalars['String']['input']>;
+  borrower_not_contains?: InputMaybe<Scalars['String']['input']>;
+  borrower_not_contains_nocase?: InputMaybe<Scalars['String']['input']>;
+  borrower_not_ends_with?: InputMaybe<Scalars['String']['input']>;
+  borrower_not_ends_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  borrower_not_in?: InputMaybe<Array<Scalars['String']['input']>>;
+  borrower_not_starts_with?: InputMaybe<Scalars['String']['input']>;
+  borrower_not_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  borrower_starts_with?: InputMaybe<Scalars['String']['input']>;
+  borrower_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
+  collateralReturned?: InputMaybe<Scalars['BigInt']['input']>;
+  collateralReturned_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  collateralReturned_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  collateralReturned_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  collateralReturned_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  collateralReturned_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  collateralReturned_not?: InputMaybe<Scalars['BigInt']['input']>;
+  collateralReturned_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  collateralSeized?: InputMaybe<Scalars['BigInt']['input']>;
+  collateralSeized_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  collateralSeized_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  collateralSeized_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  collateralSeized_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  collateralSeized_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  collateralSeized_not?: InputMaybe<Scalars['BigInt']['input']>;
+  collateralSeized_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  id?: InputMaybe<Scalars['ID']['input']>;
+  id_gt?: InputMaybe<Scalars['ID']['input']>;
+  id_gte?: InputMaybe<Scalars['ID']['input']>;
+  id_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  id_lt?: InputMaybe<Scalars['ID']['input']>;
+  id_lte?: InputMaybe<Scalars['ID']['input']>;
+  id_not?: InputMaybe<Scalars['ID']['input']>;
+  id_not_in?: InputMaybe<Array<Scalars['ID']['input']>>;
+  loanId?: InputMaybe<Scalars['BigInt']['input']>;
+  loanId_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  loanId_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  loanId_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  loanId_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  loanId_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  loanId_not?: InputMaybe<Scalars['BigInt']['input']>;
+  loanId_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  or?: InputMaybe<Array<InputMaybe<StableLoan_Filter>>>;
+  ovlAmount?: InputMaybe<Scalars['BigInt']['input']>;
+  ovlAmount_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  ovlAmount_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  ovlAmount_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  ovlAmount_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  ovlAmount_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  ovlAmount_not?: InputMaybe<Scalars['BigInt']['input']>;
+  ovlAmount_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  ovlRepaid?: InputMaybe<Scalars['BigInt']['input']>;
+  ovlRepaid_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  ovlRepaid_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  ovlRepaid_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  ovlRepaid_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  ovlRepaid_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  ovlRepaid_not?: InputMaybe<Scalars['BigInt']['input']>;
+  ovlRepaid_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  positions_?: InputMaybe<Position_Filter>;
+  price?: InputMaybe<Scalars['BigInt']['input']>;
+  price_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  price_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  price_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  price_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  price_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  price_not?: InputMaybe<Scalars['BigInt']['input']>;
+  price_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  stableAmount?: InputMaybe<Scalars['BigInt']['input']>;
+  stableAmount_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  stableAmount_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  stableAmount_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  stableAmount_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  stableAmount_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  stableAmount_not?: InputMaybe<Scalars['BigInt']['input']>;
+  stableAmount_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+};
+
+export enum StableLoan_OrderBy {
+  Borrower = 'borrower',
+  BorrowerId = 'borrower__id',
+  BorrowerNumberOfLiquidatedPositions = 'borrower__numberOfLiquidatedPositions',
+  BorrowerNumberOfOpenPositions = 'borrower__numberOfOpenPositions',
+  BorrowerNumberOfUnwinds = 'borrower__numberOfUnwinds',
+  BorrowerOvlVolumeTraded = 'borrower__ovlVolumeTraded',
+  BorrowerPlanckCatBalance = 'borrower__planckCatBalance',
+  BorrowerRealizedPnl = 'borrower__realizedPnl',
+  BorrowerRealizedPnlOvl = 'borrower__realizedPnlOvl',
+  BorrowerRealizedPnlStables = 'borrower__realizedPnlStables',
+  CollateralReturned = 'collateralReturned',
+  CollateralSeized = 'collateralSeized',
+  Id = 'id',
+  LoanId = 'loanId',
+  OvlAmount = 'ovlAmount',
+  OvlRepaid = 'ovlRepaid',
+  Positions = 'positions',
+  Price = 'price',
+  StableAmount = 'stableAmount'
 }
 
 export type Staking = {
@@ -4278,6 +4561,8 @@ export enum StakingPosition_OrderBy {
   OwnerOvlVolumeTraded = 'owner__ovlVolumeTraded',
   OwnerPlanckCatBalance = 'owner__planckCatBalance',
   OwnerRealizedPnl = 'owner__realizedPnl',
+  OwnerRealizedPnlOvl = 'owner__realizedPnlOvl',
+  OwnerRealizedPnlStables = 'owner__realizedPnlStables',
   Pool = 'pool',
   PoolId = 'pool__id',
   PoolRewardRatioDenominator = 'pool__rewardRatioDenominator',
@@ -4452,6 +4737,8 @@ export type Subscription = {
   routerParams?: Maybe<RouterParams>;
   routerParams_collection: Array<RouterParams>;
   routers: Array<Router>;
+  stableLoan?: Maybe<StableLoan>;
+  stableLoans: Array<StableLoan>;
   staking?: Maybe<Staking>;
   stakingPosition?: Maybe<StakingPosition>;
   stakingPositions: Array<StakingPosition>;
@@ -4880,6 +5167,24 @@ export type SubscriptionRoutersArgs = {
 };
 
 
+export type SubscriptionStableLoanArgs = {
+  block?: InputMaybe<Block_Height>;
+  id: Scalars['ID']['input'];
+  subgraphError?: _SubgraphErrorPolicy_;
+};
+
+
+export type SubscriptionStableLoansArgs = {
+  block?: InputMaybe<Block_Height>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  orderBy?: InputMaybe<StableLoan_OrderBy>;
+  orderDirection?: InputMaybe<OrderDirection>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  subgraphError?: _SubgraphErrorPolicy_;
+  where?: InputMaybe<StableLoan_Filter>;
+};
+
+
 export type SubscriptionStakingArgs = {
   block?: InputMaybe<Block_Height>;
   id: Scalars['ID']['input'];
@@ -5181,6 +5486,8 @@ export enum TokenPosition_OrderBy {
   OwnerOvlVolumeTraded = 'owner__ovlVolumeTraded',
   OwnerPlanckCatBalance = 'owner__planckCatBalance',
   OwnerRealizedPnl = 'owner__realizedPnl',
+  OwnerRealizedPnlOvl = 'owner__realizedPnlOvl',
+  OwnerRealizedPnlStables = 'owner__realizedPnlStables',
   Token = 'token',
   TokenId = 'token__id',
   TokenName = 'token__name',
@@ -5733,6 +6040,8 @@ export enum TradingMiningEpochVolume_OrderBy {
   TraderOvlVolumeTraded = 'trader__ovlVolumeTraded',
   TraderPlanckCatBalance = 'trader__planckCatBalance',
   TraderRealizedPnl = 'trader__realizedPnl',
+  TraderRealizedPnlOvl = 'trader__realizedPnlOvl',
+  TraderRealizedPnlStables = 'trader__realizedPnlStables',
   Volume = 'volume'
 }
 
@@ -6019,6 +6328,7 @@ export type Unwind = {
   price: Scalars['BigInt']['output'];
   routerParams?: Maybe<RouterParams>;
   size: Scalars['BigInt']['output'];
+  stableOut?: Maybe<Scalars['BigInt']['output']>;
   timestamp: Scalars['BigInt']['output'];
   transaction: Transaction;
   transferAmount: Scalars['BigInt']['output'];
@@ -6174,6 +6484,14 @@ export type Unwind_Filter = {
   size_lte?: InputMaybe<Scalars['BigInt']['input']>;
   size_not?: InputMaybe<Scalars['BigInt']['input']>;
   size_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  stableOut?: InputMaybe<Scalars['BigInt']['input']>;
+  stableOut_gt?: InputMaybe<Scalars['BigInt']['input']>;
+  stableOut_gte?: InputMaybe<Scalars['BigInt']['input']>;
+  stableOut_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
+  stableOut_lt?: InputMaybe<Scalars['BigInt']['input']>;
+  stableOut_lte?: InputMaybe<Scalars['BigInt']['input']>;
+  stableOut_not?: InputMaybe<Scalars['BigInt']['input']>;
+  stableOut_not_in?: InputMaybe<Array<Scalars['BigInt']['input']>>;
   timestamp?: InputMaybe<Scalars['BigInt']['input']>;
   timestamp_gt?: InputMaybe<Scalars['BigInt']['input']>;
   timestamp_gte?: InputMaybe<Scalars['BigInt']['input']>;
@@ -6245,6 +6563,8 @@ export enum Unwind_OrderBy {
   OwnerOvlVolumeTraded = 'owner__ovlVolumeTraded',
   OwnerPlanckCatBalance = 'owner__planckCatBalance',
   OwnerRealizedPnl = 'owner__realizedPnl',
+  OwnerRealizedPnlOvl = 'owner__realizedPnlOvl',
+  OwnerRealizedPnlStables = 'owner__realizedPnlStables',
   Pnl = 'pnl',
   Position = 'position',
   PositionCreatedAtBlockNumber = 'position__createdAtBlockNumber',
@@ -6270,6 +6590,7 @@ export enum Unwind_OrderBy {
   RouterParamsId = 'routerParams__id',
   RouterParamsPerformer = 'routerParams__performer',
   Size = 'size',
+  StableOut = 'stableOut',
   Timestamp = 'timestamp',
   Transaction = 'transaction',
   TransactionBlockNumber = 'transaction__blockNumber',
@@ -6324,7 +6645,8 @@ export type OpenPositionsQueryVariables = Exact<{
   skip?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
-export type OpenPositionsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', fractionUnwound: any, id: string, createdAtTimestamp: any, currentOi: any, entryPrice: any, initialCollateral: any, isLiquidated: boolean, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: string, isShutdown: boolean }, router: { __typename?: 'Router', id: string } }> } | null };
+
+export type OpenPositionsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', fractionUnwound: any, id: string, createdAtTimestamp: any, currentOi: any, entryPrice: any, initialCollateral: any, isLiquidated: boolean, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: any, isShutdown: boolean }, router?: { __typename?: 'Router', id: any } | null, loan?: { __typename?: 'StableLoan', id: string, loanId: any, stableAmount: any, ovlAmount: any, price: any, ovlRepaid: any, collateralReturned: any, collateralSeized: any } | null }> } | null };
 
 export type OpenPositionsNoRouterQueryVariables = Exact<{
   account: Scalars['ID']['input'];
@@ -6332,7 +6654,8 @@ export type OpenPositionsNoRouterQueryVariables = Exact<{
   skip?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
-export type OpenPositionsNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', fractionUnwound: any, id: string, createdAtTimestamp: any, currentOi: any, entryPrice: any, initialCollateral: any, isLiquidated: boolean, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: string, isShutdown: boolean } }> } | null };
+
+export type OpenPositionsNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', fractionUnwound: any, id: string, createdAtTimestamp: any, currentOi: any, entryPrice: any, initialCollateral: any, isLiquidated: boolean, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: any, isShutdown: boolean }, loan?: { __typename?: 'StableLoan', id: string, loanId: any, stableAmount: any, ovlAmount: any, price: any, ovlRepaid: any, collateralReturned: any, collateralSeized: any } | null }> } | null };
 
 export type UnwindsQueryVariables = Exact<{
   account: Scalars['ID']['input'];
@@ -6341,7 +6664,7 @@ export type UnwindsQueryVariables = Exact<{
 }>;
 
 
-export type UnwindsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', unwinds: Array<{ __typename?: 'Unwind', fraction: any, fractionOfPosition: any, id: string, mint: any, pnl: any, price: any, size: any, timestamp: any, transferAmount: any, unwindNumber: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: any }, router: { __typename?: 'Router', id: string } } }> } | null };
+export type UnwindsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', unwinds: Array<{ __typename?: 'Unwind', fraction: any, fractionOfPosition: any, id: string, mint: any, pnl: any, price: any, size: any, timestamp: any, transferAmount: any, stableOut?: any | null, unwindNumber: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: any }, router?: { __typename?: 'Router', id: any } | null, loan?: { __typename?: 'StableLoan', id: string, loanId: any, stableAmount: any, ovlAmount: any, price: any, ovlRepaid: any, collateralReturned: any, collateralSeized: any } | null } }> } | null };
 
 export type UnwindsNoRouterQueryVariables = Exact<{
   account: Scalars['ID']['input'];
@@ -6349,7 +6672,8 @@ export type UnwindsNoRouterQueryVariables = Exact<{
   skip?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
-export type UnwindsNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', unwinds: Array<{ __typename?: 'Unwind', fraction: any, fractionOfPosition: any, id: string, mint: any, pnl: any, price: any, size: any, timestamp: any, transferAmount: any, unwindNumber: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: any } } }> } | null };
+
+export type UnwindsNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', unwinds: Array<{ __typename?: 'Unwind', fraction: any, fractionOfPosition: any, id: string, mint: any, pnl: any, price: any, size: any, timestamp: any, transferAmount: any, stableOut?: any | null, unwindNumber: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, numberOfUniwnds: any, positionId: string, market: { __typename?: 'Market', feedAddress: string, id: any }, loan?: { __typename?: 'StableLoan', id: string, loanId: any, stableAmount: any, ovlAmount: any, price: any, ovlRepaid: any, collateralReturned: any, collateralSeized: any } | null } }> } | null };
 
 export type ActiveMarketsQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -6363,7 +6687,7 @@ export type LiquidatedPositionsQueryVariables = Exact<{
 }>;
 
 
-export type LiquidatedPositionsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', liquidates: Array<{ __typename?: 'Liquidate', id: string, mint: any, price: any, timestamp: any, size: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, fractionUnwound: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, market: { __typename?: 'Market', feedAddress: string, id: any }, router: { __typename?: 'Router', id: string } } }> } | null };
+export type LiquidatedPositionsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', liquidates: Array<{ __typename?: 'Liquidate', id: string, mint: any, price: any, timestamp: any, size: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, fractionUnwound: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, market: { __typename?: 'Market', feedAddress: string, id: any }, router?: { __typename?: 'Router', id: any } | null, loan?: { __typename?: 'StableLoan', id: string, loanId: any, stableAmount: any, ovlAmount: any, price: any, ovlRepaid: any, collateralReturned: any, collateralSeized: any } | null } }> } | null };
 
 export type LiquidatedPositionsNoRouterQueryVariables = Exact<{
   account: Scalars['ID']['input'];
@@ -6371,28 +6695,31 @@ export type LiquidatedPositionsNoRouterQueryVariables = Exact<{
   skip?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
-export type LiquidatedPositionsNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', liquidates: Array<{ __typename?: 'Liquidate', id: string, mint: any, price: any, timestamp: any, size: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, fractionUnwound: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, market: { __typename?: 'Market', feedAddress: string, id: any } } }> } | null };
+
+export type LiquidatedPositionsNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', liquidates: Array<{ __typename?: 'Liquidate', id: string, mint: any, price: any, timestamp: any, size: any, position: { __typename?: 'Position', createdAtTimestamp: any, currentOi: any, entryPrice: any, fractionUnwound: any, id: string, initialCollateral: any, isLong: boolean, leverage: any, market: { __typename?: 'Market', feedAddress: string, id: any }, loan?: { __typename?: 'StableLoan', id: string, loanId: any, stableAmount: any, ovlAmount: any, price: any, ovlRepaid: any, collateralReturned: any, collateralSeized: any } | null } }> } | null };
 
 export type NumberOfPositionsQueryVariables = Exact<{
   account: Scalars['ID']['input'];
 }>;
 
 
-export type NumberOfPositionsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', numberOfLiquidatedPositions: any, numberOfOpenPositions: any, numberOfUnwinds: any, realizedPnl: any } | null };
+export type NumberOfPositionsQuery = { __typename?: 'Query', account?: { __typename?: 'Account', numberOfLiquidatedPositions: any, numberOfOpenPositions: any, numberOfUnwinds: any, realizedPnl: any, realizedPnlOvl: any, realizedPnlStables: any } | null };
 
 export type QueryPositionQueryVariables = Exact<{
   account: Scalars['ID']['input'];
   marketPositionId: Scalars['ID']['input'];
 }>;
 
-export type QueryPositionQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', id: string, positionId: string, initialOi: any, initialDebt: any, initialCollateral: any, initialNotional: any, leverage: any, isLong: boolean, entryPrice: any, isLiquidated: boolean, currentOi: any, currentDebt: any, mint: any, createdAtTimestamp: any, createdAtBlockNumber: any, numberOfUniwnds: any, fractionUnwound: any, market: { __typename?: 'Market', id: any, feedAddress: string, isShutdown: boolean }, router: { __typename?: 'Router', id: string }, builds: Array<{ __typename?: 'Build', id: string, price: any, timestamp: any }>, liquidates: Array<{ __typename?: 'Liquidate', id: string, mint: any, price: any, timestamp: any }>, unwinds: Array<{ __typename?: 'Unwind', fraction: any, id: string, mint: any, timestamp: any, price: any, unwindNumber: any, transferAmount: any, pnl: any, size: any }> }> } | null };
+
+export type QueryPositionQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', id: string, positionId: string, initialOi: any, initialDebt: any, initialCollateral: any, initialNotional: any, leverage: any, isLong: boolean, entryPrice: any, isLiquidated: boolean, currentOi: any, currentDebt: any, mint: any, createdAtTimestamp: any, createdAtBlockNumber: any, numberOfUniwnds: any, fractionUnwound: any, market: { __typename?: 'Market', id: any, feedAddress: string, isShutdown: boolean }, router?: { __typename?: 'Router', id: any } | null, loan?: { __typename?: 'StableLoan', id: string, ovlAmount: any, stableAmount: any } | null, builds: Array<{ __typename?: 'Build', id: string, price: any, timestamp: any }>, liquidates: Array<{ __typename?: 'Liquidate', id: string, mint: any, price: any, timestamp: any }>, unwinds: Array<{ __typename?: 'Unwind', fraction: any, id: string, mint: any, timestamp: any, price: any, unwindNumber: any, transferAmount: any, stableOut?: any | null, pnl: any, size: any }> }> } | null };
 
 export type QueryPositionNoRouterQueryVariables = Exact<{
   account: Scalars['ID']['input'];
   marketPositionId: Scalars['ID']['input'];
 }>;
 
-export type QueryPositionNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', id: string, positionId: string, initialOi: any, initialDebt: any, initialCollateral: any, initialNotional: any, leverage: any, isLong: boolean, entryPrice: any, isLiquidated: boolean, currentOi: any, currentDebt: any, mint: any, createdAtTimestamp: any, createdAtBlockNumber: any, numberOfUniwnds: any, fractionUnwound: any, market: { __typename?: 'Market', id: any, feedAddress: string, isShutdown: boolean }, builds: Array<{ __typename?: 'Build', id: string, price: any, timestamp: any }>, liquidates: Array<{ __typename?: 'Liquidate', id: string, mint: any, price: any, timestamp: any }>, unwinds: Array<{ __typename?: 'Unwind', fraction: any, id: string, mint: any, timestamp: any, price: any, unwindNumber: any, transferAmount: any, pnl: any, size: any }> }> } | null };
+
+export type QueryPositionNoRouterQuery = { __typename?: 'Query', account?: { __typename?: 'Account', positions: Array<{ __typename?: 'Position', id: string, positionId: string, initialOi: any, initialDebt: any, initialCollateral: any, initialNotional: any, leverage: any, isLong: boolean, entryPrice: any, isLiquidated: boolean, currentOi: any, currentDebt: any, mint: any, createdAtTimestamp: any, createdAtBlockNumber: any, numberOfUniwnds: any, fractionUnwound: any, market: { __typename?: 'Market', id: any, feedAddress: string, isShutdown: boolean }, loan?: { __typename?: 'StableLoan', id: string, ovlAmount: any, stableAmount: any } | null, builds: Array<{ __typename?: 'Build', id: string, price: any, timestamp: any }>, liquidates: Array<{ __typename?: 'Liquidate', id: string, mint: any, price: any, timestamp: any }>, unwinds: Array<{ __typename?: 'Unwind', fraction: any, id: string, mint: any, timestamp: any, price: any, unwindNumber: any, transferAmount: any, stableOut?: any | null, pnl: any, size: any }> }> } | null };
 
 export type TotalSupplyHistoryQueryVariables = Exact<{
   since: Scalars['Int']['input'];

@@ -12,6 +12,7 @@ import { invariant } from "../../common/index.js";
 import { paginate } from "../../common/utils/paginate.js";
 import { formatPriceWithCurrency } from "../../common/utils/formatPriceWithCurrency.js";
 import { toLowercaseKeys } from "../../common/utils/toLowercaseKeys.js";
+import { calculateStableSize } from "../../common/utils/calculateStableSize.js";
 
 export type LiquidatedPositionData = {
   marketName: string | undefined;
@@ -21,6 +22,19 @@ export type LiquidatedPositionData = {
   exitPrice: string | undefined;
   created: string | undefined;
   liquidated: string | undefined;
+  loan?: {
+    id: string;
+    loanId: string;
+    stableAmount: string;
+    ovlAmount: string;
+    price: string;
+    ovlRepaid: string;
+    collateralReturned: string;
+    collateralSeized: string;
+  } | null;
+  stableValues?: {
+    size: string;
+  };
 };
 
 export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
@@ -95,15 +109,31 @@ export class OverlaySDKLiquidatedPositions extends OverlaySDKModule {
         const parsedClosedTimestamp = formatUnixTimestampToDate(
           liquidated.timestamp
         );
-  
+
+        // Calculate stable values for LBSC positions
+        let stableValues: LiquidatedPositionData['stableValues'] = undefined;
+        if (liquidated.position.loan) {
+          const stableSize = calculateStableSize(
+            parsedSize,
+            liquidated.position.loan,
+          );
+          if (stableSize !== undefined) {
+            stableValues = {
+              size: stableSize,
+            };
+          }
+        }
+
         transformedLiquidated.push({
           marketName: marketName,
           size: parsedSize,
           position: liquidated.position.leverage + "x " + positionSide,
           entryPrice: parsedEntryPrice ? formatPriceWithCurrency(parsedEntryPrice, priceCurrency) : "-",
-          exitPrice: parsedExitPrice ? formatPriceWithCurrency(parsedExitPrice, priceCurrency) : "-", 
+          exitPrice: parsedExitPrice ? formatPriceWithCurrency(parsedExitPrice, priceCurrency) : "-",
           created: parsedCreatedTimestamp,
           liquidated: parsedClosedTimestamp,
+          loan: liquidated.position.loan || null,
+          stableValues,
         });
       }
 
