@@ -108,10 +108,6 @@ export const V1_FACTORY_PERIPHERY: AddressFactoryPeripheryMap = {
       factory: "0x5e6613da86099c264ef9cd56c142506bbf642825",
       periphery: "0x6fecbf42b2dcf4bfd3c1c60dcd956247f4abd35e",
     },
-    {
-      factory: "0x5e6613da86099c264ef9cd56c142506bbf642825",
-      periphery: "0x6fecbf42b2dcf4bfd3c1c60dcd956247f4abd35e",
-    },
   ],
 };
 
