@@ -8,6 +8,7 @@ import { OverlaySDKTrade } from "./trade/index.js";
 import { OverlaySDKLiquidatedPositions } from "./positionsTables/liquidatePositionsTable/liquidatePositionsTable.js";
 import { OverlaySDKAccountDetails } from "./account/account.js";
 import { OverlaySDKShiva } from "./shiva/shiva.js";
+import { OverlaySDKLBSC } from "./lbsc/lbsc.js";
 
 export class OverlaySDK {
   readonly core: OverlaySDKCore;
@@ -21,6 +22,7 @@ export class OverlaySDK {
   readonly liquidatedPositions: OverlaySDKLiquidatedPositions;
   readonly accountDetails: OverlaySDKAccountDetails;
   readonly shiva: OverlaySDKShiva;
+  readonly lbsc: OverlaySDKLBSC;
 
   constructor(props: OverlaySDKCoreProps) {
     // Core functionality
@@ -45,5 +47,6 @@ export class OverlaySDK {
       this
     );
     this.shiva = new OverlaySDKShiva({ ...props, core }, this);
+    this.lbsc = new OverlaySDKLBSC({ ...props, core });
   }
 }

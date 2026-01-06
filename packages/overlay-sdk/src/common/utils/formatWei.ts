@@ -1,15 +1,19 @@
 import { formatUnits, parseUnits } from 'viem'
 import { invariant } from './sdk-error'
 
-export function formatWeiToParsedNumber(wei: bigint | string | undefined, decimals = 18, round?: number) {
-  let parsedWei
+export function formatWeiToParsedNumber(
+  wei: bigint | string | undefined,
+  tokenDecimals = 18,
+  displayDecimals?: number
+) {
+  if (!wei) return undefined
 
-  if (wei) {
-    parsedWei = formatUnits(BigInt(wei), 18)
-    return Number(Number(Number(parsedWei).toFixed(decimals)).toFixed(round))
-  } else {
-    return undefined
-  }
+  const parsedWei = formatUnits(BigInt(wei), tokenDecimals)
+  const numValue = Number(parsedWei)
+
+  return displayDecimals !== undefined
+    ? Number(numValue.toFixed(displayDecimals))
+    : numValue
 }
 
 export function formatFundingRateToDaily(wei: bigint | string | undefined, decimals: number, round: number) {

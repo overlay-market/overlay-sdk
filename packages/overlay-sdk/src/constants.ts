@@ -66,11 +66,6 @@ export type AddressFactoryPeripheryMap = { [chainId: number]: AddressFactoryPeri
 // V1 Periphery (State) contract addresses - used for querying position state
 // These are legacy single-periphery addresses for chains that don't use multiple factories
 export const V1_PERIPHERY_ADDRESS: AddressMap = {
-  [CHAINS.ArbitrumSepolia]: "0x2878837ea173e8bd40db7cee360b15c1c27deb5a",
-  [CHAINS.Imola]: "0x0CA6128B528f503C7c649ba9cc02560a8B9fD55e",
-  [CHAINS.Bartio]: "0x4f69dfb24958fcf69b70bca73c3e74f2c82bb405",
-  [CHAINS.BerachainMainnet]: "0x2a154ebA61A182e726a540ae2856fc012106e763",
-  [CHAINS.Bepolia]: "0xC50C7a502e6aE874A6299f385F938aF5C30CB91d",
   [CHAINS.BscTestnet]: "0x6C57F1d360027c10b3b698b302120DaD31CB34c9",
   [CHAINS.BscMainnet]: "0x10575a9C8F36F9F42D7DB71Ef179eD9BEf8Df238",
 };
@@ -109,35 +104,28 @@ export const V1_FACTORY_PERIPHERY: AddressFactoryPeripheryMap = {
       factory: "0x17D4F2ea0c3227FB6b31ADA99265E41f3369150A",
       periphery: "0x9C52f7107efBe6e0010E924a0B53265ba4e8959d",
     },
+    {
+      factory: "0x5e6613da86099c264ef9cd56c142506bbf642825",
+      periphery: "0x6fecbf42b2dcf4bfd3c1c60dcd956247f4abd35e",
+    },
+    {
+      factory: "0x5e6613da86099c264ef9cd56c142506bbf642825",
+      periphery: "0x6fecbf42b2dcf4bfd3c1c60dcd956247f4abd35e",
+    },
   ],
 };
 
 export const OVL_ADDRESS: AddressMap = {
-  [CHAINS.ArbitrumSepolia]: "0x3E27fAe625f25291bFda517f74bf41DC40721dA2",
-  [CHAINS.Imola]: "0xCde46284D32148c4D470fA33BA788710b3d21E89",
-  [CHAINS.Bartio]: "0x97576e088f0d05EF68cac2EEc63d017FE90952a0",
-  [CHAINS.BerachainMainnet]: "0xaeD2f0c7AaCfE2B59Cc70964833EA4C28C2CdbDB",
-  [CHAINS.Bepolia]: "0xd37f15e6f2E5F4A624bbb9864f56bbd2e9b201b5",
   [CHAINS.BscTestnet]: "0x1A0eF183D548405705bb9B00E8b4ef3524AE090E",
   [CHAINS.BscMainnet]: "0x1F34c87ded863Fe3A3Cd76FAc8adA9608137C8c3",
 };
 
 export const OVL_USDT_POOL_ADDRESS: AddressMap = {
-  [CHAINS.ArbitrumSepolia]: zeroAddress,
-  [CHAINS.Imola]: zeroAddress,
-  [CHAINS.Bartio]: zeroAddress,
-  [CHAINS.BerachainMainnet]: zeroAddress,
-  [CHAINS.Bepolia]: zeroAddress,
   [CHAINS.BscTestnet]: zeroAddress,
   [CHAINS.BscMainnet]: "0x927aE3c2cd88717a1525a55021AF9612C3F04583"
 }
 
 export const SHIVA_ADDRESS: AddressMap = {
-  [CHAINS.ArbitrumSepolia]: zeroAddress,
-  [CHAINS.Imola]: zeroAddress,
-  [CHAINS.Bartio]: '0x3Cd0bC7E680006A322536311F3a9B0235bb6d865',
-  [CHAINS.BerachainMainnet]: "0x7a555c83F7d2D26362C2b4954Cf01EBf9fA07DA0",
-  [CHAINS.Bepolia]: "0xFf84cb66F0c302Cd860244868E10D110D8dc505D",
   [CHAINS.BscTestnet]: "0x9fB7D92526Fc13bB3c0603d39E55e5C371c26Ce6",
   [CHAINS.BscMainnet]: "0xeB497c228F130BD91E7F13f81c312243961d894A",
 };
@@ -150,52 +138,17 @@ interface Network {
 }
 
 export const NETWORKS: { [chainId: number]: Network } = {
-  [CHAINS.ArbitrumSepolia]: {
-    MARKET_PRICES_API: "https://api.overlay.market/sepolia-charts/v1/charts",
-    SUBGRAPH_URL:
-      "https://api.studio.thegraph.com/query/77621/overlay-sepolia-test-less-call/version/latest",
-    MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
-    hasShiva: false,
-  },
-  [CHAINS.Imola]: {
-    MARKET_PRICES_API: "https://api.overlay.market/imola-charts/v1/charts",
-    SUBGRAPH_URL:
-      "https://subgraph.overlay.market/query/subgraphs/NETWORKS/overlay/v1-subgraph",
-    MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
-    hasShiva: false,
-  },
-  [CHAINS.Bartio]: {
-    MARKET_PRICES_API: "https://api.overlay.market/bartio-charts/v1/charts",
-    SUBGRAPH_URL:
-      "https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-bartio/prod/gn",
-    MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
-    hasShiva: true,
-  },
-  [CHAINS.BerachainMainnet]: {
-    MARKET_PRICES_API: "https://api.overlay.market/berachain-charts/v1/charts",
-    SUBGRAPH_URL:
-      "https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-berachain/prod/gn",
-    MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
-    hasShiva: true,
-  },
-  [CHAINS.Bepolia]: {
-    MARKET_PRICES_API: "https://api.overlay.market/bepolia-charts/v1/charts",
-    SUBGRAPH_URL:
-      "https://api.goldsky.com/api/public/project_cm3n5avsu08tw01vthbry8fl7/subgraphs/overlay-bepolia/latest/gn",
-    MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
-    hasShiva: true,
-  },
   [CHAINS.BscTestnet]: {
     MARKET_PRICES_API: "https://api.overlay.market/bsc-testnet-charts/v1/charts",
     SUBGRAPH_URL:
-      "https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-bnb-testnet/multi-factory/gn",
+      "https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-bnb-testnet/4-stable-pnl/gn",
     MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
     hasShiva: true,
   },
   [CHAINS.BscMainnet]: {
     MARKET_PRICES_API: "https://api.overlay.market/bsc-mainnet-charts/v1/charts",
     SUBGRAPH_URL:
-      "https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-bsc/prod/gn",
+      "https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-bsc/prod-lbsc/gn",
     MARKETS_DETAILS_API: "https://api.overlay.market/data/api/markets",
     hasShiva: true,
   },

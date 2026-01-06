@@ -249,7 +249,7 @@ export class OverlaySDKMarket extends OverlaySDKModule {
     const positionDetails = await getPositionDetails(this.core.chainId, account.address.toLowerCase(), marketPositionId) ?? null
     invariant(positionDetails, `Position not found for ${marketPositionId}; ${account.address.toLowerCase()}; ${positionId}; marketAddress: ${marketAddress}; chainId: ${this.core.chainId}`)
 
-    if (positionDetails.router.id !== zeroAddress) {
+    if (positionDetails.router?.id !== zeroAddress) {
       return this.sdk.shiva.unwind(props, true);
     }
     return this._unwind(props);

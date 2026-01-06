@@ -1,6 +1,6 @@
 overrideExisting: true
-schema: https://api.studio.thegraph.com/query/77621/overlay-sepolia/version/latest
-documents: "./**/**/!(*.d).{ts,tsx}"
+schema: https://api.goldsky.com/api/public/project_clyiptt06ifuv01ul9xiwfj28/subgraphs/overlay-bnb-testnet/4-stable-pnl/gn
+documents: "src/**/**/!(*.d).{ts,tsx}"
 generates:
   src/types.ts:
     plugins:

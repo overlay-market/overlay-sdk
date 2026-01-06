@@ -37,6 +37,7 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
   readonly logMode: LOG_MODE;
   readonly brokerId: number;
   readonly useShiva: boolean;
+  readonly oneInchApiBaseUrl: string | undefined;
   private factoryAddresses: Address[];
   private factoryPeripheryMap: Map<string, Address>;
 
@@ -50,6 +51,7 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
     this.rpcUrls = props.rpcUrls;
     this.logMode = props.logMode ?? "info";
     this.brokerId = props.brokerId ?? 0;
+    this.oneInchApiBaseUrl = props.oneInchApiBaseUrl;
     // if the chain has shiva, use the useShiva prop, otherwise set it to false
     this.useShiva = NETWORKS[this.chainId].hasShiva ? props.useShiva ?? false : false;
 
@@ -218,7 +220,7 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
           code: ERROR_CODE.INVALID_ARGUMENT,
         });
       }
-      
+
       const currentRpcProvider = OverlaySDKCore.createRpcProvider(chainId, rpcConfig);
       return {
         chain,
@@ -297,8 +299,8 @@ export default class OverlaySDKCore extends OverlaySDKCacheable {
     const maxPriorityFeePerGas =
       feeHistory.reward && feeHistory.reward.length > 0
         ? feeHistory.reward
-            .map((fees) => (fees[0] ? BigInt(fees[0]) : 0n))
-            .reduce((sum, fee) => sum + fee) / BigInt(feeHistory.reward.length)
+          .map((fees) => (fees[0] ? BigInt(fees[0]) : 0n))
+          .reduce((sum, fee) => sum + fee) / BigInt(feeHistory.reward.length)
         : 0n;
 
     const lastBaseFeePerGas = feeHistory.baseFeePerGas[0]

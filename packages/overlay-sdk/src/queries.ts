@@ -32,6 +32,16 @@ export const OpenPositionsQuery = gql`
         router {
           id
         }
+        loan {
+          id
+          loanId
+          stableAmount
+          ovlAmount
+          price
+          ovlRepaid
+          collateralReturned
+          collateralSeized
+        }
       }
     }
   }
@@ -66,6 +76,16 @@ export const OpenPositionsNoRouterQuery = gql`
           id
           isShutdown
         }
+        loan {
+          id
+          loanId
+          stableAmount
+          ovlAmount
+          price
+          ovlRepaid
+          collateralReturned
+          collateralSeized
+        }
       }
     }
   }
@@ -89,6 +109,7 @@ export const UnwindPositionsQuery = gql`
         size
         timestamp
         transferAmount
+        stableOut
         unwindNumber
         position {
           createdAtTimestamp
@@ -106,6 +127,16 @@ export const UnwindPositionsQuery = gql`
           }
           router {
             id
+          }
+          loan {
+            id
+            loanId
+            stableAmount
+            ovlAmount
+            price
+            ovlRepaid
+            collateralReturned
+            collateralSeized
           }
         }
       }
@@ -131,6 +162,7 @@ export const UnwindPositionsNoRouterQuery = gql`
         size
         timestamp
         transferAmount
+        stableOut
         unwindNumber
         position {
           createdAtTimestamp
@@ -145,6 +177,16 @@ export const UnwindPositionsNoRouterQuery = gql`
           market {
             feedAddress
             id
+          }
+          loan {
+            id
+            loanId
+            stableAmount
+            ovlAmount
+            price
+            ovlRepaid
+            collateralReturned
+            collateralSeized
           }
         }
       }
@@ -210,6 +252,16 @@ export const LiquidatedPositionsQuery = gql`
           router {
             id
           }
+          loan {
+            id
+            loanId
+            stableAmount
+            ovlAmount
+            price
+            ovlRepaid
+            collateralReturned
+            collateralSeized
+          }
         }
       }
     }
@@ -243,6 +295,16 @@ export const LiquidatedPositionsNoRouterQuery = gql`
             feedAddress
             id
           }
+          loan {
+            id
+            loanId
+            stableAmount
+            ovlAmount
+            price
+            ovlRepaid
+            collateralReturned
+            collateralSeized
+          }
         }
       }
     }
@@ -256,6 +318,8 @@ export const NumberOfPositionsQuery = gql`
       numberOfOpenPositions
       numberOfUnwinds
       realizedPnl
+      realizedPnlOvl
+      realizedPnlStables
     }
   }
 `;
@@ -279,6 +343,11 @@ query queryPosition($account: ID!, $marketPositionId: ID!) {
       router {
         id
       }
+      loan {
+        id
+        ovlAmount
+        stableAmount
+      }
       initialOi
       initialDebt
       initialCollateral
@@ -313,6 +382,7 @@ query queryPosition($account: ID!, $marketPositionId: ID!) {
         price
         unwindNumber
         transferAmount
+        stableOut
         pnl
         size
       }
@@ -336,6 +406,11 @@ query queryPositionNoRouter($account: ID!, $marketPositionId: ID!) {
         feedAddress
         isShutdown
       }
+      loan {
+        id
+        ovlAmount
+        stableAmount
+      }
       initialOi
       initialDebt
       initialCollateral
@@ -370,6 +445,7 @@ query queryPositionNoRouter($account: ID!, $marketPositionId: ID!) {
         price
         unwindNumber
         transferAmount
+        stableOut
         pnl
         size
       }

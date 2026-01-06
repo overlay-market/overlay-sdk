@@ -2,8 +2,8 @@ export enum TradeState {
   PositionUnderwater = "Position Underwater",
   ExceedsOICap = "Exceeds OI Cap",
   ExceedsCircuitBreakerOICap = "Exceeds Circuit Breaker OI Cap",
-  OVLBalanceBelowMinimum = "OVL Balance Below Minimum",
-  NeedsApproval = "Approve OVL",
+  OVLBalanceBelowMinimum = "Balance Below Minimum",
+  NeedsApproval = "Approve Collateral",
   Trade = "Trade",
   TradeHighPriceImpact = "Trade - High Price Impact",
   AmountExceedsMaxInput = "Amount Exceeds Max Input",
@@ -30,7 +30,9 @@ export type TradeStateData = {
   };
   tradeState: TradeState;
   tradingFeeRate: number;
-  estimatedCollateral: number;
+  initialCollateral: number;
+  buildFee: number;
+  totalCost: number;
 }
 
 export type UnwindStateSuccess = {
@@ -58,6 +60,13 @@ export type UnwindStateSuccess = {
   positionId: number;
   marketAddress: string;
   useShiva: boolean;
+  stableValues?: {
+    value: string;
+    debt: string;
+    initialCollateral: string;
+    initialNotional: string;
+    maintenanceMargin: string;
+  };
 }
 
 export type UnwindStateError = {
@@ -92,6 +101,7 @@ export type TradeStateOnchainData = {
   },
   minCollateral: bigint,
   tradingFeeRate: bigint,
-  balance: bigint,
+  ovlBalance: bigint,
+  stableBalance: bigint,
   currentAllowance: bigint
 }

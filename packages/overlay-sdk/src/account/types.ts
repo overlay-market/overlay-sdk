@@ -8,6 +8,8 @@ export type OverviewDataByPeriod = {
 export type OverviewData = {
   numberOfOpenPositions: number;
   realizedPnl: string | number;
+  realizedPnlUsdt: string;
+  realizedPnlOvl: string;
   totalValueLocked: string;
   unrealizedPnL: string;
   lockedPlusUnrealized: string;

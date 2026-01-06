@@ -5,7 +5,7 @@ import { OVL_ADDRESS, SHIVA_ADDRESS } from "../constants";
 import { OverlaySDKCommonProps } from "../core/types";
 import { OverlaySDK } from "../sdk";
 import { formatBigNumber, formatFundingRateToDaily } from "../common/utils";
-import { TradeState, TradeStateOnchainData, UnwindState, UnwindStateData } from "./types";
+import { TradeState, TradeStateOnchainData, UnwindState, UnwindStateData, UnwindStateSuccess } from "./types";
 import { getPositionDetails } from "../subgraph";
 import { OverlayV1StateABI } from "../markets/abis/OverlayV1State";
 import { OverlayV1Market2ABI } from "../markets/abis/OverlayV1Market2";
@@ -123,9 +123,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const {marketAddress} = await this._getMarketAddressAndChainId(marketId)
 
     const {oiShares, isLong} = await this.sdk.market.getOiShares(marketAddress, positionId, owner)
-    console.log(oiShares, isLong)
     const oiSharesFraction = oiShares * fraction / 10n ** 18n
-    console.log(oiSharesFraction)
 
     const priceInfo = await this.getPriceInfo(marketId, oiSharesFraction, 10n ** 18n, slippage, !isLong, decimals)
 
@@ -163,11 +161,13 @@ export class OverlaySDKTrade extends OverlaySDKModule {
 
   private _getMaxInputIncludingFees(tradingFeeRate: bigint, balance: bigint, leverage: bigint, decimals: number = 18) {
     const tradingFeeRateParsed = formatBigNumber(tradingFeeRate, 18, 6, true) as number
-    const balanceParsed = formatBigNumber(balance, 18, 18, true) as number
+    const balanceParsed = formatBigNumber(balance, decimals, 18, true) as number
+    const leverageParsed = formatBigNumber(leverage, 18, 18, true) as number
 
-    const returnValue = balanceParsed/(1+tradingFeeRateParsed * (formatBigNumber(leverage, 18, 18, true) as number))
-  
-    return Math.trunc(returnValue * Math.pow(10, decimals)) / Math.pow(10, decimals)
+    const returnValue = balanceParsed/(1+tradingFeeRateParsed * leverageParsed)
+
+    const result = Math.trunc(returnValue * Math.pow(10, decimals)) / Math.pow(10, decimals)
+    return result
   }
 
   public async getFee(marketId: string) {
@@ -211,6 +211,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     slippage: number,
     isLong: boolean,
     address: Address,
+    collateralType: 'OVL' | 'USDT' = 'OVL'
   ) {
     const {marketAddress, chainId} = await this._getMarketAddressAndChainId(marketId)
     const periphery = await this.getPeriphery(marketAddress)
@@ -225,12 +226,15 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       marketState,
       minCollateral,
       tradingFeeRate: rawTradingFeeRate,
-      balance,
+      ovlBalance,
+      stableBalance,
       currentAllowance
-    } = await this._getTradeStateData(chainId, marketAddress, periphery, collateral, leverage, isLong, address)
+    } = await this._getTradeStateData(chainId, marketAddress, periphery, collateral, leverage, isLong, address, collateralType)
 
     const liquidationPriceEstimate = this._getLiquidationPriceEstimate(liquidationPrice)
-    const maxInputIncludingFees = this._getMaxInputIncludingFees(rawTradingFeeRate, balance, leverage)
+    // Use appropriate balance based on collateral type
+    const balanceToUse = collateralType === 'USDT' ? stableBalance : ovlBalance;
+    const maxInputIncludingFees = this._getMaxInputIncludingFees(rawTradingFeeRate, balanceToUse, leverage)
     const price = await this._getPrice(periphery, marketAddress, rawExpectedOi, isLong) as bigint
     const priceInfo = await this._getPriceInfo(slippage, isLong, price, marketState.ask, marketState.bid, 18)
     const tradingFeeRate = this._getFee(rawTradingFeeRate)
@@ -258,17 +262,35 @@ export class OverlaySDKTrade extends OverlaySDKModule {
 
     const isPriceImpactHigh = Number(priceInfo.priceImpactPercentage) - Number(slippage) > 0
 
-    const amountExceedsMaxInput = 
-      Number(formatBigNumber(collateral, 18, 18)) > maxInputIncludingFees
-    
-    const amountBelowMinCollateral = 
-      Number(formatBigNumber(collateral, 18, 18)) < formattedMinCollateral  
+    // Fee calculation: User input = initial collateral for both OVL and USDT
+    // Total cost = initial collateral + fees
+    const leverageNum = Number(formatBigNumber(leverage, 18, 18))
+    let initialCollateral: number
+    let buildFee: number
+    let totalCost: number
 
-    // determine estimated collateral
-    const preAdjustedOi = Number(formatBigNumber(collateral, 18, 18)) * Number(formatBigNumber(leverage, 18, 18))
-    const calculatedBuildFee = Number(preAdjustedOi) * tradingFeeRate / 100
-    const estimatedCollateral = Number(formatBigNumber(collateral, 18, 18)) + calculatedBuildFee
-    
+    // User input is always the desired initial collateral
+    initialCollateral = Number(formatBigNumber(collateral, 18, 18))
+
+    if (collateralType === 'USDT') {
+      // For USDT (LBSC): Calculate total USDT needed to achieve desired initial collateral
+      // When we send totalCost to LBSC, it will split into initialCollateral + fees
+      const feeMultiplier = 1 + (leverageNum * tradingFeeRate / 100)
+      totalCost = initialCollateral * feeMultiplier
+      buildFee = totalCost - initialCollateral
+    } else {
+      // For OVL: Simple addition of collateral + fees
+      const notional = initialCollateral * leverageNum
+      buildFee = notional * tradingFeeRate / 100
+      totalCost = initialCollateral + buildFee
+    }
+
+    // Compare user INPUT to max allowed INPUT (not total cost)
+    // maxInputIncludingFees is the max amount user can ENTER, not the max total cost
+    const amountExceedsMaxInput = initialCollateral > maxInputIncludingFees
+
+    const amountBelowMinCollateral = initialCollateral < formattedMinCollateral
+
     let tradeState: TradeState = TradeState.Trade
     if (showUnderwaterFlow) tradeState = TradeState.PositionUnderwater
     if (exceedOiCap) tradeState = TradeState.ExceedsOICap
@@ -286,7 +308,9 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       priceInfo,
       tradeState,
       tradingFeeRate,
-      estimatedCollateral
+      initialCollateral,
+      buildFee,
+      totalCost
     }
   }
 
@@ -312,7 +336,7 @@ export class OverlaySDKTrade extends OverlaySDKModule {
 
     if (!positionDetails) return { error: "Position not found", isShutdown: false, cost: 0, unwindState: UnwindState.PositionNotFound, positionId: posId, marketAddress }
 
-    const positionAccount = (positionDetails.router.id === zeroAddress ? account.toLowerCase() : SHIVA_ADDRESS[chainId].toLowerCase()) as Address
+    const positionAccount = (positionDetails.router?.id === zeroAddress ? account.toLowerCase() : SHIVA_ADDRESS[chainId].toLowerCase()) as Address
 
     if (positionDetails.market.isShutdown) {
       const cost = await this.sdk.state.getCost(periphery, marketAddress, positionAccount, positionId)
@@ -373,6 +397,54 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       ? (estimatedPrice * (base - slippageFactor)) / base
       : (estimatedPrice * (base + slippageFactor)) / base;
 
+    // Calculate stable values for LBSC positions
+    let stableValues: UnwindStateSuccess['stableValues'] = undefined;
+    if ((positionDetails as any).loan) {
+      try {
+        const oraclePrice = await this.sdk.lbsc.getOraclePrice();
+        const loan = (positionDetails as any).loan;
+
+        // Helper function to convert OVL to USDT using oracle price
+        const convertToStable = (ovlValue: bigint | string): string => {
+          const WAD = 10n ** 18n;
+          const ovlBigInt = typeof ovlValue === 'string' ? BigInt(ovlValue) : ovlValue;
+          const stableValueWei = (ovlBigInt * oraclePrice) / WAD;
+          const stableValueNum = Number(stableValueWei) / 1e18;
+          return stableValueNum < 1
+            ? stableValueNum.toFixed(6)
+            : stableValueNum.toFixed(2);
+        };
+
+        // Calculate initial collateral in USDT using the loan ratio
+        // initialCollateralUSDT = initialCollateralOVL × (stableAmount / ovlAmount)
+        const initialCollateralOVL = BigInt(positionDetails.initialCollateral);
+        const stableAmount = BigInt(loan.stableAmount);
+        const ovlAmount = BigInt(loan.ovlAmount);
+
+        // Calculate: (initialCollateralOVL * stableAmount) / ovlAmount
+        const initialCollateralUSDTWei = (initialCollateralOVL * stableAmount) / ovlAmount;
+        const actualInitialCollateral = Number(initialCollateralUSDTWei) / 1e18;
+
+        const lev = Number(positionDetails.leverage);
+        const initialNotionalNative = actualInitialCollateral * lev;
+        const debtNative = initialNotionalNative - actualInitialCollateral;
+
+        const formatNative = (value: number): string => {
+          return Math.abs(value) < 1 ? value.toFixed(6) : value.toFixed(2);
+        };
+
+        stableValues = {
+          value: convertToStable(positionValue),
+          debt: formatNative(debtNative),
+          initialCollateral: formatNative(actualInitialCollateral),
+          initialNotional: formatNative(initialNotionalNative),
+          maintenanceMargin: convertToStable(maintenanceMargin),
+        };
+      } catch (error) {
+        console.error('Failed to calculate stable values for unwind state:', error);
+      }
+    }
+
     return {
       pnl: formatBigNumber(pnl, 18, 2),
       side: info.isLong ? "Long" : "Short",
@@ -397,7 +469,8 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       priceLimit,
       positionId: posId,
       marketAddress,
-      useShiva: positionDetails.router.id !== zeroAddress
+      useShiva: positionDetails.router?.id !== zeroAddress,
+      stableValues,
     } as UnwindStateData
   }
 
@@ -408,7 +481,8 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     collateral: bigint,
     leverage: bigint,
     isLong: boolean,
-    userAddress: Address
+    userAddress: Address,
+    collateralType: 'OVL' | 'USDT' = 'OVL'
   ): Promise<TradeStateOnchainData> {
     const OverlayV1MarketABIFunctions = OverlayV1Market2ABI.filter((abi) => abi.type === "function")
     const OverlayV1StateABIFunctions = OverlayV1StateABI.filter((abi) => abi.type === "function")
@@ -417,6 +491,30 @@ export class OverlaySDKTrade extends OverlaySDKModule {
     const marketContract = { address: marketAddress, abi: OverlayV1MarketABIFunctions }
     const stateContract = { address: periphery, abi: OverlayV1StateABIFunctions }
     const ovlContract = { address: OVL_ADDRESS[chainId], abi: OVLTokenABIFunctions }
+
+    // Always fetch stable token address for balance checking
+    let stableTokenAddress: Address;
+    try {
+      stableTokenAddress = await this.sdk.lbsc.getStableTokenAddress();
+    } catch {
+      // LBSC not available - use OVL address as fallback (won't be used for USDT trades)
+      stableTokenAddress = OVL_ADDRESS[chainId];
+    }
+
+    // Get allowance contract details based on collateral type
+    let allowanceContract;
+    let allowanceSpender;
+
+    if (collateralType === 'USDT') {
+      // For USDT: check stable token allowance to LBSC
+      const lbscAddress = await this.sdk.lbsc.getLbscAddress();
+      allowanceContract = { address: stableTokenAddress, abi: OVLTokenABIFunctions };
+      allowanceSpender = lbscAddress;
+    } else {
+      // For OVL: check OVL allowance to Market or Shiva
+      allowanceContract = ovlContract;
+      allowanceSpender = this.core.usingShiva() ? SHIVA_ADDRESS[chainId] : marketAddress;
+    }
     
     const [
       midPrice,
@@ -428,7 +526,8 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       marketState,
       minCollateral,
       tradingFeeRate,
-      balance,
+      ovlBalance,
+      stableBalance,
       currentAllowance
     ] = await this.core.rpcProvider.multicall({
         allowFailure: false,
@@ -483,10 +582,17 @@ export class OverlaySDKTrade extends OverlaySDKModule {
             functionName: "balanceOf",
             args: [userAddress],
           },
+          // Fetch stable token balance
           {
-            ...ovlContract,
+            address: stableTokenAddress,
+            abi: OVLTokenABIFunctions,
+            functionName: "balanceOf",
+            args: [userAddress],
+          },
+          {
+            ...allowanceContract,
             functionName: "allowance",
-            args: [userAddress, this.core.usingShiva() ? SHIVA_ADDRESS[chainId] : marketAddress],
+            args: [userAddress, allowanceSpender],
           },
         ] as const
     });
@@ -501,7 +607,8 @@ export class OverlaySDKTrade extends OverlaySDKModule {
       marketState,
       minCollateral,
       tradingFeeRate,
-      balance,
+      ovlBalance,
+      stableBalance,
       currentAllowance
     }
   }
