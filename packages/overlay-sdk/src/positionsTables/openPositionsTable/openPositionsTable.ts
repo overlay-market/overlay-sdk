@@ -42,6 +42,7 @@ export type OpenPositionData = {
   priceCurrency: string;
   deprecated?: boolean;
   initialCollateral: string | number | undefined;
+  router?: { id: Address } | null;
   loan?: {
     id: string;
     loanId: string;
@@ -165,7 +166,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     }
 
     console.log(`Processing ${dataToProcess.length} positions. Original count from subgraph: ${allRawOpenDataFromSubgraph.length}. MarketId param: ${marketId || 'Not specified'}`);
-    
+
     let positionsDataFromContracts: {
       [key: string]: PositionData | null | undefined
     } = {};
@@ -351,6 +352,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
         parsedFunding: '0',
         priceCurrency: '0',
         initialCollateral: formatBigNumber(open.initialCollateral, 18, 18),
+        router: open.router || null,
         loan: open.loan || null,
         stableValues: open.loan ? {
           size: open.loan.stableAmount,
@@ -487,6 +489,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       priceCurrency: priceCurrency,
       deprecated: deprecated,
       initialCollateral: formatBigNumber(open.initialCollateral, 18, 18),
+      router: open.router || null,
       loan: open.loan || null,
       stableValues: stableValues,
     };
@@ -617,6 +620,211 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     }
 
     return data;
+  }
+
+  /**
+   * Fetches position PnL data with market prices in a single Multicall
+   * Reuses existing Multicall infrastructure from getPositionsData()
+   *
+   * @param chainId - The chain ID
+   * @param marketAddress - The market contract address
+   * @param positions - Array of positions with positionId, walletAddress, and optional loan data
+   * @param includeOraclePrice - Whether to fetch oracle price for LBSC conversion (default: true)
+   * @returns Object containing prices (bid/ask/mid) and position PnL data
+   */
+  async getPositionsPnLWithPrices(
+    chainId: CHAINS,
+    marketAddress: Address,
+    positions: Array<{
+      positionId: bigint;
+      walletAddress: Address;
+      loan?: { ovlAmount: string; stableAmount: string } | null;
+    }>,
+    includeOraclePrice: boolean = true
+  ): Promise<{
+    prices: { bid: bigint; ask: bigint; mid: bigint };
+    positions: Map<string, {
+      value: bigint;
+      cost: bigint;
+      tradingFee: bigint;
+      pnl: bigint;
+      pnlFormatted: number;
+      pnlUSDT?: string;
+    }>;
+    timestamp: number;
+  }> {
+    // Helper function to convert OVL PnL to USDT for LBSC positions
+    const convertPnLToStable = (
+      ovlValueWei: bigint,
+      loan: { ovlAmount: string; stableAmount: string },
+      oraclePrice: bigint
+    ): string | undefined => {
+      try {
+        if (ovlValueWei === 0n) {
+          return "0";
+        }
+
+        const isNegative = ovlValueWei < 0n;
+        const absOvlValueWei = isNegative ? -ovlValueWei : ovlValueWei;
+
+        // For POSITIVE values (gains): Use oracle price
+        if (ovlValueWei > 0n) {
+          const WAD = BigInt(10 ** 18);
+          const stableValueWei = (absOvlValueWei * oraclePrice) / WAD;
+          const stableValueNum = Number(stableValueWei) / 1e18;
+          const formattedValue = stableValueNum < 1 ? stableValueNum.toFixed(6) : stableValueNum.toFixed(2);
+          return formattedValue;
+        }
+
+        // For NEGATIVE values (losses): Use ratio-based formula
+        const loanOvlAmount = BigInt(loan.ovlAmount);
+        if (loanOvlAmount === 0n) {
+          console.warn("loan.ovlAmount is 0, cannot calculate stable value");
+          return undefined;
+        }
+
+        const stableAmount = BigInt(loan.stableAmount);
+        const stableValueWei = (absOvlValueWei * stableAmount) / loanOvlAmount;
+        const stableValueNum = Number(stableValueWei) / 1e18;
+        const formattedValue = stableValueNum < 1 ? stableValueNum.toFixed(6) : stableValueNum.toFixed(2);
+
+        return isNegative ? `-${formattedValue}` : formattedValue;
+      } catch (error) {
+        console.error("Error calculating stable value:", error);
+        return undefined;
+      }
+    };
+
+    // Get periphery state address
+    const periphery = await this.sdk.market.periphery(marketAddress);
+    invariant(periphery, `Periphery not configured for market ${marketAddress}`);
+
+    // Fetch oracle price for LBSC conversion if needed
+    let oraclePrice: bigint | undefined;
+    const needsLBSC = includeOraclePrice && positions.some((p) => p.loan);
+
+    if (needsLBSC) {
+      oraclePrice = await this.fetchOraclePrice();
+    }
+
+    // Build multicall array
+    const calls: {
+      address: Address;
+      abi: typeof OverlayV1StateABI;
+      functionName: string;
+      args: readonly unknown[];
+    }[] = [];
+
+    // Add prices call
+    calls.push({
+      address: periphery,
+      abi: OverlayV1StateABI,
+      functionName: "prices",
+      args: [marketAddress],
+    });
+
+    // Add position calls (value, cost, tradingFee for each position)
+    for (const pos of positions) {
+      calls.push(
+        {
+          address: periphery,
+          abi: OverlayV1StateABI,
+          functionName: "value",
+          args: [marketAddress, pos.walletAddress, pos.positionId],
+        },
+        {
+          address: periphery,
+          abi: OverlayV1StateABI,
+          functionName: "cost",
+          args: [marketAddress, pos.walletAddress, pos.positionId],
+        },
+        {
+          address: periphery,
+          abi: OverlayV1StateABI,
+          functionName: "tradingFee",
+          args: [marketAddress, pos.walletAddress, pos.positionId],
+        }
+      );
+    }
+
+    // Execute single multicall
+    const results = await this.core.rpcProvider.multicall({
+      allowFailure: true,
+      contracts: calls,
+    });
+
+    // Process prices result
+    const pricesResult = results[0];
+    let bid: bigint = 0n;
+    let ask: bigint = 0n;
+    let mid: bigint = 0n;
+
+    if (pricesResult.status === "success" && pricesResult.result) {
+      const priceResults = pricesResult.result as unknown as readonly [bigint, bigint, bigint];
+      bid = priceResults[0];
+      ask = priceResults[1];
+      mid = priceResults[2];
+    }
+
+    // Process position results
+    const positionsMap = new Map<string, {
+      value: bigint;
+      cost: bigint;
+      tradingFee: bigint;
+      pnl: bigint;
+      pnlFormatted: number;
+      pnlUSDT?: string;
+    }>();
+
+    const positionResultsStartIndex = 1;
+
+    for (let i = 0; i < positions.length; i++) {
+      const valueIndex = positionResultsStartIndex + i * 3;
+      const costIndex = valueIndex + 1;
+      const tradingFeeIndex = valueIndex + 2;
+
+      const valueResult = results[valueIndex];
+      const costResult = results[costIndex];
+      const tradingFeeResult = results[tradingFeeIndex];
+
+      if (
+        valueResult.status === "success" &&
+        costResult.status === "success" &&
+        tradingFeeResult.status === "success" &&
+        valueResult.result !== undefined &&
+        costResult.result !== undefined &&
+        tradingFeeResult.result !== undefined
+      ) {
+        const value = valueResult.result as unknown as bigint;
+        const cost = costResult.result as unknown as bigint;
+        const tradingFee = tradingFeeResult.result as unknown as bigint;
+        const pnl = value - cost - tradingFee;
+        const pnlOVL = Number(pnl) / 1e18;
+
+        // Convert to USDT for LBSC positions
+        let pnlUSDT: string | undefined;
+        const position = positions[i];
+        if (position.loan && oraclePrice !== undefined) {
+          pnlUSDT = convertPnLToStable(pnl, position.loan, oraclePrice);
+        }
+
+        const key = `${marketAddress}-${positions[i].positionId}`;
+        positionsMap.set(key, {
+          value,
+          cost,
+          tradingFee,
+          pnl,
+          pnlFormatted: pnlOVL,
+          pnlUSDT,
+        });
+      }
+    }
+
+    return {
+      prices: { bid, ask, mid },
+      positions: positionsMap,
+      timestamp: Date.now(),
+    };
   }
 
   async getOpenPositionData(
