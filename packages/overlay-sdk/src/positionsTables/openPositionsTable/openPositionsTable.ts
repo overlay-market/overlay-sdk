@@ -22,6 +22,7 @@ import { CHAINS, invariant } from "../../common";
 import { paginate } from "../../common/utils/paginate";
 import { OverlayV1StateABI } from "../../markets/abis/OverlayV1State";
 import { formatPriceWithCurrency } from "../../common/utils/formatPriceWithCurrency";
+import { LBSCABI } from "../../lbsc/abis/LBSC";
 
 type OpenPosition = NonNullable<
   NonNullable<OpenPositionsQuery["account"]>["positions"]
@@ -59,6 +60,21 @@ export type OpenPositionData = {
     funding: string;       // USDT if negative, OVL if positive
     initialCollateral: string; // USDT initial collateral
   };
+};
+
+export type PositionPnLEntry = {
+  value: bigint;
+  cost: bigint;
+  tradingFee: bigint;
+  pnl: bigint;
+  pnlFormatted: number;
+  pnlUSDT?: string;
+};
+
+export type MultiMarketPnLResult = {
+  positions: Map<string, PositionPnLEntry>;
+  marketPrices: Map<string, { bid: bigint; ask: bigint; mid: bigint }>;
+  timestamp: number;
 };
 
 export type PositionData = {
@@ -301,6 +317,43 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
 
     } catch (error) {
       console.error('Error calculating stable value:', error);
+      return undefined;
+    }
+  }
+
+  /**
+   * Convert OVL PnL (wei) to USDT for LBSC positions.
+   * Gains use oracle price; losses use loan ratio.
+   */
+  private convertPnLToStable(
+    ovlValueWei: bigint,
+    loan: { ovlAmount: string; stableAmount: string },
+    oraclePrice: bigint
+  ): string | undefined {
+    try {
+      if (ovlValueWei === 0n) return "0";
+      const isNegative = ovlValueWei < 0n;
+      const absOvlValueWei = isNegative ? -ovlValueWei : ovlValueWei;
+
+      if (ovlValueWei > 0n) {
+        const WAD = BigInt(10 ** 18);
+        const stableValueWei = (absOvlValueWei * oraclePrice) / WAD;
+        const stableValueNum = Number(stableValueWei) / 1e18;
+        return stableValueNum < 1 ? stableValueNum.toFixed(6) : stableValueNum.toFixed(2);
+      }
+
+      const loanOvlAmount = BigInt(loan.ovlAmount);
+      if (loanOvlAmount === 0n) {
+        console.warn("loan.ovlAmount is 0, cannot calculate stable value");
+        return undefined;
+      }
+      const stableAmount = BigInt(loan.stableAmount);
+      const stableValueWei = (absOvlValueWei * stableAmount) / loanOvlAmount;
+      const stableValueNum = Number(stableValueWei) / 1e18;
+      const formattedValue = stableValueNum < 1 ? stableValueNum.toFixed(6) : stableValueNum.toFixed(2);
+      return isNegative ? `-${formattedValue}` : formattedValue;
+    } catch (error) {
+      console.error("Error calculating stable value:", error);
       return undefined;
     }
   }
@@ -653,48 +706,6 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     }>;
     timestamp: number;
   }> {
-    // Helper function to convert OVL PnL to USDT for LBSC positions
-    const convertPnLToStable = (
-      ovlValueWei: bigint,
-      loan: { ovlAmount: string; stableAmount: string },
-      oraclePrice: bigint
-    ): string | undefined => {
-      try {
-        if (ovlValueWei === 0n) {
-          return "0";
-        }
-
-        const isNegative = ovlValueWei < 0n;
-        const absOvlValueWei = isNegative ? -ovlValueWei : ovlValueWei;
-
-        // For POSITIVE values (gains): Use oracle price
-        if (ovlValueWei > 0n) {
-          const WAD = BigInt(10 ** 18);
-          const stableValueWei = (absOvlValueWei * oraclePrice) / WAD;
-          const stableValueNum = Number(stableValueWei) / 1e18;
-          const formattedValue = stableValueNum < 1 ? stableValueNum.toFixed(6) : stableValueNum.toFixed(2);
-          return formattedValue;
-        }
-
-        // For NEGATIVE values (losses): Use ratio-based formula
-        const loanOvlAmount = BigInt(loan.ovlAmount);
-        if (loanOvlAmount === 0n) {
-          console.warn("loan.ovlAmount is 0, cannot calculate stable value");
-          return undefined;
-        }
-
-        const stableAmount = BigInt(loan.stableAmount);
-        const stableValueWei = (absOvlValueWei * stableAmount) / loanOvlAmount;
-        const stableValueNum = Number(stableValueWei) / 1e18;
-        const formattedValue = stableValueNum < 1 ? stableValueNum.toFixed(6) : stableValueNum.toFixed(2);
-
-        return isNegative ? `-${formattedValue}` : formattedValue;
-      } catch (error) {
-        console.error("Error calculating stable value:", error);
-        return undefined;
-      }
-    };
-
     // Get periphery state address
     const periphery = await this.sdk.market.periphery(marketAddress);
     invariant(periphery, `Periphery not configured for market ${marketAddress}`);
@@ -805,7 +816,7 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
         let pnlUSDT: string | undefined;
         const position = positions[i];
         if (position.loan && oraclePrice !== undefined) {
-          pnlUSDT = convertPnLToStable(pnl, position.loan, oraclePrice);
+          pnlUSDT = this.convertPnLToStable(pnl, position.loan, oraclePrice);
         }
 
         const key = `${marketAddress}-${positions[i].positionId}`;
@@ -823,6 +834,227 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
     return {
       prices: { bid, ask, mid },
       positions: positionsMap,
+      timestamp: Date.now(),
+    };
+  }
+
+  /**
+   * Fetches PnL data for positions across multiple markets in a single multicall.
+   * Combines prices(market) + value/cost/tradingFee per position into one RPC batch.
+   * LBSC oracle price is folded into the same multicall when needed.
+   */
+  async getMultiMarketPositionsPnL(
+    chainId: CHAINS,
+    marketGroups: Array<{
+      marketAddress: Address;
+      positions: Array<{
+        positionId: bigint;
+        walletAddress: Address;
+        loan?: { ovlAmount: string; stableAmount: string } | null;
+      }>;
+    }>
+  ): Promise<MultiMarketPnLResult> {
+    if (marketGroups.length === 0) {
+      return {
+        positions: new Map(),
+        marketPrices: new Map(),
+        timestamp: Date.now(),
+      };
+    }
+
+    // 1. Collect unique markets and check if any LBSC positions exist
+    const uniqueMarkets = new Map<string, Address>();
+    let needsLBSC = false;
+
+    for (const group of marketGroups) {
+      const key = group.marketAddress.toLowerCase();
+      if (!uniqueMarkets.has(key)) {
+        uniqueMarkets.set(key, group.marketAddress);
+      }
+      if (!needsLBSC && group.positions.some((p) => p.loan)) {
+        needsLBSC = true;
+      }
+    }
+
+    // 2. Resolve periphery for each unique market (+ LBSC address if needed) in parallel
+    const peripheryByMarket = new Map<string, Address>();
+    let lbscAddress: Address | undefined;
+
+    const peripheryPromises = Array.from(uniqueMarkets.entries()).map(
+      async ([key, marketAddress]) => {
+        const periphery = await this.sdk.market.periphery(marketAddress);
+        invariant(periphery, `Periphery not configured for market ${marketAddress}`);
+        peripheryByMarket.set(key, periphery);
+      }
+    );
+
+    if (needsLBSC) {
+      peripheryPromises.push(
+        this.sdk.lbsc.getLbscAddress().then((addr) => {
+          lbscAddress = addr;
+        }).catch((err) => {
+          console.error("Failed to resolve LBSC address, USDT conversion will be skipped:", err);
+        })
+      );
+    }
+
+    await Promise.all(peripheryPromises);
+
+    // 3. Build ONE contracts[] array
+    const calls: {
+      address: Address;
+      abi: readonly unknown[];
+      functionName: string;
+      args: readonly unknown[];
+    }[] = [];
+
+    // Track layout: for each market group we record where its calls start
+    // Layout: [market0_prices, market0_pos0_value, market0_pos0_cost, market0_pos0_fee, ...]
+    // Then optionally LBSC currentPrice at the end.
+
+    interface MarketLayout {
+      marketAddress: Address;
+      pricesIndex: number;
+      positionLayouts: Array<{
+        positionId: bigint;
+        loan?: { ovlAmount: string; stableAmount: string } | null;
+        valueIndex: number;
+      }>;
+    }
+    const layouts: MarketLayout[] = [];
+
+    for (const group of marketGroups) {
+      const key = group.marketAddress.toLowerCase();
+      const periphery = peripheryByMarket.get(key)!;
+
+      const layout: MarketLayout = {
+        marketAddress: group.marketAddress,
+        pricesIndex: calls.length,
+        positionLayouts: [],
+      };
+
+      // prices(marketAddress) — 1 call per market
+      calls.push({
+        address: periphery,
+        abi: OverlayV1StateABI,
+        functionName: "prices",
+        args: [group.marketAddress],
+      });
+
+      // 3 calls per position: value, cost, tradingFee
+      for (const pos of group.positions) {
+        layout.positionLayouts.push({
+          positionId: pos.positionId,
+          loan: pos.loan,
+          valueIndex: calls.length,
+        });
+
+        calls.push(
+          {
+            address: periphery,
+            abi: OverlayV1StateABI,
+            functionName: "value",
+            args: [group.marketAddress, pos.walletAddress, pos.positionId],
+          },
+          {
+            address: periphery,
+            abi: OverlayV1StateABI,
+            functionName: "cost",
+            args: [group.marketAddress, pos.walletAddress, pos.positionId],
+          },
+          {
+            address: periphery,
+            abi: OverlayV1StateABI,
+            functionName: "tradingFee",
+            args: [group.marketAddress, pos.walletAddress, pos.positionId],
+          }
+        );
+      }
+
+      layouts.push(layout);
+    }
+
+    // Fold LBSC currentPrice() into the same multicall
+    let lbscPriceIndex: number | undefined;
+    if (needsLBSC && lbscAddress) {
+      lbscPriceIndex = calls.length;
+      calls.push({
+        address: lbscAddress,
+        abi: LBSCABI,
+        functionName: "currentPrice",
+        args: [],
+      });
+    }
+
+    // 4. Execute single multicall
+    const results = await this.core.rpcProvider.multicall({
+      allowFailure: true,
+      contracts: calls as any,
+    });
+
+    // 5. Extract LBSC oracle price from results
+    let oraclePrice: bigint | undefined;
+    if (lbscPriceIndex !== undefined) {
+      const lbscResult = results[lbscPriceIndex];
+      if (lbscResult.status === "success" && lbscResult.result !== undefined) {
+        oraclePrice = lbscResult.result as unknown as bigint;
+      }
+    }
+
+    // 6. Parse results by layout
+    const positionsMap = new Map<string, PositionPnLEntry>();
+    const marketPricesMap = new Map<string, { bid: bigint; ask: bigint; mid: bigint }>();
+
+    for (const layout of layouts) {
+      // Parse market prices
+      const pricesResult = results[layout.pricesIndex];
+      if (pricesResult.status === "success" && pricesResult.result) {
+        const [bid, ask, mid] = pricesResult.result as unknown as readonly [bigint, bigint, bigint];
+        marketPricesMap.set(layout.marketAddress.toLowerCase(), { bid, ask, mid });
+      }
+
+      // Parse each position
+      for (const posLayout of layout.positionLayouts) {
+        const valueResult = results[posLayout.valueIndex];
+        const costResult = results[posLayout.valueIndex + 1];
+        const feeResult = results[posLayout.valueIndex + 2];
+
+        if (
+          valueResult.status === "success" &&
+          costResult.status === "success" &&
+          feeResult.status === "success" &&
+          valueResult.result !== undefined &&
+          costResult.result !== undefined &&
+          feeResult.result !== undefined
+        ) {
+          const value = valueResult.result as unknown as bigint;
+          const cost = costResult.result as unknown as bigint;
+          const tradingFee = feeResult.result as unknown as bigint;
+          const pnl = value - cost - tradingFee;
+          const pnlFormatted = Number(pnl) / 1e18;
+
+          let pnlUSDT: string | undefined;
+          if (posLayout.loan && oraclePrice !== undefined) {
+            pnlUSDT = this.convertPnLToStable(pnl, posLayout.loan, oraclePrice);
+          }
+
+          const key = `${layout.marketAddress}-${posLayout.positionId}`;
+          positionsMap.set(key, {
+            value,
+            cost,
+            tradingFee,
+            pnl,
+            pnlFormatted,
+            pnlUSDT,
+          });
+        }
+        // Positions with failed calls are excluded (not silently zero'd)
+      }
+    }
+
+    return {
+      positions: positionsMap,
+      marketPrices: marketPricesMap,
       timestamp: Date.now(),
     };
   }
