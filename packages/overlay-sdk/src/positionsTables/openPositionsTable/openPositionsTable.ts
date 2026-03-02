@@ -892,6 +892,8 @@ export class OverlaySDKOpenPositions extends OverlaySDKModule {
       peripheryPromises.push(
         this.sdk.lbsc.getLbscAddress().then((addr) => {
           lbscAddress = addr;
+        }).catch((err) => {
+          console.error("Failed to resolve LBSC address, USDT conversion will be skipped:", err);
         })
       );
     }
